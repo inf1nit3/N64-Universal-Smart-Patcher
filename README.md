@@ -72,7 +72,7 @@ The application features a sleek dark cyberpunk user interface with drag-and-dro
 
 ## 🚀 Quick Start (Portable EXE)
 
-1. Download the latest standalone executable from the **[Releases](../../releases)** tab.
+1. Download the latest standalone executable from the **[Releases](../../releases/tag/v3.0.0)** tab.
 2. Double-click `N64_Smart_Patcher.exe` (no installation required).
 3. Drag & drop your N64 ROMs (`.z64`, `.n64`, `.v64`) or an entire games folder.
 4. Select your desired patch options and click **PATCH ROMS NOW**.
