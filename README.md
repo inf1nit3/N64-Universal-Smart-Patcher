@@ -1,8 +1,8 @@
-# 🎮 Universal N64 ROM Inspector & Smart Patcher v2.0
+# 🎮 Universal N64 ROM Inspector & Smart Patcher v2.1
 
 ![N64 Smart Patcher Icon](app_icon.png)
 
-A modern, high-performance GUI ROM patcher and inspection utility for Nintendo 64 games. Features the **Smart VI Mode Table Engine v2.0** for zero-false-positive 640x480 high-resolution patching, anti-aliasing (No-AA) removal, dither/divot filter toggles, and SubDrag `.xdelta` community patch integration.
+A modern, high-performance GUI + CLI ROM patcher and inspection utility for Nintendo 64 games. Features the **Smart VI Mode Table Engine v2.0** for zero-false-positive 640x480 high-resolution patching, anti-aliasing (No-AA) removal, dither/divot/gamma filter toggles, and SubDrag `.xdelta` community patch integration.
 
 Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M64), flashcarts (SummerCart 64, EverDrive 64), and N64 emulators (Simple64, Ares, RMG).
 
@@ -17,11 +17,17 @@ Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M6
 
 - **🔥 SubDrag `.xdelta` Community Patch Integration**:
   - Automatically detects and applies verified high-res patches for *Super Mario 64*, *GoldenEye 007*, *Banjo-Kazooie*, *F-Zero X*, *Forsaken 64*, *Pokemon Snap*, *Quake II*, and *Golden Nugget 64*.
+  - Applied to the **clean ROM first** (xdelta deltas are built against pristine dumps), then combined with your filter options.
 
-- **✨ Crisp Visual Filters**:
+- **✨ Crisp Visual Filters** (every toggle is honored independently):
   - **Disable Anti-Aliasing (No-AA)**: Removes N64 VI blur for sharp 3D polygon edges.
   - **Disable Dither Filter**: Removes 16-bit dot pattern artifacts across textures and gradients.
   - **Disable Divot Filter**: Eliminates hardware edge blurring on 3D objects.
+  - **Disable Gamma Boost**: Removes hardware gamma boost for more accurate colors.
+
+- **🖥️ GUI + Headless CLI**:
+  - Dark cyberpunk GUI with background inspection, cancellable batch runs, persistent options, and MD5/SHA-1 hashes with CSV/JSON report export.
+  - `n64_patcher_cli.py` for scripting and batch-processing entire libraries.
 
 - **🛡️ 100% Non-Destructive**:
   - Original ROMs are **never modified or overwritten**. Always outputs a new patched file.
@@ -30,7 +36,29 @@ Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M6
   - Automatically formats concise suffixes (` [NoAA].z64`, ` [640p].z64`, ` [HR+NoAA].z64`) and caps excessive base filename lengths to prevent UI truncation on FAT32 flashcard menus.
 
 - **🔍 Comprehensive ROM Inspector**:
-  - Header inspection (Game Title, Code, Region/TV standard, Format/Endianness conversion `.v64`/`.n64` -> `.z64`, Boot Checksums CRC1/CRC2, VI Table Counter).
+  - Header inspection (Game Title, Code, Region/TV standard, Format/Endianness conversion `.v64`/`.n64` -> `.z64`, Boot Checksums CRC1/CRC2, VI Table Counter, MD5/SHA-1 hashes).
+
+---
+
+## ⌨️ Command-Line Mode
+
+The same patch engine is available headless via `n64_patcher_cli.py` (no GUI required):
+
+```bash
+# Inspect a folder (with MD5/SHA-1 hashes)
+python n64_patcher_cli.py "D:\N64 Roms" --inspect-only
+
+# Patch single ROMs with hi-res + all filters
+python n64_patcher_cli.py rom1.z64 rom2.n64 --hires --no-dither --no-divot
+
+# Recursively batch a whole library, keep AA untouched
+python n64_patcher_cli.py "D:\N64 Roms" -r --hires --keep-aa
+
+# Export an inspection report (CSV or JSON)
+python n64_patcher_cli.py "D:\N64 Roms" -r --export report.csv --inspect-only
+```
+
+Run `python n64_patcher_cli.py --help` for all options. Originals are never modified; outputs get tagged filenames next to the inputs.
 
 ---
 
@@ -67,6 +95,9 @@ cd N64-Universal-Smart-Patcher
 # Install dependencies
 pip install PyQt6 Pillow pyinstaller
 
+# Run the test suite (pure stdlib, synthetic ROMs - no game files needed)
+python -m unittest test_n64_core -v
+
 # Run GUI script directly
 python N64_Smart_Patcher_GUI.py
 
@@ -77,6 +108,14 @@ pyinstaller --onefile --noconsole --name "N64_Smart_Patcher" --icon "app_icon.ic
   --add-data "app_icon.ico;." \
   N64_Smart_Patcher_GUI.py
 ```
+
+### Project layout
+- `n64_core.py` — pure-stdlib patch engine (endianness conversion, Smart VI Table Engine, SubDrag xdelta, inspection, pipeline). Shared by GUI, CLI, and tests.
+- `N64_Smart_Patcher_GUI.py` — PyQt6 interface.
+- `n64_patcher_cli.py` — headless command-line interface.
+- `test_n64_core.py` — unit tests with synthetic ROM images.
+
+Execution logs are appended to `%APPDATA%\N64SmartPatcher\N64_Patcher_Log.txt` (per-user, works for installed bundles).
 
 ---
 
@@ -147,13 +186,13 @@ This application was developed using **Vibecoding** — a modern AI-assisted sof
 **Yes, 100% of everything this tool does is fully verifiable:**
 
 1. **Full Open-Source Code**:
-   Every line of code is open-source in [`N64_Smart_Patcher_GUI.py`](N64_Smart_Patcher_GUI.py). Every byte modification, search pattern, and subprocess call is explicit and auditable.
+   Every line of code is open-source in [`n64_core.py`](n64_core.py) (patch engine) and [`N64_Smart_Patcher_GUI.py`](N64_Smart_Patcher_GUI.py) (interface). Every byte modification, search pattern, and subprocess call is explicit and auditable - and covered by the unit tests in [`test_n64_core.py`](test_n64_core.py).
 2. **Detailed Execution Logs**:
-   Every patch operation generates a complete, timestamped execution log (`N64_Patcher_Log.txt`) detailing exact offset modifications, CRC recalculated values, and stage results.
+   Every patch operation appends to a complete, timestamped execution log (`%APPDATA%\N64SmartPatcher\N64_Patcher_Log.txt`) detailing exact offset modifications, CRC recalculated values, and stage results.
 3. **Hex & Binary Diff Auditing**:
    Because original files are **never overwritten**, you can compare any input ROM and output patched ROM using standard Hex editors (HxD, ImHex) or `fc /b` binary diffs to verify exact byte offsets changed.
 4. **Self-Inspecting ROM Tree**:
-   Dragging a patched ROM back into the application immediately audits its header, verifying updated boot checksums (CRC1/CRC2) and modified VI mode table statuses (`640x480 Hi-Res (Already Patched)`).
+   Dragging a patched ROM back into the application immediately audits its header, verifying updated boot checksums (CRC1/CRC2), hashes, and modified VI mode table statuses (`640x480 Hi-Res (native or already patched)`).
 
 ---
 
