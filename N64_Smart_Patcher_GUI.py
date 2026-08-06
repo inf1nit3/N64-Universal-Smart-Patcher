@@ -1,5 +1,5 @@
 """
-N64_Smart_Patcher_GUI.py (ERWEITERT)
+N64_Smart_Patcher_GUI.py (BULLETPROOF V3.0)
 Universal N64 ROM Inspector & Smart Patcher v3.0 - PyQt6 GUI
 """
 import os
@@ -49,46 +49,58 @@ class PatchWorker(QThread):
             
             filename = os.path.basename(rom)
             self.progress.emit(i, total, filename)
-            
-            # Header-Stripping
             working_rom = rom
-            if self.strip_header:
-                temp_stripped = rom + ".stripped.z64"
-                header_result = detect_and_strip_scene_header(rom, temp_stripped)
-                if header_result["stripped"]:
-                    self.log_message.emit(f"🔧 Header entfernt: {filename}")
-                    working_rom = temp_stripped
             
-            # Patching
-            result = core.patch_rom(
-                working_rom, 
-                self.options,
-                log=lambda m: self.log_message.emit(f"   {m}"),
-                should_cancel=lambda: self.should_cancel
-            )
+            try:
+                # Header-Stripping
+                if self.strip_header:
+                    temp_stripped = rom + ".stripped.z64"
+                    header_result = detect_and_strip_scene_header(rom, temp_stripped)
+                    if header_result.get("stripped"):
+                        self.log_message.emit(f"🔧 Header entfernt: {filename}")
+                        working_rom = temp_stripped
+                
+                # Patching
+                result = core.patch_rom(
+                    working_rom, 
+                    self.options,
+                    log=lambda m: self.log_message.emit(f"   {m}"),
+                    should_cancel=lambda: self.should_cancel
+                )
+                
+                if not isinstance(result, dict):
+                    result = {"status": "error", "message": "Invalid patch result", "output": None}
+                
+                out_file = result.get("output")
+                
+                # CRC-Fix
+                if self.fix_crc and result.get("status") == "patched" and out_file and os.path.isfile(out_file):
+                    crc_result = fix_rom_crc(out_file, core.RN64CRC_PATH)
+                    self.log_message.emit(f"🔧 {crc_result.get('message', 'CRC Updated')}: {filename}")
+                
+                results["details"].append(result)
+                if result.get("status") == "patched":
+                    results["patched"] += 1
+                    out_name = os.path.basename(out_file) if out_file else "patched.z64"
+                    self.log_message.emit(f"✅ {filename} -> {out_name}")
+                elif result.get("status") == "skipped":
+                    results["skipped"] += 1
+                    self.log_message.emit(f"⏭️  {filename}: {result.get('message', 'Skipped')}")
+                else:
+                    results["errors"] += 1
+                    self.log_message.emit(f"❌ {filename}: {result.get('message', 'Error')}")
             
-            # CRC-Fix
-            if self.fix_crc and result["status"] == "patched" and result.get("output"):
-                crc_result = fix_rom_crc(result["output"], core.RN64CRC_PATH)
-                self.log_message.emit(f"🔧 {crc_result['message']}: {filename}")
-            
-            results["details"].append(result)
-            if result["status"] == "patched":
-                results["patched"] += 1
-                self.log_message.emit(f"✅ {filename} -> {os.path.basename(result['output'])}")
-            elif result["status"] == "skipped":
-                results["skipped"] += 1
-                self.log_message.emit(f"⏭️  {filename}: {result['message']}")
-            else:
+            except Exception as e:
                 results["errors"] += 1
-                self.log_message.emit(f"❌ {filename}: {result['message']}")
+                self.log_message.emit(f"❌ Error on {filename}: {str(e)}")
             
-            # Cleanup gestripptes ROM
-            if self.strip_header and working_rom != rom:
-                try:
-                    os.remove(working_rom)
-                except:
-                    pass
+            finally:
+                # Cleanup gestripptes ROM
+                if self.strip_header and working_rom != rom and os.path.isfile(working_rom):
+                    try:
+                        os.remove(working_rom)
+                    except Exception:
+                        pass
         
         self.finished.emit(results)
 
@@ -98,6 +110,10 @@ class N64PatcherGUI(QMainWindow):
         super().__init__()
         self.setWindowTitle("Universal N64 ROM Inspector & Smart Patcher v3.0")
         self.setGeometry(100, 100, 900, 700)
+        
+        icon_path = core.get_asset_path("app_icon.ico")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         
         self.settings = QSettings("inf1nit3", "N64SmartPatcher")
         self.rom_list = []
@@ -232,11 +248,9 @@ class N64PatcherGUI(QMainWindow):
         
         if preset_key == "custom":
             self.preset_warning_label.setText("")
-            # Enable individual options
             for cb in [self.cb_no_aa, self.cb_no_dither, self.cb_no_divot, self.cb_no_gamma, self.cb_hires]:
                 cb.setEnabled(True)
         else:
-            # Apply preset
             options = apply_preset(preset_key)
             self.cb_no_aa.setChecked(options.no_aa)
             self.cb_no_dither.setChecked(options.no_dither)
@@ -244,11 +258,9 @@ class N64PatcherGUI(QMainWindow):
             self.cb_no_gamma.setChecked(options.no_gamma)
             self.cb_hires.setChecked(options.hires)
             
-            # Disable individual options when preset is active
             for cb in [self.cb_no_aa, self.cb_no_dither, self.cb_no_divot, self.cb_no_gamma, self.cb_hires]:
                 cb.setEnabled(False)
             
-            # Show warnings
             warnings = get_preset_warnings(preset_key, "emulator")
             if warnings:
                 self.preset_warning_label.setText("\n".join(f"⚠️ {w}" for w in warnings))
@@ -262,20 +274,23 @@ class N64PatcherGUI(QMainWindow):
         )
         
         for file in files:
-            if is_archive(file):
-                self.log(f"📦 Extrahiere Archiv: {os.path.basename(file)}")
-                temp_dir = os.path.join(os.path.dirname(file) or ".", "_n64_temp_extract")
-                extracted = extract_roms_from_archive(file, temp_dir)
-                self.temp_dirs.append(temp_dir)
-                for rom in extracted:
-                    if rom not in self.rom_list:
-                        self.rom_list.append(rom)
-                        self.rom_list_widget.addItem(os.path.basename(rom))
-                self.log(f"   ✓ {len(extracted)} ROM(s) extrahiert")
-            elif core.is_rom_file(file):
-                if file not in self.rom_list:
-                    self.rom_list.append(file)
-                    self.rom_list_widget.addItem(os.path.basename(file))
+            try:
+                if is_archive(file):
+                    self.log(f"📦 Extrahiere Archiv: {os.path.basename(file)}")
+                    temp_dir = os.path.join(os.path.dirname(file) or ".", "_n64_temp_extract")
+                    extracted = extract_roms_from_archive(file, temp_dir)
+                    self.temp_dirs.append(temp_dir)
+                    for rom in extracted:
+                        if rom not in self.rom_list:
+                            self.rom_list.append(rom)
+                            self.rom_list_widget.addItem(os.path.basename(rom))
+                    self.log(f"   ✓ {len(extracted)} ROM(s) extrahiert")
+                elif core.is_rom_file(file):
+                    if file not in self.rom_list:
+                        self.rom_list.append(file)
+                        self.rom_list_widget.addItem(os.path.basename(file))
+            except Exception as e:
+                self.log(f"⚠️ Fehler beim Hinzufügen von {file}: {e}")
         
         self.log(f"📊 {len(self.rom_list)} ROM(s) in der Liste")
     
@@ -285,20 +300,23 @@ class N64PatcherGUI(QMainWindow):
             for root, _, files in os.walk(folder):
                 for file in files:
                     full_path = os.path.join(root, file)
-                    if is_archive(full_path):
-                        self.log(f"📦 Extrahiere: {file}")
-                        temp_dir = os.path.join(root, "_n64_temp_extract")
-                        extracted = extract_roms_from_archive(full_path, temp_dir)
-                        self.temp_dirs.append(temp_dir)
-                        for rom in extracted:
-                            if rom not in self.rom_list:
-                                self.rom_list.append(rom)
-                                self.rom_list_widget.addItem(os.path.basename(rom))
-                    elif core.is_rom_file(file):
-                        if not core.is_tool_output(full_path):
-                            if full_path not in self.rom_list:
-                                self.rom_list.append(full_path)
-                                self.rom_list_widget.addItem(file)
+                    try:
+                        if is_archive(full_path):
+                            self.log(f"📦 Extrahiere: {file}")
+                            temp_dir = os.path.join(root, "_n64_temp_extract")
+                            extracted = extract_roms_from_archive(full_path, temp_dir)
+                            self.temp_dirs.append(temp_dir)
+                            for rom in extracted:
+                                if rom not in self.rom_list:
+                                    self.rom_list.append(rom)
+                                    self.rom_list_widget.addItem(os.path.basename(rom))
+                        elif core.is_rom_file(file):
+                            if not core.is_tool_output(full_path):
+                                if full_path not in self.rom_list:
+                                    self.rom_list.append(full_path)
+                                    self.rom_list_widget.addItem(file)
+                    except Exception as e:
+                        self.log(f"⚠️ Fehler bei Datei {file}: {e}")
             
             self.log(f"📊 {len(self.rom_list)} ROM(s) in der Liste")
     
@@ -318,11 +336,14 @@ class N64PatcherGUI(QMainWindow):
         
         self.log("\n🔍 Inspiziere ROMs...")
         for rom in self.rom_list:
-            info = core.inspect_rom_details(rom, with_hashes=True)
-            res = "640x480" if info["is_hires_640x480"] else "320x240"
-            aa = "No-AA" if info["no_aa"] else "AA"
-            self.log(f"{info['filename']}: {info['title']} [{info['region']}] "
-                     f"{info['format']} | {res} | {aa}")
+            try:
+                info = core.inspect_rom_details(rom, with_hashes=True)
+                res = "640x480" if info["is_hires_640x480"] else "320x240"
+                aa = "No-AA" if info["no_aa"] else "AA"
+                self.log(f"{info['filename']}: {info['title']} [{info['region']}] "
+                         f"{info['format']} | {res} | {aa}")
+            except Exception as e:
+                self.log(f"⚠️ Fehler bei Inspektion von {os.path.basename(rom)}: {e}")
         
         self.log("\n✅ Inspektion abgeschlossen")
     
@@ -331,7 +352,6 @@ class N64PatcherGUI(QMainWindow):
             QMessageBox.warning(self, "Keine ROMs", "Bitte zuerst ROMs hinzufügen!")
             return
         
-        # Optionen sammeln
         options = core.PatchOptions(
             no_aa=self.cb_no_aa.isChecked(),
             no_dither=self.cb_no_dither.isChecked(),
@@ -340,7 +360,6 @@ class N64PatcherGUI(QMainWindow):
             hires=self.cb_hires.isChecked(),
         )
         
-        # UI sperren
         self.btn_patch.setEnabled(False)
         self.btn_inspect.setEnabled(False)
         self.btn_cancel.setEnabled(True)
@@ -350,7 +369,6 @@ class N64PatcherGUI(QMainWindow):
         
         self.log(f"\n🚀 Starte Patching von {len(self.rom_list)} ROM(s)...")
         
-        # Worker starten
         self.worker = PatchWorker(
             self.rom_list, 
             options,
@@ -388,7 +406,6 @@ class N64PatcherGUI(QMainWindow):
             f"Errors: {results['errors']}"
         )
         
-        # Cleanup
         for temp_dir in self.temp_dirs:
             cleanup_temp_dir(temp_dir)
         self.temp_dirs.clear()
