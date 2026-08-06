@@ -175,7 +175,7 @@ This application was developed using **Vibecoding** — a modern AI-assisted sof
 
 ### 🛠️ AI Development Toolchain:
 - **AI Coding Agent**: **Google DeepMind Antigravity Agentic AI**
-- **LLM Engines**: **Kimi K3**, **Gemini 3.6 Flash** & **Claude 3.5 / 4.6 Thinking**
+- **LLM Engines**: **Qwen 3.8 Max**, **Kimi K3**, **Gemini 3.6 Flash** & **Claude 3.5 / 4.6 Thinking**
 - **Image Synthesis**: Antigravity `generate_image` (retro-futuristic 3D N64 app icon)
 - **Deployment Automation**: GitHub CLI (`gh`), Git, and PyInstaller
 
