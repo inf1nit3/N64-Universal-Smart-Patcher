@@ -13,19 +13,24 @@ Patch pipeline overview (see patch_rom):
      instruction-mask fallback, dither/divot/gamma flags)
   4. Hi-res fallback: Smart VI Mode Table engine (width 320 -> 640 on
      structurally verified OSViMode entries only)
-  5. Recalculate boot checksums (rn64crc) and write a new output file;
-     originals are never modified
+  5. Recalculate boot checksums (bundled rn64crc.exe when available,
+     otherwise the built-in pure-Python CRC engine) and write a new
+     output file; originals are never modified
 """
 
 import csv
 import hashlib
 import json
+import mmap
 import os
+import shutil
 import struct
 import subprocess
 import sys
 import tempfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+
+VERSION = "3.1.0"
 
 # ---------------------------------------------------------------------------
 # Paths (frozen-aware for PyInstaller bundles)
@@ -46,17 +51,46 @@ def get_asset_path(*relative_parts):
     return os.path.join(EXE_DIR, *relative_parts)
 
 
-U64AAP_PATH = get_asset_path("N64noAAPatcher", "additionals", "u64aap.exe")
-RN64CRC_PATH = get_asset_path("N64noAAPatcher", "additionals", "rn64crc.exe")
-XDELTA3_PATH = get_asset_path("N64noAAPatcher", "additionals", "xdelta3.exe")
+def _is_runnable(path):
+    """True if *path* is a file we can actually execute. On non-Windows
+    platforms the bundled .exe helpers are not runnable, so missing the
+    executable bit must count as 'tool unavailable'."""
+    if not os.path.isfile(path):
+        return False
+    if sys.platform == "win32":
+        return True
+    return os.access(path, os.X_OK)
+
+
+def _resolve_tool(bundled_path, *system_names):
+    """Return the bundled helper if runnable, otherwise fall back to a
+    same-named tool on PATH (e.g. a system xdelta3 on macOS/Linux)."""
+    if _is_runnable(bundled_path):
+        return bundled_path
+    for name in system_names:
+        found = shutil.which(name)
+        if found:
+            return found
+    return bundled_path
+
+
+U64AAP_PATH = _resolve_tool(
+    get_asset_path("N64noAAPatcher", "additionals", "u64aap.exe"), "u64aap")
+RN64CRC_PATH = _resolve_tool(
+    get_asset_path("N64noAAPatcher", "additionals", "rn64crc.exe"), "rn64crc")
+XDELTA3_PATH = _resolve_tool(
+    get_asset_path("N64noAAPatcher", "additionals", "xdelta3.exe"),
+    "xdelta3", "xdelta")
 HIRES_PATCHES_DIR = get_asset_path("N64noAAPatcher", "hires_patches")
 
 CREATE_NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
 SUBPROCESS_TIMEOUT = 120  # seconds; u64aap/xdelta/rn64crc are all fast
 
 ROM_EXTENSIONS = (".z64", ".n64", ".v64")
-OUTPUT_TAGS = (" [HR+NoAA]", " [640p]", " [NoAA]", " [NoDither]", " [PATCHED]")
-TEMP_SUFFIXES = (".temp.z64", ".patched.z64", ".xdelta_out.z64")
+OUTPUT_TAGS = (" [HR+NoAA]", " [640p]", " [NoAA]", " [NoDither]", " [PATCHED]",
+               " [COMMUNITY]", " [CRCFIX]")
+TEMP_SUFFIXES = (".temp.z64", ".patched.z64", ".xdelta_out.z64",
+                 ".stripped.z64")
 
 
 def get_log_path():
@@ -78,13 +112,15 @@ def append_log(lines):
 
 
 def check_tools():
-    """Availability of the bundled external helpers. All stages degrade
-    gracefully when a tool is missing."""
+    """Availability of the external helpers. All stages degrade gracefully
+    when a tool is missing; CRC fixing always works via the built-in
+    pure-Python engine ('crc_native')."""
     return {
-        "u64aap": os.path.isfile(U64AAP_PATH),
-        "rn64crc": os.path.isfile(RN64CRC_PATH),
-        "xdelta3": os.path.isfile(XDELTA3_PATH),
+        "u64aap": _is_runnable(U64AAP_PATH),
+        "rn64crc": _is_runnable(RN64CRC_PATH),
+        "xdelta3": _is_runnable(XDELTA3_PATH),
         "hires_patches": os.path.isdir(HIRES_PATCHES_DIR),
+        "crc_native": True,
     }
 
 
@@ -156,6 +192,167 @@ def ensure_z64(input_path, out_path):
 
 
 # ---------------------------------------------------------------------------
+# Pure-Python N64 boot CRC engine (CRC1/CRC2 at header 0x10/0x14)
+#
+# Port of the well-known algorithm (as used by Project64/rn64crc-class
+# tools): the CIC boot-chip is identified by summing the big-endian words
+# of the bootcode region, then a seed derived from the CIC drives a
+# register-mixing pass over the first 1 MiB. Works on every platform -
+# no rn64crc.exe needed.
+# ---------------------------------------------------------------------------
+
+_MASK32 = 0xFFFFFFFF
+CRC_DATA_OFFSET = 0x1000
+CRC_DATA_LENGTH_DEFAULT = 0x100000
+
+# CIC chips -> 64-bit sum of the big-endian words at 0x40..0x1000
+CIC_SUMS = {
+    0x000000D0027FDF31: "6101",
+    0x000000CFFB631223: "6101",
+    0x000000C34B2826B8: "6101",  # iQue
+    0x0000002F35CF0DE9: "6101",  # iQue (Paper Mario)
+    0x000000C92ADFE50A: "6101",  # iQue (Sin and Punishment)
+    0x000000D057C85244: "6102",
+    0x0000007C56242373: "6102",  # libdragon IPL3
+    0x000000D6497E414B: "6103",
+    0x0000011A49F60E96: "6105",
+    0x000000D6D5BE5580: "6106",
+    0x000001053BC19870: "5167",  # 64DD conversion CIC
+    0x000000D2E53EF008: "8303",  # 64DD IPL
+    0x000000D2E53EF39F: "8401",  # 64DD IPL tool
+    0x000000D2E53E5DDA: "8501",  # 64DD IPL US
+}
+CIC_SUM_ALECK64 = 0x000000A5F80BF620  # partial sum 0x40..0xC00
+
+# CIC chip -> (seed, CRC data length)
+CIC_SEEDS = {
+    "6101": (0xF8CA4DDC, CRC_DATA_LENGTH_DEFAULT),
+    "6102": (0xF8CA4DDC, CRC_DATA_LENGTH_DEFAULT),
+    "6103": (0xA3886759, CRC_DATA_LENGTH_DEFAULT),
+    "6105": (0xDF26F436, CRC_DATA_LENGTH_DEFAULT),
+    "6106": (0x1FEA617A, CRC_DATA_LENGTH_DEFAULT),
+    "8501": (0x861AE3A7, 0x000A0000),
+    "8303": (0x8331D4CA, 0x000A0000),
+    "8401": (0x0D8303E2, 0x000A0000),
+    "5101": (0x95104FDD, CRC_DATA_LENGTH_DEFAULT),
+}
+
+
+def _be_word(data, offset):
+    """Big-endian 32-bit word at offset; missing bytes read as zero
+    (short/homebrew images are padded, mirroring empty flash)."""
+    if offset + 4 <= len(data):
+        return struct.unpack_from(">I", data, offset)[0]
+    word = 0
+    for i in range(4):
+        p = offset + i
+        word = (word << 8) | (data[p] if p < len(data) else 0)
+    return word
+
+
+def detect_cic_chip(data):
+    """Identify the CIC boot chip from the bootcode region (0x40..0x1000).
+    Returns a chip string ('6102', ...) or None if unknown."""
+    if len(data) < 0x44:
+        return None
+    total = 0
+    aleck_sum = 0
+    for off in range(0x40, 0x1000, 4):
+        if off == 0xC00:
+            aleck_sum = total  # Aleck64 only covers 0x40..0xC00
+        total += _be_word(data, off)
+    chip = CIC_SUMS.get(total)
+    if chip is not None:
+        return chip
+    if aleck_sum == CIC_SUM_ALECK64:
+        return "5101"
+    return None
+
+
+def calculate_n64_crc(data, chip=None):
+    """Compute (crc1, crc2) for a big-endian z64 image. Returns None if
+    the CIC chip is unknown. Algorithm mirrors the hardware-derived
+    implementations used by emulators and flashcart tooling."""
+    if chip is None:
+        chip = detect_cic_chip(data)
+    if chip is None or chip not in CIC_SEEDS:
+        return None
+
+    seed, length = CIC_SEEDS[chip]
+    if chip == "5101" and _be_word(data, 0x8) == 0x80100400:
+        length = 0x003FE000
+
+    a3 = t2 = t3 = s0 = a2 = t4 = seed
+
+    for i in range(0, length, 4):
+        d = _be_word(data, CRC_DATA_OFFSET + i)
+
+        carry_sum = a3 + d
+        a1 = carry_sum & _MASK32
+        if carry_sum > _MASK32:
+            if chip in ("8501", "8303"):
+                t2 ^= t3
+            else:
+                t2 = (t2 + 1) & _MASK32
+
+        shift = d & 0x1F
+        rot = ((d << shift) | (d >> (32 - shift))) & _MASK32 if shift else d
+
+        a3 = a1
+        t3 ^= d
+        s0 = (s0 + rot) & _MASK32
+        if a2 < d:
+            a2 ^= a3 ^ d
+        elif chip == "8303":
+            a2 = (a2 + rot) & _MASK32
+        else:
+            a2 ^= rot
+
+        if chip == "6105":
+            table_word = _be_word(data, 0x750 + (i & 0xFF))
+            t4 = (t4 + (d ^ table_word)) & _MASK32
+        else:
+            t4 = (t4 + (d ^ s0)) & _MASK32
+
+    if chip == "6103":
+        crc1 = ((a3 ^ t2) + t3) & _MASK32
+        crc2 = ((s0 ^ a2) + t4) & _MASK32
+    elif chip == "6106":
+        crc1 = ((a3 * t2) + t3) & _MASK32
+        crc2 = ((s0 * a2) + t4) & _MASK32
+    elif chip == "5101":
+        crc1 = ((a3 ^ t2) + t3) & _MASK32
+        crc2 = ((s0 ^ a2) + t4) & _MASK32
+    else:
+        crc1 = a3 ^ t2 ^ t3
+        crc2 = s0 ^ a2 ^ t4
+    return crc1, crc2
+
+
+def fix_rom_crc_native(path):
+    """Recalculate CRC1/CRC2 in pure Python and stamp them into the file
+    at 0x10/0x14. The file must already be a big-endian .z64.
+    Returns (True, message) or (False, message)."""
+    with open(path, "rb") as f:
+        data = bytearray(f.read())
+    fmt, _label = detect_format(data)
+    if fmt != "z64":
+        return False, "Not a big-endian .z64 image"
+    chip = detect_cic_chip(data)
+    if chip is None:
+        return False, "Unknown CIC boot chip - cannot compute CRC"
+    crc = calculate_n64_crc(data, chip)
+    if crc is None:
+        return False, f"Unsupported CIC chip '{chip}'"
+    crc1, crc2 = crc
+    data[0x10:0x14] = struct.pack(">I", crc1)
+    data[0x14:0x18] = struct.pack(">I", crc2)
+    with open(path, "wb") as f:
+        f.write(data)
+    return True, f"CRC1/CRC2 recalculated natively (CIC-{chip})"
+
+
+# ---------------------------------------------------------------------------
 # Smart VI Mode Table Engine
 # Searches for N64 SDK OSViMode data structures: the 32-bit width word
 # (320 = 0x00000140) paired with a hardware NTSC/PAL/M-PAL burst timing
@@ -185,6 +382,34 @@ def find_vi_tables(data, width=WIDTH_320_DATA):
             tables.append({"offset": pos, "tv": tv})
         pos += 4
     return tables
+
+
+def scan_vi_tables_file(rom_path, width=WIDTH_320_DATA):
+    """Memory-mapped VI table scan for big-endian .z64 files (avoids
+    loading the whole ROM for inspection). Falls back to an in-memory
+    scan when mmap is unavailable. Same result shape as find_vi_tables."""
+    if not os.path.isfile(rom_path) or os.path.getsize(rom_path) < 8:
+        return []
+    try:
+        with open(rom_path, "rb") as f, \
+                mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+            tables = []
+            size = len(mm)
+            pos = 0
+            while True:
+                pos = mm.find(width, pos)
+                if pos == -1 or pos + 8 > size:
+                    break
+                next_4 = mm[pos + 4:pos + 8]
+                if next_4 in ALL_BURSTS:
+                    tv = ("NTSC" if next_4 == NTSC_BURST
+                          else ("PAL" if next_4 == PAL_BURST else "M-PAL"))
+                    tables.append({"offset": pos, "tv": tv})
+                pos += 4
+            return tables
+    except (ValueError, OSError):
+        with open(rom_path, "rb") as f:
+            return find_vi_tables(f.read(), width)
 
 
 def apply_smart_hires_patch(z64_path):
@@ -283,8 +508,8 @@ def patch_includes_noaa(patch_path):
 def try_subdrag_xdelta(patch_file, source_z64, output_z64):
     """Apply a SubDrag .xdelta patch. The source MUST be the pristine ROM -
     xdelta deltas are built against clean dumps and fail on modified data."""
-    if not os.path.isfile(XDELTA3_PATH):
-        return False, "xdelta3.exe not found"
+    if not _is_runnable(XDELTA3_PATH):
+        return False, "xdelta3 not found (bundled exe not runnable here; install xdelta3 for SubDrag support)"
     cmd = [XDELTA3_PATH, "-d", "-s", source_z64, patch_file, output_z64]
     try:
         res = subprocess.run(cmd, capture_output=True, text=True, errors="replace",
@@ -367,30 +592,55 @@ def inspect_rom_details(rom_path, with_hashes=False):
         info["is_60fps_or_mod"] = True
 
     with open(rom_path, "rb") as f:
-        full_bytes = f.read()
+        head = f.read(64)
 
-    fmt, label = detect_format(full_bytes)
+    fmt, label = detect_format(head)
     info["format"] = label
-    if fmt is None or len(full_bytes) < 64:
+    if fmt is None or len(head) < 64:
         return info
 
-    full_be = to_big_endian(full_bytes, fmt)
+    if fmt == "z64":
+        # Fast path: header fields from the first 64 bytes, AA/dither
+        # heuristics from the code region, VI tables via mmap scan -
+        # no full in-memory copy of the ROM is needed.
+        info["title"] = head[32:52].decode("ascii", errors="ignore").strip()
+        info["game_id"] = head[59:63].decode("ascii", errors="ignore").strip()
+        info["crc1"] = head[16:20].hex().upper()
+        info["crc2"] = head[20:24].hex().upper()
 
-    info["title"] = full_be[32:52].decode("ascii", errors="ignore").strip()
-    info["game_id"] = full_be[59:63].decode("ascii", errors="ignore").strip()
-    info["crc1"] = full_be[16:20].hex().upper()
-    info["crc2"] = full_be[20:24].hex().upper()
+        country_byte = head[62]
+        country_code = chr(country_byte) if 32 <= country_byte < 127 else "?"
+        info["region"] = REGION_MAP.get(country_code, f"Unknown ({country_code})")
 
-    country_byte = full_be[62]
-    country_code = chr(country_byte) if 32 <= country_byte < 127 else "?"
-    info["region"] = REGION_MAP.get(country_code, f"Unknown ({country_code})")
+        with open(rom_path, "rb") as f:
+            scan_region = f.read(AA_SCAN_LIMIT)
+        info["no_dither"] = b"\x31\xcf\x00\x00" in scan_region
+        info["no_aa"] = b"\x30\x42\x20\x00" in scan_region or info["no_dither"]
 
-    scan_region = full_be[:AA_SCAN_LIMIT]
-    info["no_dither"] = b"\x31\xcf\x00\x00" in scan_region
-    info["no_aa"] = b"\x30\x42\x20\x00" in scan_region or info["no_dither"]
+        vi_tables_320 = scan_vi_tables_file(rom_path, WIDTH_320_DATA)
+        vi_tables_640 = scan_vi_tables_file(rom_path, WIDTH_640_DATA)
+    else:
+        # Byte-swapped formats need a full conversion pass first.
+        with open(rom_path, "rb") as f:
+            full_bytes = f.read()
+        full_be = to_big_endian(full_bytes, fmt)
 
-    vi_tables_320 = find_vi_tables(full_be, WIDTH_320_DATA)
-    vi_tables_640 = find_vi_tables(full_be, WIDTH_640_DATA)
+        info["title"] = full_be[32:52].decode("ascii", errors="ignore").strip()
+        info["game_id"] = full_be[59:63].decode("ascii", errors="ignore").strip()
+        info["crc1"] = full_be[16:20].hex().upper()
+        info["crc2"] = full_be[20:24].hex().upper()
+
+        country_byte = full_be[62]
+        country_code = chr(country_byte) if 32 <= country_byte < 127 else "?"
+        info["region"] = REGION_MAP.get(country_code, f"Unknown ({country_code})")
+
+        scan_region = full_be[:AA_SCAN_LIMIT]
+        info["no_dither"] = b"\x31\xcf\x00\x00" in scan_region
+        info["no_aa"] = b"\x30\x42\x20\x00" in scan_region or info["no_dither"]
+
+        vi_tables_320 = find_vi_tables(full_be, WIDTH_320_DATA)
+        vi_tables_640 = find_vi_tables(full_be, WIDTH_640_DATA)
+
     info["vi_table_count"] = len(vi_tables_320)
     info["is_hires_640x480"] = len(vi_tables_640) > 0 and len(vi_tables_320) == 0
 
@@ -413,12 +663,12 @@ class PatchOptions:
     no_divot: bool = False
     no_gamma: bool = False
     hires: bool = False
-    applied_tags: set = field(default_factory=set)
 
 
-def build_output_path(rom_path, applied):
-    """Output path next to the input with a descriptive tag. Never equals
-    the input path (originals are preserved)."""
+def build_output_path(rom_path, applied, output_dir=None):
+    """Output path with a descriptive tag, next to the input or in
+    *output_dir* when given. Never equals the input path (originals are
+    preserved)."""
     if "HR" in applied and "NoAA" in applied:
         tag = " [HR+NoAA]"
     elif "HR" in applied:
@@ -431,6 +681,8 @@ def build_output_path(rom_path, applied):
         tag = " [PATCHED]"
 
     dir_name, full_fn = os.path.split(rom_path)
+    if output_dir:
+        dir_name = output_dir
     base_fn, _ = os.path.splitext(full_fn)
     for t in OUTPUT_TAGS:
         if base_fn.endswith(t):
@@ -452,10 +704,14 @@ def _run_tool(cmd, timeout=SUBPROCESS_TIMEOUT):
                           creationflags=CREATE_NO_WINDOW, timeout=timeout)
 
 
-def patch_rom(rom_path, options, log=print, should_cancel=lambda: False):
+def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
+              output_dir=None):
     """Patch a single ROM. Returns a result dict:
-    {status: patched|skipped|error|cancelled, message, output, applied}."""
-    result = {"status": "error", "message": "", "output": None, "applied": set()}
+    {status: patched|skipped|error|cancelled, message, output, applied,
+    input}. When *output_dir* is given, the tagged output is written
+    there instead of next to the input."""
+    result = {"status": "error", "message": "", "output": None,
+              "applied": set(), "input": rom_path}
     dir_name = os.path.dirname(os.path.abspath(rom_path)) or "."
 
     fd, temp_z64 = tempfile.mkstemp(suffix=".temp.z64", dir=dir_name)
@@ -500,7 +756,7 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False):
                         if patch_includes_noaa(patch):
                             applied.add("NoAA")
                 else:
-                    log("  SubDrag patch available but xdelta3.exe missing - using Smart VI engine")
+                    log("  SubDrag patch available but no runnable xdelta3 found - using Smart VI engine")
 
         if cancelled():
             return result
@@ -586,16 +842,26 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False):
             return result
 
         # --- CRC fix + finalize ---------------------------------------------
+        crc_done = False
         if tools["rn64crc"]:
             try:
-                crc_res = _run_tool([RN64CRC_PATH, patched_z64, "-u"])
-                log(f"  CRC Update: {crc_res.stdout.strip() or crc_res.stderr.strip()}")
+                crc_res = _run_tool([RN64CRC_PATH, "-u", patched_z64])
+                if crc_res.returncode == 0:
+                    crc_done = True
+                    log(f"  CRC Update: {crc_res.stdout.strip() or crc_res.stderr.strip()}")
+                else:
+                    log(f"  rn64crc returned {crc_res.returncode}, falling back to native engine")
             except (subprocess.TimeoutExpired, OSError) as e:
-                log(f"  CRC Update FAILED ({e}) - boot checksums NOT updated!")
-        else:
-            log("  WARNING: rn64crc.exe missing - boot checksums NOT updated; ROM may black-screen")
+                log(f"  rn64crc failed ({e}), falling back to native engine")
+        if not crc_done:
+            ok, crc_msg = fix_rom_crc_native(patched_z64)
+            if ok:
+                log(f"  CRC Update: {crc_msg}")
+            else:
+                log(f"  WARNING: CRC Update FAILED ({crc_msg}) - boot checksums NOT updated!")
 
-        final_path = build_output_path(rom_path, applied)
+        final_path = build_output_path(rom_path, applied, output_dir=output_dir)
+        os.makedirs(os.path.dirname(final_path) or ".", exist_ok=True)
         os.replace(patched_z64, final_path)
         patched_exists = False
 

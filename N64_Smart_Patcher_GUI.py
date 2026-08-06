@@ -1,32 +1,43 @@
 """
-N64_Smart_Patcher_GUI.py (BULLETPROOF V3.0)
-Universal N64 ROM Inspector & Smart Patcher v3.0 - PyQt6 GUI
+N64_Smart_Patcher_GUI.py (v3.1)
+Universal N64 ROM Inspector & Smart Patcher - PyQt6 GUI
+
+Verbesserungen in v3.1:
+  - PatchWorker emittiert 'done' statt das QThread-eigene 'finished' zu
+    überschatten; Worker wird beim Schließen sauber gestoppt.
+  - Inspektion läuft in einem Hintergrund-Thread und füllt eine
+    QTreeWidget-Tabelle (Titel, Region, CRC1/CRC2, Hashes ...).
+  - Drag & Drop für Dateien, Ordner und Archive.
+  - Statusleiste zeigt Tool-Verfügbarkeit; Logs gehen zusätzlich in die
+    persistente Logdatei (core.append_log).
+  - Extraktions-Tempverzeichnisse liegen im System-Temp und werden auch
+    beim Schließen ohne vorherigen Patchlauf aufgeräumt.
 """
 import os
 import sys
 from datetime import datetime
-from pathlib import Path
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QCheckBox, QListWidget, QFileDialog,
-    QProgressBar, QGroupBox, QFrame, QTreeWidget, QTreeWidgetItem, 
-    QSplitter, QComboBox, QMessageBox, QTabWidget
+    QProgressBar, QGroupBox, QTreeWidget, QTreeWidgetItem,
+    QComboBox, QMessageBox, QTabWidget, QPlainTextEdit
 )
-from PyQt6.QtCore import Qt, QThread, QSettings, pyqtSignal
+from PyQt6.QtCore import QThread, QSettings, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon
 
 import n64_core as core
-from presets import list_presets, apply_preset, PRESETS, get_preset_warnings
-from zip_handler import is_archive, extract_roms_from_archive, cleanup_temp_dir
-from header_utils import detect_and_strip_scene_header, fix_rom_crc, get_rom_info_from_header
+from presets import list_presets, apply_preset, get_preset_warnings
+from zip_handler import (is_archive, extract_roms_from_archive,
+                         cleanup_temp_dir, create_extraction_dir)
+from header_utils import detect_and_strip_scene_header, fix_rom_crc
 
 
 class PatchWorker(QThread):
     progress = pyqtSignal(int, int, str)
-    finished = pyqtSignal(dict)
+    done = pyqtSignal(dict)  # bewusst NICHT 'finished' (QThread-Kollision)
     log_message = pyqtSignal(str)
-    
+
     def __init__(self, roms, options, strip_header=False, fix_crc=False):
         super().__init__()
         self.roms = roms
@@ -34,221 +45,295 @@ class PatchWorker(QThread):
         self.strip_header = strip_header
         self.fix_crc = fix_crc
         self.should_cancel = False
-    
+        self.log_lines = []
+
     def cancel(self):
         self.should_cancel = True
-    
+
+    def _log(self, msg):
+        self.log_lines.append(str(msg))
+        self.log_message.emit(str(msg))
+
     def run(self):
         results = {"patched": 0, "skipped": 0, "errors": 0, "details": []}
         total = len(self.roms)
-        
+
         for i, rom in enumerate(self.roms, 1):
             if self.should_cancel:
-                self.log_message.emit("⛔ Abgebrochen durch User")
+                self._log("⛔ Abgebrochen durch User")
                 break
-            
+
             filename = os.path.basename(rom)
             self.progress.emit(i, total, filename)
             working_rom = rom
-            
+            temp_stripped = None
+
             try:
                 # Header-Stripping
                 if self.strip_header:
                     temp_stripped = rom + ".stripped.z64"
                     header_result = detect_and_strip_scene_header(rom, temp_stripped)
                     if header_result.get("stripped"):
-                        self.log_message.emit(f"🔧 Header entfernt: {filename}")
+                        self._log(f"🔧 Header entfernt: {filename}")
                         working_rom = temp_stripped
-                
+
                 # Patching
                 result = core.patch_rom(
-                    working_rom, 
+                    working_rom,
                     self.options,
-                    log=lambda m: self.log_message.emit(f"   {m}"),
+                    log=lambda m: self._log(f"   {m}"),
                     should_cancel=lambda: self.should_cancel
                 )
-                
+
                 if not isinstance(result, dict):
                     result = {"status": "error", "message": "Invalid patch result", "output": None}
-                
+
                 out_file = result.get("output")
-                
-                # CRC-Fix
-                if self.fix_crc and result.get("status") == "patched" and out_file and os.path.isfile(out_file):
-                    crc_result = fix_rom_crc(out_file, core.RN64CRC_PATH)
-                    self.log_message.emit(f"🔧 {crc_result.get('message', 'CRC Updated')}: {filename}")
-                
+
+                # Optionaler (idempotenter) CRC-Durchlauf für Flashcarts
+                if self.fix_crc and result.get("status") == "patched" \
+                        and out_file and os.path.isfile(out_file):
+                    crc_result = fix_rom_crc(out_file)
+                    self._log(f"🔧 {crc_result.get('message', 'CRC Updated')}: {filename}")
+
                 results["details"].append(result)
                 if result.get("status") == "patched":
                     results["patched"] += 1
                     out_name = os.path.basename(out_file) if out_file else "patched.z64"
-                    self.log_message.emit(f"✅ {filename} -> {out_name}")
+                    self._log(f"✅ {filename} -> {out_name}")
                 elif result.get("status") == "skipped":
                     results["skipped"] += 1
-                    self.log_message.emit(f"⏭️  {filename}: {result.get('message', 'Skipped')}")
+                    self._log(f"⏭️  {filename}: {result.get('message', 'Skipped')}")
                 else:
                     results["errors"] += 1
-                    self.log_message.emit(f"❌ {filename}: {result.get('message', 'Error')}")
-            
+                    self._log(f"❌ {filename}: {result.get('message', 'Error')}")
+
             except Exception as e:
                 results["errors"] += 1
-                self.log_message.emit(f"❌ Error on {filename}: {str(e)}")
-            
+                self._log(f"❌ Error on {filename}: {e}")
+
             finally:
-                # Cleanup gestripptes ROM
-                if self.strip_header and working_rom != rom and os.path.isfile(working_rom):
+                # Cleanup des gestrippten Temp-ROMs
+                if temp_stripped and os.path.isfile(temp_stripped):
                     try:
-                        os.remove(working_rom)
-                    except Exception:
+                        os.remove(temp_stripped)
+                    except OSError:
                         pass
-        
-        self.finished.emit(results)
+
+        self.done.emit(results)
+
+
+class InspectWorker(QThread):
+    """Hintergrund-Inspektion, damit die GUI bei großen Bibliotheken
+    nicht blockiert."""
+    item_ready = pyqtSignal(dict)
+    done = pyqtSignal(list)
+
+    def __init__(self, roms, with_hashes=True):
+        super().__init__()
+        self.roms = roms
+        self.with_hashes = with_hashes
+
+    def run(self):
+        infos = []
+        for rom in self.roms:
+            try:
+                info = core.inspect_rom_details(rom, with_hashes=self.with_hashes)
+            except Exception as e:
+                info = {
+                    "filename": os.path.basename(rom), "path": rom,
+                    "format": f"Fehler: {e}", "title": "", "region": "",
+                    "size_mb": 0, "no_aa": False, "is_hires_640x480": False,
+                    "vi_table_count": 0, "crc1": "", "crc2": "",
+                    "has_subdrag_patch": False,
+                }
+            infos.append(info)
+            self.item_ready.emit(info)
+        self.done.emit(infos)
 
 
 class N64PatcherGUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Universal N64 ROM Inspector & Smart Patcher v3.0")
-        self.setGeometry(100, 100, 900, 700)
-        
+        self.setWindowTitle(f"Universal N64 ROM Inspector & Smart Patcher v{core.VERSION}")
+        self.setGeometry(100, 100, 1000, 760)
+        self.setAcceptDrops(True)
+
         icon_path = core.get_asset_path("app_icon.ico")
+        if not os.path.exists(icon_path):
+            icon_path = core.get_asset_path("app_icon.png")
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
-        
+
         self.settings = QSettings("inf1nit3", "N64SmartPatcher")
         self.rom_list = []
         self.temp_dirs = []
         self.worker = None
-        
+        self.inspect_worker = None
+        self.last_infos = []
+
         self.init_ui()
         self.load_settings()
-    
+        self.update_status_bar()
+
+    # ------------------------------------------------------------------ UI
+
     def init_ui(self):
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
-        
-        # Tabs für bessere Übersicht
+
         tabs = QTabWidget()
         layout.addWidget(tabs)
-        
-        # Tab 1: Haupt-Patching
+
+        # Tab 1: Patching
         patch_tab = QWidget()
         patch_layout = QVBoxLayout(patch_tab)
         tabs.addTab(patch_tab, "🎮 Patching")
-        
-        # Preset-Auswahl
+
         preset_group = QGroupBox("📋 Preset-Profil wählen")
         preset_layout = QVBoxLayout()
-        
+
         self.preset_combo = QComboBox()
         self.preset_combo.addItem("⚙️ Benutzerdefiniert (Individual Settings)", "custom")
         for preset in list_presets():
             self.preset_combo.addItem(f"{preset['name']} - {preset['description']}", preset['key'])
-        
         self.preset_combo.currentIndexChanged.connect(self.on_preset_changed)
         preset_layout.addWidget(self.preset_combo)
-        
+
         self.preset_warning_label = QLabel("")
         self.preset_warning_label.setStyleSheet("color: #ff6b6b; font-weight: bold;")
         self.preset_warning_label.setWordWrap(True)
         preset_layout.addWidget(self.preset_warning_label)
-        
+
         preset_group.setLayout(preset_layout)
         patch_layout.addWidget(preset_group)
-        
-        # Optionen
+
         options_group = QGroupBox("🎨 Visuelle Filter (Individual Settings)")
         options_layout = QVBoxLayout()
-        
         self.cb_no_aa = QCheckBox("Anti-Aliasing entfernen (No-AA) - Schärfere Kanten")
         self.cb_no_dither = QCheckBox("Dither-Filter entfernen - Keine 16-bit Artefakte")
         self.cb_no_divot = QCheckBox("Divot-Filter entfernen - Keine Edge-Blurring")
         self.cb_no_gamma = QCheckBox("Gamma-Boost entfernen - Akkurate Farben")
         self.cb_hires = QCheckBox("High-Res 640x480 (Smart VI Table Engine)")
-        
-        for cb in [self.cb_no_aa, self.cb_no_dither, self.cb_no_divot, self.cb_no_gamma, self.cb_hires]:
+        for cb in [self.cb_no_aa, self.cb_no_dither, self.cb_no_divot,
+                   self.cb_no_gamma, self.cb_hires]:
             options_layout.addWidget(cb)
-        
         options_group.setLayout(options_layout)
         patch_layout.addWidget(options_group)
-        
-        # Flashcart-Optionen
+
         flashcart_group = QGroupBox("💾 Flashcart-Optionen")
         flashcart_layout = QVBoxLayout()
-        
         self.cb_strip_header = QCheckBox("Scene-Header entfernen (iN0000 etc.)")
         self.cb_fix_crc = QCheckBox("CRC1/CRC2 reparieren (EverDrive kompatibel)")
-        
         flashcart_layout.addWidget(self.cb_strip_header)
         flashcart_layout.addWidget(self.cb_fix_crc)
-        
         flashcart_group.setLayout(flashcart_layout)
         patch_layout.addWidget(flashcart_group)
-        
-        # ROM-Liste
-        list_group = QGroupBox("📁 ROM-Bibliothek")
+
+        list_group = QGroupBox("📁 ROM-Bibliothek (auch per Drag & Drop)")
         list_layout = QVBoxLayout()
-        
         self.rom_list_widget = QListWidget()
         list_layout.addWidget(self.rom_list_widget)
-        
+
         btn_layout = QHBoxLayout()
         self.btn_add_files = QPushButton("➕ Dateien hinzufügen")
         self.btn_add_folder = QPushButton("📂 Ordner hinzufügen")
         self.btn_clear = QPushButton("🗑️ Liste leeren")
-        
         self.btn_add_files.clicked.connect(self.add_files)
         self.btn_add_folder.clicked.connect(self.add_folder)
         self.btn_clear.clicked.connect(self.clear_list)
-        
         btn_layout.addWidget(self.btn_add_files)
         btn_layout.addWidget(self.btn_add_folder)
         btn_layout.addWidget(self.btn_clear)
-        
         list_layout.addLayout(btn_layout)
         list_group.setLayout(list_layout)
         patch_layout.addWidget(list_group)
-        
-        # Progress & Buttons
+
+        self.progress_label = QLabel("")
+        patch_layout.addWidget(self.progress_label)
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
         patch_layout.addWidget(self.progress_bar)
-        
+
         action_layout = QHBoxLayout()
-        self.btn_inspect = QPushButton("🔍 Nur Inspizieren")
+        self.btn_inspect = QPushButton("🔍 Inspizieren (Tabelle)")
         self.btn_patch = QPushButton("🚀 Patchen starten")
         self.btn_cancel = QPushButton("⛔ Abbrechen")
         self.btn_cancel.setEnabled(False)
-        
-        self.btn_inspect.clicked.connect(self.inspect_roms)
+        self.btn_inspect.clicked.connect(self.start_inspection)
         self.btn_patch.clicked.connect(self.start_patching)
         self.btn_cancel.clicked.connect(self.cancel_patching)
-        
         action_layout.addWidget(self.btn_inspect)
         action_layout.addWidget(self.btn_patch)
         action_layout.addWidget(self.btn_cancel)
-        
         patch_layout.addLayout(action_layout)
-        
-        # Tab 2: Log
+
+        # Tab 2: Inspector
+        inspect_tab = QWidget()
+        inspect_layout = QVBoxLayout(inspect_tab)
+        tabs.addTab(inspect_tab, "🔍 Inspector")
+
+        inspect_ctrl = QHBoxLayout()
+        self.cb_hashes = QCheckBox("MD5/SHA-1 berechnen (langsam)")
+        self.cb_hashes.setChecked(True)
+        self.btn_export_csv = QPushButton("💾 Export CSV")
+        self.btn_export_json = QPushButton("💾 Export JSON")
+        self.btn_export_csv.clicked.connect(lambda: self.export_report("csv"))
+        self.btn_export_json.clicked.connect(lambda: self.export_report("json"))
+        self.btn_export_csv.setEnabled(False)
+        self.btn_export_json.setEnabled(False)
+        inspect_ctrl.addWidget(self.cb_hashes)
+        inspect_ctrl.addStretch(1)
+        inspect_ctrl.addWidget(self.btn_export_csv)
+        inspect_ctrl.addWidget(self.btn_export_json)
+        inspect_layout.addLayout(inspect_ctrl)
+
+        self.inspect_progress = QProgressBar()
+        self.inspect_progress.setVisible(False)
+        inspect_layout.addWidget(self.inspect_progress)
+
+        self.tree = QTreeWidget()
+        self.tree.setColumnCount(13)
+        self.tree.setHeaderLabels([
+            "Datei", "Titel", "Region", "Format", "Größe (MB)", "Auflösung",
+            "AA", "VI-Tabellen", "CRC1", "CRC2", "SubDrag-Patch", "MD5", "SHA1"
+        ])
+        self.tree.setAlternatingRowColors(True)
+        self.tree.setSortingEnabled(True)
+        inspect_layout.addWidget(self.tree)
+
+        # Tab 3: Log
         log_tab = QWidget()
         log_layout = QVBoxLayout(log_tab)
         tabs.addTab(log_tab, "📜 Log")
-        
-        self.log_widget = QListWidget()
-        self.log_widget.setFont(QFont("Consolas", 9))
+
+        self.log_widget = QPlainTextEdit()
+        self.log_widget.setReadOnly(True)
+        self.log_widget.setMaximumBlockCount(10000)
+        self.log_widget.setFont(QFont("Menlo", 9))
         log_layout.addWidget(self.log_widget)
-        
-        self.log(f"🎮 N64 Smart Patcher v3.0 gestartet")
+
+        # Statusleiste
+        self.status_bar = self.statusBar()
+        self.status_tool_label = QLabel("")
+        self.status_count_label = QLabel("")
+        self.status_bar.addWidget(self.status_tool_label)
+        self.status_bar.addPermanentWidget(self.status_count_label)
+
+        self.log(f"🎮 N64 Smart Patcher v{core.VERSION} gestartet")
         self.log(f"📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    
+        self.log(f"📂 Logdatei: {core.get_log_path()}")
+
+    # ------------------------------------------------------- Presets
+
     def on_preset_changed(self, index):
         preset_key = self.preset_combo.currentData()
-        
+
         if preset_key == "custom":
             self.preset_warning_label.setText("")
-            for cb in [self.cb_no_aa, self.cb_no_dither, self.cb_no_divot, self.cb_no_gamma, self.cb_hires]:
+            for cb in [self.cb_no_aa, self.cb_no_dither, self.cb_no_divot,
+                       self.cb_no_gamma, self.cb_hires]:
                 cb.setEnabled(True)
         else:
             options = apply_preset(preset_key)
@@ -257,101 +342,196 @@ class N64PatcherGUI(QMainWindow):
             self.cb_no_divot.setChecked(options.no_divot)
             self.cb_no_gamma.setChecked(options.no_gamma)
             self.cb_hires.setChecked(options.hires)
-            
-            for cb in [self.cb_no_aa, self.cb_no_dither, self.cb_no_divot, self.cb_no_gamma, self.cb_hires]:
+
+            for cb in [self.cb_no_aa, self.cb_no_dither, self.cb_no_divot,
+                       self.cb_no_gamma, self.cb_hires]:
                 cb.setEnabled(False)
-            
-            warnings = get_preset_warnings(preset_key, "emulator")
+
+            warnings = get_preset_warnings(preset_key)
             if warnings:
                 self.preset_warning_label.setText("\n".join(f"⚠️ {w}" for w in warnings))
             else:
                 self.preset_warning_label.setText("")
-    
+
+    # -------------------------------------------------- Drag & Drop
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        paths = [url.toLocalFile() for url in event.mimeData().urls()
+                 if url.isLocalFile()]
+        self.add_paths(paths)
+
+    # ------------------------------------------------- ROM-Verwaltung
+
+    def add_paths(self, paths):
+        for path in paths:
+            try:
+                if os.path.isdir(path):
+                    self._add_folder_contents(path)
+                elif is_archive(path):
+                    self._add_archive(path)
+                elif core.is_rom_file(path) and not core.is_tool_output(path):
+                    self._add_rom(path)
+            except Exception as e:
+                self.log(f"⚠️ Fehler beim Hinzufügen von {path}: {e}")
+        self.update_status_bar()
+
+    def _add_rom(self, path):
+        if path not in self.rom_list:
+            self.rom_list.append(path)
+            self.rom_list_widget.addItem(os.path.basename(path))
+
+    def _add_archive(self, path):
+        self.log(f"📦 Extrahiere Archiv: {os.path.basename(path)}")
+        temp_dir = create_extraction_dir()
+        try:
+            extracted = extract_roms_from_archive(path, temp_dir)
+        except RuntimeError as e:
+            cleanup_temp_dir(temp_dir)
+            self.log(f"⚠️ {e}")
+            return
+        self.temp_dirs.append(temp_dir)
+        for rom in extracted:
+            self._add_rom(rom)
+        self.log(f"   ✓ {len(extracted)} ROM(s) extrahiert")
+
+    def _add_folder_contents(self, folder):
+        for root, _, files in os.walk(folder):
+            for file in files:
+                full_path = os.path.join(root, file)
+                try:
+                    if is_archive(full_path):
+                        self._add_archive(full_path)
+                    elif core.is_rom_file(file) and not core.is_tool_output(full_path):
+                        self._add_rom(full_path)
+                except Exception as e:
+                    self.log(f"⚠️ Fehler bei Datei {file}: {e}")
+
     def add_files(self):
         files, _ = QFileDialog.getOpenFileNames(
             self, "ROM-Dateien auswählen", "",
             "N64 ROMs & Archive (*.z64 *.v64 *.n64 *.zip *.7z);;Alle Dateien (*)"
         )
-        
-        for file in files:
-            try:
-                if is_archive(file):
-                    self.log(f"📦 Extrahiere Archiv: {os.path.basename(file)}")
-                    temp_dir = os.path.join(os.path.dirname(file) or ".", "_n64_temp_extract")
-                    extracted = extract_roms_from_archive(file, temp_dir)
-                    self.temp_dirs.append(temp_dir)
-                    for rom in extracted:
-                        if rom not in self.rom_list:
-                            self.rom_list.append(rom)
-                            self.rom_list_widget.addItem(os.path.basename(rom))
-                    self.log(f"   ✓ {len(extracted)} ROM(s) extrahiert")
-                elif core.is_rom_file(file):
-                    if file not in self.rom_list:
-                        self.rom_list.append(file)
-                        self.rom_list_widget.addItem(os.path.basename(file))
-            except Exception as e:
-                self.log(f"⚠️ Fehler beim Hinzufügen von {file}: {e}")
-        
+        self.add_paths(files)
         self.log(f"📊 {len(self.rom_list)} ROM(s) in der Liste")
-    
+
     def add_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "Ordner auswählen")
         if folder:
-            for root, _, files in os.walk(folder):
-                for file in files:
-                    full_path = os.path.join(root, file)
-                    try:
-                        if is_archive(full_path):
-                            self.log(f"📦 Extrahiere: {file}")
-                            temp_dir = os.path.join(root, "_n64_temp_extract")
-                            extracted = extract_roms_from_archive(full_path, temp_dir)
-                            self.temp_dirs.append(temp_dir)
-                            for rom in extracted:
-                                if rom not in self.rom_list:
-                                    self.rom_list.append(rom)
-                                    self.rom_list_widget.addItem(os.path.basename(rom))
-                        elif core.is_rom_file(file):
-                            if not core.is_tool_output(full_path):
-                                if full_path not in self.rom_list:
-                                    self.rom_list.append(full_path)
-                                    self.rom_list_widget.addItem(file)
-                    except Exception as e:
-                        self.log(f"⚠️ Fehler bei Datei {file}: {e}")
-            
+            self.add_paths([folder])
             self.log(f"📊 {len(self.rom_list)} ROM(s) in der Liste")
-    
+
     def clear_list(self):
         self.rom_list.clear()
         self.rom_list_widget.clear()
+        for temp_dir in self.temp_dirs:
+            cleanup_temp_dir(temp_dir)
+        self.temp_dirs.clear()
+        self.update_status_bar()
         self.log("🗑️ Liste geleert")
-    
+
+    # ------------------------------------------------------- Helpers
+
     def log(self, message):
-        self.log_widget.addItem(message)
-        self.log_widget.scrollToBottom()
-    
-    def inspect_roms(self):
+        self.log_widget.appendPlainText(str(message))
+
+    def update_status_bar(self):
+        tools = core.check_tools()
+        parts = []
+        for name, label in (("u64aap", "u64aap"), ("rn64crc", "rn64crc"),
+                            ("xdelta3", "xdelta3")):
+            parts.append(f"{label}: {'✓' if tools.get(name) else '✗ (Fallback)'}")
+        parts.append("CRC-Engine: Pure-Python ✓")
+        self.status_tool_label.setText("  |  ".join(parts))
+        self.status_count_label.setText(f"{len(self.rom_list)} ROM(s) geladen")
+
+    # ---------------------------------------------------- Inspektion
+
+    def start_inspection(self):
         if not self.rom_list:
             QMessageBox.warning(self, "Keine ROMs", "Bitte zuerst ROMs hinzufügen!")
             return
-        
-        self.log("\n🔍 Inspiziere ROMs...")
-        for rom in self.rom_list:
-            try:
-                info = core.inspect_rom_details(rom, with_hashes=True)
-                res = "640x480" if info["is_hires_640x480"] else "320x240"
-                aa = "No-AA" if info["no_aa"] else "AA"
-                self.log(f"{info['filename']}: {info['title']} [{info['region']}] "
-                         f"{info['format']} | {res} | {aa}")
-            except Exception as e:
-                self.log(f"⚠️ Fehler bei Inspektion von {os.path.basename(rom)}: {e}")
-        
-        self.log("\n✅ Inspektion abgeschlossen")
-    
+
+        self.tree.setSortingEnabled(False)
+        self.tree.clear()
+        self.last_infos = []
+        self.btn_inspect.setEnabled(False)
+        self.btn_export_csv.setEnabled(False)
+        self.btn_export_json.setEnabled(False)
+        self.inspect_progress.setVisible(True)
+        self.inspect_progress.setMaximum(len(self.rom_list))
+        self.inspect_progress.setValue(0)
+
+        self.log("\n🔍 Inspiziere ROMs im Hintergrund...")
+        self.inspect_worker = InspectWorker(self.rom_list,
+                                            with_hashes=self.cb_hashes.isChecked())
+        self.inspect_worker.item_ready.connect(self.on_inspect_item)
+        self.inspect_worker.done.connect(self.on_inspection_done)
+        self.inspect_worker.start()
+
+    def on_inspect_item(self, info):
+        self.last_infos.append(info)
+        res = "640x480" if info.get("is_hires_640x480") else "320x240"
+        aa = "No-AA" if info.get("no_aa") else "AA"
+        item = QTreeWidgetItem([
+            info.get("filename", ""),
+            info.get("title", ""),
+            info.get("region", ""),
+            info.get("format", ""),
+            str(info.get("size_mb", "")),
+            res,
+            aa,
+            str(info.get("vi_table_count", 0)),
+            info.get("crc1", ""),
+            info.get("crc2", ""),
+            "✓" if info.get("has_subdrag_patch") else "",
+            info.get("md5", ""),
+            info.get("sha1", ""),
+        ])
+        self.tree.addTopLevelItem(item)
+        self.inspect_progress.setValue(len(self.last_infos))
+        self.log(f"{info.get('filename', '')}: {info.get('title', '')} "
+                 f"[{info.get('region', '')}] {res} | {aa}")
+
+    def on_inspection_done(self, infos):
+        self.btn_inspect.setEnabled(True)
+        self.btn_export_csv.setEnabled(bool(infos))
+        self.btn_export_json.setEnabled(bool(infos))
+        self.inspect_progress.setVisible(False)
+        self.tree.setSortingEnabled(True)
+        for i in range(self.tree.columnCount()):
+            self.tree.resizeColumnToContents(i)
+        self.log(f"\n✅ Inspektion abgeschlossen ({len(infos)} ROM(s))")
+
+    def export_report(self, fmt):
+        if not self.last_infos:
+            return
+        default_name = f"n64_report.{fmt}"
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Report exportieren", default_name,
+            "CSV (*.csv)" if fmt == "csv" else "JSON (*.json)")
+        if not path:
+            return
+        if fmt == "csv" and not path.lower().endswith(".csv"):
+            path += ".csv"
+        if fmt == "json" and not path.lower().endswith(".json"):
+            path += ".json"
+        try:
+            core.export_report(self.last_infos, path)
+            self.log(f"💾 Report geschrieben: {path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Export fehlgeschlagen", str(e))
+
+    # ----------------------------------------------------- Patching
+
     def start_patching(self):
         if not self.rom_list:
             QMessageBox.warning(self, "Keine ROMs", "Bitte zuerst ROMs hinzufügen!")
             return
-        
+
         options = core.PatchOptions(
             no_aa=self.cb_no_aa.isChecked(),
             no_dither=self.cb_no_dither.isChecked(),
@@ -359,57 +539,69 @@ class N64PatcherGUI(QMainWindow):
             no_gamma=self.cb_no_gamma.isChecked(),
             hires=self.cb_hires.isChecked(),
         )
-        
+
         self.btn_patch.setEnabled(False)
         self.btn_inspect.setEnabled(False)
         self.btn_cancel.setEnabled(True)
         self.progress_bar.setVisible(True)
         self.progress_bar.setMaximum(len(self.rom_list))
         self.progress_bar.setValue(0)
-        
+
         self.log(f"\n🚀 Starte Patching von {len(self.rom_list)} ROM(s)...")
-        
+
         self.worker = PatchWorker(
-            self.rom_list, 
+            self.rom_list,
             options,
             strip_header=self.cb_strip_header.isChecked(),
             fix_crc=self.cb_fix_crc.isChecked()
         )
         self.worker.progress.connect(self.update_progress)
-        self.worker.finished.connect(self.on_finished)
+        self.worker.done.connect(self.on_finished)
         self.worker.log_message.connect(self.log)
         self.worker.start()
-    
+
     def update_progress(self, current, total, filename):
         self.progress_bar.setMaximum(total)
         self.progress_bar.setValue(current)
-    
+        self.progress_label.setText(f"({current}/{total}) {filename}")
+
     def cancel_patching(self):
         if self.worker:
             self.worker.cancel()
             self.log("⛔ Abbruch angefordert...")
-    
+
     def on_finished(self, results):
         self.btn_patch.setEnabled(True)
         self.btn_inspect.setEnabled(True)
         self.btn_cancel.setEnabled(False)
         self.progress_bar.setVisible(False)
-        
+        self.progress_label.setText("")
+
         self.log(f"\n{'='*60}")
-        self.log(f"✅ Fertig! Patched: {results['patched']}, Skipped: {results['skipped']}, Errors: {results['errors']}")
+        self.log(f"✅ Fertig! Patched: {results['patched']}, "
+                 f"Skipped: {results['skipped']}, Errors: {results['errors']}")
         self.log(f"{'='*60}\n")
-        
+
+        # Persistente Logdatei beschreiben
+        if self.worker is not None and getattr(self.worker, "log_lines", None):
+            try:
+                core.append_log(self.worker.log_lines)
+            except OSError:
+                pass
+
         QMessageBox.information(
             self, "Patching abgeschlossen",
             f"Patched: {results['patched']}\n"
             f"Skipped: {results['skipped']}\n"
             f"Errors: {results['errors']}"
         )
-        
+
         for temp_dir in self.temp_dirs:
             cleanup_temp_dir(temp_dir)
         self.temp_dirs.clear()
-    
+
+    # ----------------------------------------------------- Settings
+
     def load_settings(self):
         self.cb_no_aa.setChecked(self.settings.value("no_aa", True, type=bool))
         self.cb_no_dither.setChecked(self.settings.value("no_dither", True, type=bool))
@@ -418,7 +610,10 @@ class N64PatcherGUI(QMainWindow):
         self.cb_hires.setChecked(self.settings.value("hires", False, type=bool))
         self.cb_strip_header.setChecked(self.settings.value("strip_header", False, type=bool))
         self.cb_fix_crc.setChecked(self.settings.value("fix_crc", False, type=bool))
-    
+        preset_index = self.settings.value("preset_index", 0, type=int)
+        if 0 <= preset_index < self.preset_combo.count():
+            self.preset_combo.setCurrentIndex(preset_index)
+
     def save_settings(self):
         self.settings.setValue("no_aa", self.cb_no_aa.isChecked())
         self.settings.setValue("no_dither", self.cb_no_dither.isChecked())
@@ -427,22 +622,33 @@ class N64PatcherGUI(QMainWindow):
         self.settings.setValue("hires", self.cb_hires.isChecked())
         self.settings.setValue("strip_header", self.cb_strip_header.isChecked())
         self.settings.setValue("fix_crc", self.cb_fix_crc.isChecked())
-    
+        self.settings.setValue("preset_index", self.preset_combo.currentIndex())
+
     def closeEvent(self, event):
+        # Sauberer Shutdown: laufende Worker stoppen, Temp-Verzeichnisse
+        # aufräumen, Einstellungen sichern.
         self.save_settings()
+        if self.worker is not None and self.worker.isRunning():
+            self.worker.cancel()
+            self.worker.wait(5000)
+        if self.inspect_worker is not None and self.inspect_worker.isRunning():
+            self.inspect_worker.wait(5000)
+        for temp_dir in self.temp_dirs:
+            cleanup_temp_dir(temp_dir)
+        self.temp_dirs.clear()
         event.accept()
 
 
 def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    
+
     app.setStyleSheet("""
         QMainWindow { background-color: #2b2b2b; }
         QWidget { background-color: #2b2b2b; color: #e0e0e0; }
-        QGroupBox { 
-            border: 1px solid #555; 
-            border-radius: 5px; 
+        QGroupBox {
+            border: 1px solid #555;
+            border-radius: 5px;
             margin-top: 10px;
             padding-top: 10px;
         }
@@ -461,17 +667,11 @@ def main():
         QPushButton:hover { background-color: #5a5a5a; }
         QPushButton:pressed { background-color: #3a3a3a; }
         QPushButton:disabled { background-color: #333; color: #666; }
-        QComboBox {
-            background-color: #4a4a4a;
-            border: 1px solid #666;
-            border-radius: 3px;
-            padding: 3px;
-        }
-        QCheckBox { spacing: 5px; }
-        QListWidget { 
+        QComboBox, QListWidget, QTreeWidget, QPlainTextEdit {
             background-color: #1e1e1e;
             border: 1px solid #555;
         }
+        QCheckBox { spacing: 5px; }
         QProgressBar {
             border: 1px solid #555;
             border-radius: 3px;
@@ -480,8 +680,13 @@ def main():
         QProgressBar::chunk {
             background-color: #4CAF50;
         }
+        QHeaderView::section {
+            background-color: #3a3a3a;
+            border: 1px solid #555;
+            padding: 2px 6px;
+        }
     """)
-    
+
     window = N64PatcherGUI()
     window.show()
     sys.exit(app.exec())

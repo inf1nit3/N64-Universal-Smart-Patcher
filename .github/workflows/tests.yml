@@ -1,0 +1,39 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # Core engine suite: pure stdlib, runs everywhere.
+  core-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install optional test dependency (7z support)
+        run: pip install py7zr
+      - name: Run full test suite (synthetic ROMs, no game files needed)
+        run: python -m unittest discover -s . -p "test_*.py" -v
+
+  # GUI/CLI module import check with the full dependency stack.
+  gui-import:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+      - name: Import GUI and CLI modules
+        run: |
+          python -c "import N64_Smart_Patcher_GUI"
+          python -c "import n64_patcher_cli"

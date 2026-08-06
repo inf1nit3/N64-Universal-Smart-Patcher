@@ -1,7 +1,6 @@
 """Unit tests for n64_core using synthetic ROM images. No real ROMs needed."""
 
 import os
-import struct
 import tempfile
 import unittest
 
@@ -39,6 +38,18 @@ def byteswap_words(data):
     ba[0::4], ba[1::4], ba[2::4], ba[3::4] = (
         bytes(ba[3::4]), bytes(ba[2::4]), bytes(ba[1::4]), bytes(ba[0::4]))
     return bytes(ba)
+
+
+def make_cic6102_rom(size=0x2000):
+    """Synthetic ROM whose bootcode word sum equals the CIC-6102 constant
+    0xD057C85244: 208 words of 0xFFFFFFFF plus one word of 0x57C85314
+    (0xD0 * (2^32 - 1) + 0x57C85314 == 0xD057C85244)."""
+    rom = bytearray(make_synthetic_rom(vi_tables=0, size=size))
+    for i in range(208):
+        off = 0x40 + i * 4
+        rom[off:off + 4] = b"\xff\xff\xff\xff"
+    rom[0x380:0x384] = bytes.fromhex("57C85314")
+    return bytes(rom)
 
 
 class TestFormatDetection(unittest.TestCase):
@@ -343,7 +354,9 @@ class TestPatchPipeline(unittest.TestCase):
         leftovers = [f for f in os.listdir(self.tmp.name) if f != "cancelme.z64"]
         self.assertEqual(leftovers, [])
 
-    @unittest.skipUnless(os.path.isfile(core.XDELTA3_PATH), "bundled xdelta3.exe missing")
+    @unittest.skipUnless(core._is_runnable(core.XDELTA3_PATH),
+                         "no runnable xdelta3 available (bundled exe not "
+                         "executable on this platform, no system xdelta3)")
     def test_subdrag_xdelta_applies_to_clean_source_first(self):
         import subprocess
         from unittest import mock
@@ -386,6 +399,136 @@ class TestPatchPipeline(unittest.TestCase):
         self.assertEqual(out[0x2000 - 1], 0x42)  # delta content, not fallback engine
         with open(src, "rb") as f:
             self.assertEqual(f.read(), clean)  # original untouched
+
+
+class TestCrcEngine(unittest.TestCase):
+    """Pure-Python N64 boot CRC engine (emulator-compatible algorithm)."""
+
+    def _make_cic6102_rom(self):
+        return make_cic6102_rom()
+
+    def test_detect_cic_6102(self):
+        self.assertEqual(core.detect_cic_chip(self._make_cic6102_rom()), "6102")
+
+    def test_detect_cic_unknown(self):
+        self.assertIsNone(core.detect_cic_chip(make_synthetic_rom(vi_tables=0)))
+
+    def test_crc_deterministic(self):
+        rom = self._make_cic6102_rom()
+        first = core.calculate_n64_crc(rom)
+        second = core.calculate_n64_crc(rom)
+        self.assertIsNotNone(first)
+        self.assertEqual(first, second)
+
+    def test_fix_native_stamps_consistent_crc(self):
+        rom = self._make_cic6102_rom()
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "crc.z64")
+            with open(p, "wb") as f:
+                f.write(rom)
+            ok, msg = core.fix_rom_crc_native(p)
+            self.assertTrue(ok, msg)
+            with open(p, "rb") as f:
+                stamped = f.read()
+            expected = core.calculate_n64_crc(stamped)
+            self.assertIsNotNone(expected)
+            self.assertEqual(stamped[0x10:0x14], expected[0].to_bytes(4, "big"))
+            self.assertEqual(stamped[0x14:0x18], expected[1].to_bytes(4, "big"))
+
+    def test_fix_native_rejects_swapped_format(self):
+        swapped = byteswap_halfwords(self._make_cic6102_rom())
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "crc.v64")
+            with open(p, "wb") as f:
+                f.write(swapped)
+            ok, msg = core.fix_rom_crc_native(p)
+            self.assertFalse(ok)
+            self.assertIn("big-endian", msg)
+
+    def test_fix_native_rejects_unknown_cic(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "nocic.z64")
+            with open(p, "wb") as f:
+                f.write(make_synthetic_rom(vi_tables=0))
+            ok, msg = core.fix_rom_crc_native(p)
+            self.assertFalse(ok)
+            self.assertIn("Unknown CIC", msg)
+
+
+class TestOutputDirAndTags(unittest.TestCase):
+    def test_build_output_path_output_dir(self):
+        p = core.build_output_path("/roms/game.z64", {"NoAA"}, output_dir="/tmp/out")
+        self.assertEqual(os.path.dirname(p), "/tmp/out")
+        self.assertTrue(p.endswith("game [NoAA].z64"))
+
+    def test_patch_rom_writes_to_output_dir(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            rom = make_synthetic_rom(vi_tables=1)
+            src = os.path.join(tmp, "game.z64")
+            with open(src, "wb") as f:
+                f.write(rom)
+            outdir = os.path.join(tmp, "out", "nested")
+            opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+            res = core.patch_rom(src, opts, log=lambda m: None, output_dir=outdir)
+            self.assertEqual(res["status"], "patched")
+            self.assertEqual(os.path.dirname(res["output"]), outdir)
+            self.assertTrue(os.path.isfile(res["output"]))
+            self.assertEqual(res["input"], src)
+            with open(src, "rb") as f:
+                self.assertEqual(f.read(), rom)  # original untouched
+
+
+class TestToolingHelpers(unittest.TestCase):
+    def test_is_tool_output_new_tags(self):
+        self.assertTrue(core.is_tool_output("game.z64.stripped.z64"))
+        self.assertTrue(core.is_tool_output("game [COMMUNITY].z64"))
+        self.assertTrue(core.is_tool_output("game [CRCFIX].z64"))
+
+    def test_version_present(self):
+        self.assertIsInstance(core.VERSION, str)
+        self.assertEqual(core.VERSION.count("."), 2)
+
+    def test_patch_options_has_no_applied_tags(self):
+        self.assertNotIn("applied_tags", core.PatchOptions.__dataclass_fields__)
+
+    def test_check_tools_reports_native_crc(self):
+        self.assertTrue(core.check_tools()["crc_native"])
+
+
+class TestInspectionPaths(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def _write(self, name, data):
+        p = os.path.join(self.tmp.name, name)
+        with open(p, "wb") as f:
+            f.write(data)
+        return p
+
+    def test_z64_fast_path_fields(self):
+        rom = make_synthetic_rom(title=b"FASTPATH", country=b"P", vi_tables=2)
+        p = self._write("fast.z64", rom)
+        info = core.inspect_rom_details(p, with_hashes=True)
+        self.assertEqual(info["title"], "FASTPATH")
+        self.assertEqual(info["region"], core.REGION_MAP["P"])
+        self.assertEqual(info["crc1"], "DEADBEEF")
+        self.assertEqual(info["vi_table_count"], 2)
+        self.assertIn("md5", info)
+
+    def test_v64_slow_path_fields(self):
+        v64 = byteswap_halfwords(make_synthetic_rom(title=b"SWAPPED2", country=b"J"))
+        p = self._write("slow.v64", v64)
+        info = core.inspect_rom_details(p)
+        self.assertEqual(info["title"], "SWAPPED2")
+        self.assertEqual(info["region"], core.REGION_MAP["J"])
+        self.assertEqual(info["vi_table_count"], 1)
+
+    def test_mmap_scanner_matches_memory_scan(self):
+        rom = make_synthetic_rom(vi_tables=3)
+        p = self._write("scan.z64", rom)
+        self.assertEqual(core.scan_vi_tables_file(p), core.find_vi_tables(rom))
+        self.assertEqual(core.scan_vi_tables_file(p, core.WIDTH_640_DATA), [])
 
 
 if __name__ == "__main__":

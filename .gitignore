@@ -25,3 +25,8 @@ N64_Patcher_Log.txt
 # OS generated
 .DS_Store
 Thumbs.db
+
+# Local environments & temp artifacts
+.venv/
+_n64_temp_extract/
+*.stripped.z64

@@ -3,7 +3,7 @@ presets.py
 Presets profiles for the Universal N64 Smart Patcher.
 """
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List
 import n64_core as core
 
 
@@ -81,13 +81,24 @@ def list_presets() -> List[Dict[str, str]]:
 
 
 def apply_preset(preset_key: str) -> core.PatchOptions:
-    """Returns the PatchOptions object for the given preset key."""
+    """Returns a FRESH PatchOptions object for the given preset key.
+
+    Never returns the shared preset instance itself - callers may mutate
+    the returned options (e.g. CLI flag overrides) without affecting
+    later runs."""
     if preset_key in PRESETS:
-        return PRESETS[preset_key].options
+        src = PRESETS[preset_key].options
+        return core.PatchOptions(
+            no_aa=src.no_aa,
+            no_dither=src.no_dither,
+            no_divot=src.no_divot,
+            no_gamma=src.no_gamma,
+            hires=src.hires,
+        )
     return core.PatchOptions()
 
 
-def get_preset_warnings(preset_key: str, mode: str = "emulator") -> List[str]:
+def get_preset_warnings(preset_key: str) -> List[str]:
     """Returns warning strings associated with the preset key."""
     if preset_key in PRESETS:
         return PRESETS[preset_key].warnings
