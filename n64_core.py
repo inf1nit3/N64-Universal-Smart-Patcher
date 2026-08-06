@@ -862,7 +862,7 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
 
         final_path = build_output_path(rom_path, applied, output_dir=output_dir)
         os.makedirs(os.path.dirname(final_path) or ".", exist_ok=True)
-        os.replace(patched_z64, final_path)
+        shutil.move(patched_z64, final_path)
         patched_exists = False
 
         result["status"] = "patched"
