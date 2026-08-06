@@ -92,14 +92,33 @@ Our **Smart VI Engine** searches for N64 SDK `OSViMode` struct data definitions:
 
 Because the hardware timing burst constant `0x03E52239` is unique to video interface register configs, pairing it with the width field guarantees exact identification of VI display mode tables with zero false positives.
 
----
+## 🙏 Credits, Tools & Acknowledgments
 
-## 🙏 Credits & Acknowledgments
+This tool builds upon years of research, utilities, and patches created by the N64 reverse-engineering and modding community:
 
-- **SubDrag**: High-resolution 640x480i N64 ROM patches and research (`jombo23/N64-Tools`).
-- **saturnu**: `u64aap.exe` (N64 Anti-Aliasing Patcher) and `rn64crc.exe` CRC recalculation utilities.
-- **Zoinkity & Trevor**: N64 hex editing techniques and video timing research.
-- **Josh MacDonald**: `xdelta3` binary diffing library.
+### 🛠️ Embedded Tools & Utilities
+- **`u64aap` (N64 Anti-Aliasing Patcher)** by **saturnu**:
+  Automated N64 Video Interface (VI) Anti-Aliasing and dither pattern removal engine.
+- **`rn64crc` (N64 Checksum Recalculator)** by **saturnu**:
+  Fast command-line utility for recalculating and updating N64 boot checksums (CRC1 & CRC2) after ROM modifications.
+- **`xdelta3` (VCDIFF Delta Compression)** by **Josh MacDonald** ([github.com/jmacd/xdelta](https://github.com/jmacd/xdelta)):
+  Binary patch decoder tool used for applying `.xdelta` game patches.
+
+### 🎮 Patches & Reverse-Engineering Research
+- **SubDrag**:
+  Created the `Make_HiRes` tool, reverse-engineered N64 `OSViMode` display mode structures, and authored the 640x480i `.xdelta` patches for *Super Mario 64*, *GoldenEye 007*, *Banjo-Kazooie*, *F-Zero X*, *Forsaken 64*, *Pokemon Snap*, *Quake II*, and *Golden Nugget 64*.
+- **Zoinkity & Trevor**:
+  Pioneered N64 Hex-editing methods, memory map layouts, and Video Interface register modifications.
+- **jombo23** ([github.com/jombo23/N64-Tools](https://github.com/jombo23/N64-Tools)):
+  Archived N64 tools, source code, and community game patches.
+- **Admentus64** (`Patcher64+ Tool`):
+  N64 video pipeline documentation and widescreen/resolution patch research.
+
+### 💻 Open Source Libraries & Frameworks
+- **PyQt6** by **Riverbank Computing / Qt Project**: Modern Python bindings for the Qt application framework.
+- **PyInstaller**: Standalone executable packager for Python.
+- **Pillow (PIL)**: Python Imaging Library used for application icon processing.
+- **Nintendo**: Creators of the Nintendo 64 hardware and `libultra` OS architecture.
 
 ---
 
