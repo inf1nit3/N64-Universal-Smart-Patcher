@@ -36,6 +36,8 @@ Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M6
 
 ## 📸 Screenshots & GUI
 
+![Universal N64 Smart Patcher GUI](gui_screenshot.png)
+
 The application features a sleek dark cyberpunk user interface with drag-and-drop support, real-time logging, and interactive property tooltips.
 
 ---
