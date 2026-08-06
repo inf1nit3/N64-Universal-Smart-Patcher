@@ -142,6 +142,21 @@ This application was developed using **Vibecoding** — a modern AI-assisted sof
 
 ---
 
+## 🔍 Transparency & Verifiability
+
+**Yes, 100% of everything this tool does is fully verifiable:**
+
+1. **Full Open-Source Code**:
+   Every line of code is open-source in [`N64_Smart_Patcher_GUI.py`](N64_Smart_Patcher_GUI.py). Every byte modification, search pattern, and subprocess call is explicit and auditable.
+2. **Detailed Execution Logs**:
+   Every patch operation generates a complete, timestamped execution log (`N64_Patcher_Log.txt`) detailing exact offset modifications, CRC recalculated values, and stage results.
+3. **Hex & Binary Diff Auditing**:
+   Because original files are **never overwritten**, you can compare any input ROM and output patched ROM using standard Hex editors (HxD, ImHex) or `fc /b` binary diffs to verify exact byte offsets changed.
+4. **Self-Inspecting ROM Tree**:
+   Dragging a patched ROM back into the application immediately audits its header, verifying updated boot checksums (CRC1/CRC2) and modified VI mode table statuses (`640x480 Hi-Res (Already Patched)`).
+
+---
+
 ## 📜 License
 
 This project is licensed under the [MIT License](LICENSE).
