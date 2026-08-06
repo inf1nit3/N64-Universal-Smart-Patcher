@@ -1,0 +1,27 @@
+# Python / PyInstaller
+__pycache__/
+*.py[cod]
+*$py.class
+build/
+dist/
+*.spec
+
+# Logs & temporary files
+*.log
+N64_Patcher_Log.txt
+*.temp.z64
+*.patched.z64
+*.xdelta_out.z64
+
+# ROMs & Executables (use GitHub Releases for compiled EXE)
+*.z64
+*.n64
+*.v64
+*.exe
+!N64noAAPatcher/additionals/u64aap.exe
+!N64noAAPatcher/additionals/rn64crc.exe
+!N64noAAPatcher/additionals/xdelta3.exe
+
+# OS generated
+.DS_Store
+Thumbs.db
