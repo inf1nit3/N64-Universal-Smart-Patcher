@@ -454,9 +454,15 @@ class TestOutputCollisions(unittest.TestCase):
         self.assertFalse(os.path.exists(payload))
 
 
-class TestSubdragRegionGate(unittest.TestCase):
-    """Every bundled delta targets an NTSC-U dump, so a PAL cartridge used
-    to get an xdelta attempt that could only fail."""
+class TestSubdragCrcMatching(unittest.TestCase):
+    """Deltas are keyed on the CRC1/CRC2 of the exact dump they were built
+    against, each value derived by actually applying the delta. Title
+    matching preceded this and was wrong twice: the keys "BANJO KAZOOIE"
+    and "FORSAKEN 64" never matched the real internal titles
+    "Banjo-Kazooie" and "Forsaken", so those two games silently never got
+    their patch."""
+
+    SM64 = (0x635A2BFF, 0x8B022326)
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -464,27 +470,48 @@ class TestSubdragRegionGate(unittest.TestCase):
         self.patch_dir = os.path.join(self.tmp.name, "hires")
         os.makedirs(self.patch_dir)
         with open(os.path.join(self.patch_dir, "sm64.xdelta"), "wb") as f:
-            f.write(b"\xd6\xc3\xc4\x00")
-        self.table = {"SUPER MARIO 64": ("sm64.xdelta", "E")}
+            f.write(bytes.fromhex("d6c3c400"))  # xdelta3 magic
+        self.table = {self.SM64: ("sm64.xdelta", "Super Mario 64 (USA)")}
 
-    def _lookup(self, country):
-        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
-             mock.patch.object(core, "SUBDRAG_PATCHES", self.table):
-            return core.get_subdrag_patch_for_title("SUPER MARIO 64", country)
+    def _lookup(self, crc1, crc2):
+        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir),              mock.patch.object(core, "SUBDRAG_PATCHES", self.table):
+            return core.get_subdrag_patch(crc1, crc2)
 
-    def test_matching_region_is_offered(self):
-        self.assertIsNotNone(self._lookup("E"))
+    def test_exact_dump_is_offered(self):
+        self.assertIsNotNone(self._lookup(*self.SM64))
 
-    def test_pal_rom_is_not_offered_a_us_patch(self):
-        self.assertIsNone(self._lookup("P"))
+    def test_accepts_hex_strings_as_well_as_ints(self):
+        """inspect_rom_details carries the checksums as hex text."""
+        self.assertIsNotNone(self._lookup("635A2BFF", "8B022326"))
 
-    def test_japanese_rom_is_not_offered_a_us_patch(self):
-        self.assertIsNone(self._lookup("J"))
+    def test_other_revision_is_not_offered(self):
+        """The failure title matching could never catch: right game, wrong
+        revision. Applying the delta could only fail."""
+        self.assertIsNone(self._lookup(0x635A2BFF, 0xDEADBEEF))
 
-    def test_unknown_region_still_falls_back_to_title_match(self):
-        """Without a country code there is nothing to gate on; behave as
-        before rather than refusing to patch."""
-        self.assertIsNotNone(self._lookup(None))
+    def test_unrelated_rom_is_not_offered(self):
+        self.assertIsNone(self._lookup(0x11111111, 0x22222222))
+
+    def test_missing_or_malformed_checksums_are_safe(self):
+        for bad in (None, "", "Unknown", "zzzz"):
+            self.assertIsNone(self._lookup(bad, bad), bad)
+
+    def test_missing_patch_file_is_not_offered(self):
+        os.remove(os.path.join(self.patch_dir, "sm64.xdelta"))
+        self.assertIsNone(self._lookup(*self.SM64))
+
+    def test_shipped_table_is_wellformed(self):
+        """Guards the real table: 8 entries, int key pairs, no duplicate
+        patch filenames."""
+        self.assertEqual(len(core.SUBDRAG_PATCHES), 8)
+        files = []
+        for key, value in core.SUBDRAG_PATCHES.items():
+            self.assertIsInstance(key, tuple)
+            self.assertEqual(len(key), 2)
+            self.assertTrue(all(isinstance(k, int) for k in key), key)
+            self.assertEqual(len(value), 2)
+            files.append(value[0])
+        self.assertEqual(len(files), len(set(files)), "duplicate patch file")
 
     def test_inspect_reports_country_code(self):
         p = os.path.join(self.tmp.name, "pal.z64")
@@ -492,7 +519,17 @@ class TestSubdragRegionGate(unittest.TestCase):
             f.write(make_synthetic_rom(country=b"P"))
         info = core.inspect_rom_details(p)
         self.assertEqual(info["country_code"], "P")
-        self.assertEqual(core._country_code_of(info), "P")
+
+    def test_inspect_flags_a_known_dump(self):
+        """has_subdrag_patch must key off the checksums, not the title."""
+        rom = bytearray(make_synthetic_rom(vi_tables=0))
+        rom[0x10:0x14] = (0x635A2BFF).to_bytes(4, "big")
+        rom[0x14:0x18] = (0x8B022326).to_bytes(4, "big")
+        p = os.path.join(self.tmp.name, "sm64.z64")
+        with open(p, "wb") as f:
+            f.write(bytes(rom))
+        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir),              mock.patch.object(core, "SUBDRAG_PATCHES", self.table):
+            self.assertTrue(core.inspect_rom_details(p)["has_subdrag_patch"])
 
 
 class TestMixedResolutionReporting(unittest.TestCase):
@@ -837,7 +874,8 @@ class TestPatchPipeline(unittest.TestCase):
         import subprocess
         from unittest import mock
 
-        # Clean source ROM titled to match a SubDrag entry
+        # Clean source ROM whose checksums match the mocked SubDrag entry
+        # (lookup is by CRC1/CRC2, not by title).
         clean = make_synthetic_rom(title=b"SUPER MARIO 64", vi_tables=1)
         src = self._write("sm64.z64", clean)
 
@@ -863,7 +901,8 @@ class TestPatchPipeline(unittest.TestCase):
         logs = []
         with mock.patch.object(core, "HIRES_PATCHES_DIR", fake_dir), \
              mock.patch.object(core, "SUBDRAG_PATCHES",
-                               {"SUPER MARIO 64": ("sm64 NoAA hires.xdelta", "E")}):
+                               {(0xDEADBEEF, 0x12345678):
+                                ("sm64 NoAA hires.xdelta", "SM64 fixture")}):
             res = core.patch_rom(src, opts, log=logs.append)
 
         self.assertEqual(res["status"], "patched")

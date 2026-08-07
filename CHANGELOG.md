@@ -2,6 +2,8 @@
 
 ## v3.2 - Production Hardening
 
+- **SubDrag patches keyed on CRC1/CRC2 instead of the internal title.** Title matching never worked for Banjo-Kazooie (internal title `Banjo-Kazooie`, key `BANJO KAZOOIE`) or Forsaken 64 (internal title `Forsaken`, key `FORSAKEN 64`) - two of the eight advertised integrations were dead. Every checksum pair was derived empirically by applying the delta to candidate dumps and recording which succeeded; the Banjo delta turns out to target Rev A only, which region gating could not have expressed.
+- CRC engine validated against a 1,549-file library: 1,492 of 1,496 stamped images reproduce their header checksums exactly (99.73%), covering CIC 6101/6102/6103/6105/6106.
 - **Flashcart CRC repair actually repairs**: `header_utils.fix_rom_crc` (behind `--fix-crc`, `--patch-file --fix-crc` and the GUI flashcart checkbox) reported `CRC1/CRC2 repaired (rn64crc)` while the checksums stayed untouched, because rn64crc exits 0 on failure. It now re-reads the file and falls back to the native engine.
 - **UI is fully English**: every GUI label, CLI help string, runtime message and the `header_utils` docstrings were German or mixed; all translated.
 - `--list-presets` now prints the key `--preset` expects, not just the display name.

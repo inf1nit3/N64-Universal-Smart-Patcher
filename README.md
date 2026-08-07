@@ -184,6 +184,7 @@ the installed package rather than the working directory):
 ## 📜 Version History
 
 - **v3.2.0 (Production Hardening)**:
+  - **SubDrag patches are matched on CRC1/CRC2**, not the ROM's internal title. Title matching was wrong for two of the eight supported games - the keys `BANJO KAZOOIE` and `FORSAKEN 64` never matched the real titles `Banjo-Kazooie` and `Forsaken`, so those two silently never received their patch. Each checksum pair was derived by actually applying the delta to candidate dumps. This also pins revisions: the Banjo delta targets Rev A only.
   - **Flashcart CRC repair actually repairs**: `fix_rom_crc` reported success while leaving the checksums untouched, because `rn64crc` exits 0 even when it fails. Affected `--fix-crc` and the GUI flashcart checkbox.
   - **Fully English UI**: GUI labels, CLI help and messages, and the remaining German docstrings were translated.
   - **Packaging**: installable `n64patcher` package (src layout), console entry points `n64patcher` / `n64patcher-gui`, and a dependency split — the engine and CLI now install with **no third-party dependencies**; PyQt6 and py7zr are extras.
@@ -217,6 +218,32 @@ the installed package rather than the working directory):
   - Built PyQt6 GUI and initial CLI.
 - **v1.0.0**:
   - Initial proof of concept with `u64aap.exe` and header inspection.
+
+---
+
+### Validation against a real ROM library
+
+The pure-Python CRC engine was checked against a 1,549-file library. For every
+image the engine recomputed CRC1/CRC2 and compared them to the values the
+publisher stamped in the header:
+
+| | |
+|---|---|
+| Files scanned | 1,549 |
+| Recognized N64 images | 1,527 |
+| CIC boot chip identified | 1,519 |
+| ...of those, carrying stamped checksums | 1,496 |
+| **Checksums reproduced exactly** | **1,492 (99.73%)** |
+
+CIC coverage in that set: 6102 (1,332), 6103 (92), 6105 (51), 6101 (34),
+6106 (10). The 23 images with all-zero checksums were never stamped
+(iQue dumps, homebrew, dev builds) and are excluded rather than counted as
+failures. Four genuine disagreements remain: a GameShark Pro cartridge, a
+Derby Stallion 64 beta, Human Grand Prix, and one ROM previously patched by
+an older version of this tool.
+
+This measures the CRC engine specifically, not end-to-end patch
+compatibility. Reproduce it on your own library with `--verify-report`.
 
 ---
 

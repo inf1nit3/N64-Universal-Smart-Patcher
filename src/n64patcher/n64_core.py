@@ -585,46 +585,68 @@ def apply_dynamic_vi_patch(z64_path, no_aa=True, no_dither=True, log=None):
 
 
 # ---------------------------------------------------------------------------
-# SubDrag verified .xdelta patches (matched by ROM internal title)
+# SubDrag verified .xdelta patches, keyed on the exact dump they target
+#
+# An xdelta delta applies only to the ROM it was built against, so the
+# header CRC1/CRC2 pair is the right key. Every value below was derived by
+# actually applying the delta to candidate dumps and recording which one
+# succeeded - not transcribed from a database.
+#
+# This replaces matching on the ROM's internal title, which was wrong twice:
+# the keys "BANJO KAZOOIE" and "FORSAKEN 64" never matched the real titles
+# "Banjo-Kazooie" (hyphen) and "Forsaken" (no "64"), so those two games
+# silently never received their patch. Title matching also could not
+# distinguish revisions - the Banjo delta applies to Rev A only, and would
+# have been attempted and failed on the far more common base USA dump.
 # ---------------------------------------------------------------------------
 
-# title substring -> (patch filename, accepted country codes at header 0x3E).
-# Every one of these deltas is built against a specific NTSC-U dump, so a
-# PAL or JP cartridge can only ever fail the xdelta. Gating on the region
-# byte turns a confusing "patch failed" into a clean skip.
-#
-# Region alone does not pin down the revision (the Banjo-Kazooie delta
-# wants v1.1 specifically); matching CRC1/CRC2 would, and inspect_rom_details
-# already reads them. That needs the checksums of the exact dumps these
-# deltas target, which are not recorded anywhere in this repo - fill in
-# EXPECTED_CRC1 per entry once verified and the region gate can go.
+# (crc1, crc2) at header 0x10/0x14 -> (patch filename, human label)
 SUBDRAG_PATCHES = {
-    "SUPER MARIO 64":   ("Super Mario 64 (U) [!] 640 x 480i No AA[SubDrag].xdelta", "E"),
-    "GOLDENEYE":        ("GE640x480iEnhanced[SubDragTrevorZoinkity].xdelta", "E"),
-    "BANJO KAZOOIE":    ("Banjo-Kazooie (U) (V1.1) 640 x 480i NoAA[SubDrag].xdelta", "E"),
-    "F-ZERO X":         ("F-ZERO X (U) 640x480i No AA[SubDrag].xdelta", "E"),
-    "FORSAKEN 64":      ("Forsaken 64 (U) 640x480i NoAA [SubDrag].xdelta", "E"),
-    "POKEMON SNAP":     ("PokemonSnap640x480iNoAA.xdelta", "E"),
-    "QUAKE II":         ("Quake II (U) [!] 640 x 480i NoAA[SubDrag].xdelta", "E"),
-    "GOLDEN NUGGET 64": ("GoldenNugget 640 x 480i CrapsCrashes[SubDrag].xdelta", "E"),
+    (0x635A2BFF, 0x8B022326): (
+        "Super Mario 64 (U) [!] 640 x 480i No AA[SubDrag].xdelta",
+        "Super Mario 64 (USA)"),
+    (0xDCBC50D1, 0x09FD1AA3): (
+        "GE640x480iEnhanced[SubDragTrevorZoinkity].xdelta",
+        "GoldenEye 007 (USA)"),
+    (0xCD7559AC, 0xB26CF5AE): (
+        "Banjo-Kazooie (U) (V1.1) 640 x 480i NoAA[SubDrag].xdelta",
+        "Banjo-Kazooie (USA) Rev A / v1.1"),
+    (0xB30ED978, 0x3003C9F9): (
+        "F-ZERO X (U) 640x480i No AA[SubDrag].xdelta",
+        "F-Zero X (USA)"),
+    (0x9E330C01, 0x8C0314BA): (
+        "Forsaken 64 (U) 640x480i NoAA [SubDrag].xdelta",
+        "Forsaken 64 (USA)"),
+    (0xCA12B547, 0x71FA4EE4): (
+        "PokemonSnap640x480iNoAA.xdelta",
+        "Pokemon Snap (USA)"),
+    (0xBDA8F143, 0xB1AF2D62): (
+        "Quake II (U) [!] 640 x 480i NoAA[SubDrag].xdelta",
+        "Quake II (USA)"),
+    (0x4690FB1C, 0x4CD56D44): (
+        "GoldenNugget 640 x 480i CrapsCrashes[SubDrag].xdelta",
+        "Golden Nugget 64 (USA)"),
 }
 
 
-def get_subdrag_patch_for_title(title, country_code=None):
-    """Return the path of a usable SubDrag patch for this title, or None.
-    When *country_code* (header 0x3E) is given, entries built for another
-    region are rejected rather than attempted."""
+def get_subdrag_patch(crc1, crc2):
+    """Path of the verified SubDrag patch for this exact dump, or None.
+
+    *crc1*/*crc2* are the header checksums, as ints or hex strings.
+    """
     if not os.path.isdir(HIRES_PATCHES_DIR):
         return None
-    title_upper = (title or "").upper().strip()
-    for key, (filename, regions) in SUBDRAG_PATCHES.items():
-        if key not in title_upper:
-            continue
-        if country_code and regions and country_code.upper() not in regions:
-            continue
-        candidate = os.path.join(HIRES_PATCHES_DIR, filename)
-        if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
-            return candidate
+    try:
+        key = (int(crc1, 16) if isinstance(crc1, str) else int(crc1),
+               int(crc2, 16) if isinstance(crc2, str) else int(crc2))
+    except (TypeError, ValueError):
+        return None
+    entry = SUBDRAG_PATCHES.get(key)
+    if entry is None:
+        return None
+    candidate = os.path.join(HIRES_PATCHES_DIR, entry[0])
+    if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
+        return candidate
     return None
 
 
@@ -782,8 +804,8 @@ def inspect_rom_details(rom_path, with_hashes=False):
     info["is_hires_640x480"] = len(vi_tables_640) > 0 and len(vi_tables_320) == 0
     info["is_mixed_resolution"] = len(vi_tables_640) > 0 and len(vi_tables_320) > 0
 
-    info["has_subdrag_patch"] = get_subdrag_patch_for_title(
-        info["title"], country_code) is not None
+    info["has_subdrag_patch"] = get_subdrag_patch(
+        info["crc1"], info["crc2"]) is not None
 
     if with_hashes:
         info["md5"], info["sha1"] = _hash_file(rom_path)
@@ -907,18 +929,6 @@ def move_onto_reserved(src, dst):
         shutil.move(src, dst)
 
 
-def _country_code_of(info):
-    """The header 0x3E character from an inspect_rom_details dict. Falls
-    back to the last character of game_id ('media + 2-char id + country')
-    for dicts built before that field existed; game_id is stripped, so a
-    short value means the code is unknown and no region gate applies."""
-    code = info.get("country_code")
-    if code and code != "?":
-        return code
-    game_id = info.get("game_id") or ""
-    return game_id[-1] if len(game_id) >= 4 else None
-
-
 def _files_differ(path_a, path_b, chunk=1024 * 1024):
     """Chunked content comparison; used to tell a real patch from a tool
     that exited cleanly without changing anything."""
@@ -988,8 +998,7 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
 
         # --- Stage 1: SubDrag verified .xdelta on the CLEAN source ---------
         if options.hires:
-            patch = get_subdrag_patch_for_title(
-                info["title"], _country_code_of(info))
+            patch = get_subdrag_patch(info["crc1"], info["crc2"])
             if patch:
                 if tools["xdelta3"]:
                     ok, msg = try_subdrag_xdelta(patch, temp_z64, patched_z64)
