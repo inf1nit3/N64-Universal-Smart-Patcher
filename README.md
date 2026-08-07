@@ -150,6 +150,46 @@ powershell -ExecutionPolicy Bypass -File build_release.ps1   # Windows
 ./build_release.sh                                           # macOS / Linux
 ```
 
+### Auditing and undoing a patch
+
+The pipeline never modifies an original, so undo is not about rescuing a
+ROM — it is about answering *what exactly did you change in my file*. That
+matters most for the dynamic VI patcher, which rewrites instruction patterns
+it matched rather than applying a hand-verified delta.
+
+```bash
+n64patcher "rom.z64" --preset modern_crisp --manifest
+n64patcher --show-manifest "rom [NoAA].z64"
+```
+
+```
+Star Fox 64 (U) [!].z64  ->  Star Fox 64 (U) [!] [NoAA].z64
+  applied      : NoAA, NoDither
+  stages       : u64aap
+  changed      : 17 byte(s) in 8 run(s)
+  revertible   : yes
+  changes:
+    0x00000010  A7 -> 98            <- boot checksum restamp
+    0x000227E8  11E0 -> 1000        <- VI instruction edits
+    ...
+```
+
+Undo it from the output alone:
+
+```bash
+n64patcher --revert "rom [NoAA].z64"
+```
+
+The restored file is verified against the recorded SHA-1 before the command
+reports success. Revert refuses, rather than guessing, when the patched file
+has been modified since — a manifest that looks reversible but is not would
+be worse than no manifest at all.
+
+Byte runs are only recorded while they stay small. A SubDrag delta rewrites
+megabytes, so past a cap the manifest keeps the summary and hashes and says
+plainly that it cannot revert. Your input was never touched, so it remains
+the way back.
+
 ### Identifying dumps with a No-Intro / Redump DAT
 
 A DAT file is a catalogue of known-good dumps. Matching against one answers
@@ -262,15 +302,17 @@ the installed package rather than the working directory):
 - `mmap_vi_scanner.py` — Memory-mapped fast VI table scanner (used by inspection).
 - `patchdb.py` — Declarative patch recipe database (`patches/*.json`, user-extensible).
 - `datdb.py` — No-Intro/Redump DAT parsing, hash indexing and caching.
+- `manifest.py` — Undo manifests: change recording, auditing and revert.
 - `gui.py` — PyQt6 GUI with preset controls, background inspector table, drag & drop & thread exception safety.
 - `cli.py` — Headless CLI runner (`n64patcher`).
-- `tests/` — Synthetic ROM unit suite, 226 tests, no game files required.
+- `tests/` — Synthetic ROM unit suite, 244 tests, no game files required.
 
 ---
 
 ## 📜 Version History
 
 - **v3.3.0 (Hi-Res Gating)**:
+  - **Undo manifests** (`--manifest`): a JSON sidecar recording every changed byte run, with `--show-manifest` to audit it and `--revert` to undo a patch from the output alone. Verified byte-identical on a real 12 MB ROM; refuses when the file no longer matches.
   - **No-Intro/Redump DAT lookup** (`--dat`, or drop files in `~/.n64patcher/dats/`). Reports whether each ROM is a catalogued good dump and its proper name. DATs are not bundled; parsed results are cached (~15x faster on repeat runs).
   - **Patch recipes moved out of Python into a declarative database** (`patches/*.json`). Adding support for a dump is now a data file, not a code change: drop a `.json` in `~/.n64patcher/patches/` and `--list-patches` picks it up. Malformed entries are reported by id and skipped rather than taking the database down. See `docs/PATCH_DB.md`.
   - **640x480 is no longer offered for ROMs that cannot take it.** Widening an `OSViMode` entry changes one field; the framebuffer the game allocated and the RDP coordinates it draws with still assume 320. On hardware (verified on a SummerCart64) that produces a doubled image, menus rendered at the wrong size and UI in the wrong position. Hi-res now applies only where a verified per-dump patch exists; everything else is reported and skipped, with the reason. `--force-hires` applies it anyway and labels the result EXPERIMENTAL.

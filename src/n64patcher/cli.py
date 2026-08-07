@@ -31,6 +31,7 @@ if sys.platform == "win32":
             pass
 
 from . import datdb, patchdb
+from . import manifest as manifest_mod
 from . import n64_core as core
 from .batch_runner import batch_patch_roms
 from .header_utils import detect_and_strip_scene_header, fix_rom_crc
@@ -239,6 +240,15 @@ def main(argv=None):
                         help="No-Intro/Redump DAT to identify dumps against "
                              "(repeatable). Files in ~/.n64patcher/dats/ are "
                              "picked up automatically.")
+    parser.add_argument("--manifest", action="store_true",
+                        help="Write a JSON sidecar next to each output listing "
+                             "every changed byte run, for auditing or --revert")
+    parser.add_argument("--revert", metavar="PATCHED_ROM",
+                        help="Undo a patch using its .n64patch.json sidecar, "
+                             "writing the restored ROM next to it")
+    parser.add_argument("--show-manifest", metavar="FILE",
+                        help="Print what a manifest (or a patched ROM with one) "
+                             "changed, and exit")
     parser.add_argument("--list-dats", action="store_true",
                         help="Show which DAT files are loaded and how many dumps "
                              "they index")
@@ -258,6 +268,46 @@ def main(argv=None):
 
     if args.version:
         log(f"n64patcher v{core.VERSION}")
+        return 0
+
+    if args.show_manifest:
+        target = args.show_manifest
+        if not target.endswith(manifest_mod.MANIFEST_SUFFIX):
+            target = manifest_mod.manifest_path_for(target)
+        try:
+            log(manifest_mod.describe(manifest_mod.load_manifest(target)))
+        except (OSError, ValueError) as e:
+            log(f"❌ {e}")
+            return 1
+        return 0
+
+    if args.revert:
+        patched = args.revert
+        man_path = manifest_mod.manifest_path_for(patched)
+        if not os.path.isfile(man_path):
+            log(f"❌ No manifest beside {os.path.basename(patched)}.\n"
+                f"   Expected: {os.path.basename(man_path)}\n"
+                f"   Manifests are written only when --manifest was used.")
+            return 1
+        try:
+            man = manifest_mod.load_manifest(man_path)
+        except (OSError, ValueError) as e:
+            log(f"❌ {e}")
+            return 1
+        restored = core._free_output_path(
+            os.path.join(os.path.dirname(os.path.abspath(patched)),
+                         man["input"]["name"]))
+        ok, message = manifest_mod.revert(patched, man, restored)
+        if not ok:
+            # Leave nothing half-written behind on a refusal.
+            if os.path.isfile(restored):
+                try:
+                    os.remove(restored)
+                except OSError:
+                    pass
+            log(f"❌ Revert refused: {message}")
+            return 1
+        log(f"✅ {message}")
         return 0
 
     if args.list_dats:
@@ -442,6 +492,7 @@ def main(argv=None):
                 hires=args.hires,
             )
         options.force_hires = args.force_hires
+        options.write_manifest = args.manifest
         if args.force_hires:
             options.hires = True
             log("⚠️  --force-hires: applying the generic VI-table widening to "

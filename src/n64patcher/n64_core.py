@@ -33,6 +33,7 @@ import traceback
 from dataclasses import dataclass
 
 from . import datdb, patchdb
+from . import manifest as manifest_mod
 from ._version import __version__
 
 # Public alias: the GUI title bar and `--version` read core.VERSION.
@@ -891,6 +892,8 @@ class PatchOptions:
     # hires_support). Requesting hi-res on a dump with no verified patch is
     # a no-op unless this is set explicitly.
     force_hires: bool = False
+    # Write a JSON sidecar recording every changed byte run.
+    write_manifest: bool = False
 
 
 MAX_FILENAME_BYTES = 255  # single name component on ext4/NTFS/APFS
@@ -1059,6 +1062,8 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
 
         info = inspect_rom_details(rom_path)
         applied = result["applied"]
+        # Which stage touched the ROM, for the manifest sidecar.
+        stage_log = []
         base = temp_z64            # current working file
         patched_exists = False     # True once `patched_z64` holds working data
         subdrag_used = False
@@ -1072,6 +1077,7 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
                     log(f"  SubDrag .xdelta: {msg}")
                     if ok:
                         subdrag_used = True
+                        stage_log.append(f"subdrag-xdelta:{os.path.basename(patch)}")
                         patched_exists = True
                         base = patched_z64
                         applied.add("HR")
@@ -1110,6 +1116,7 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
                         base = patched_z64
                         filters_done = True
                         applied.add("NoAA")
+                        stage_log.append("u64aap")
                         if options.no_dither:
                             applied.add("NoDither")
                         log("  u64aap.exe: SUCCESS - No-AA patched")
@@ -1136,6 +1143,7 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
                                              log=log)
                 if dyn:
                     applied.update(dyn)
+                    stage_log.append(f"dynamic-vi:{'+'.join(sorted(dyn))}")
                     log(f"  Dynamic VI matcher: SUCCESS ({', '.join(sorted(dyn))})")
                 elif options.no_aa and not subdrag_used:
                     log("  Dynamic VI matcher: no patchable VI instruction masks found")
@@ -1161,6 +1169,7 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
                 hires_ok, _count, hires_msg = apply_smart_hires_patch(patched_z64)
                 if hires_ok:
                     applied.add("HR")
+                    stage_log.append("smart-vi-table")
                     label = ("EXPERIMENTAL" if support == HIRES_UNSUPPORTED
                              else "Smart VI Table")
                     log(f"  Hi-Res Engine: SUCCESS ({label}) - {hires_msg}")
@@ -1226,6 +1235,18 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
                 pass
             raise
         patched_exists = False
+
+        if options.write_manifest:
+            try:
+                man = manifest_mod.build_manifest(
+                    rom_path, final_path, applied=applied, stages=stage_log)
+                man_path = manifest_mod.write_manifest(man, final_path)
+                result["manifest"] = man_path
+                note = "" if man["revertible"] else " (too large to revert)"
+                log(f"  Manifest: {man['changed_bytes']} byte(s) in "
+                    f"{man['changed_runs']} run(s){note}")
+            except OSError as e:
+                log(f"  WARNING: could not write manifest ({e})")
 
         result["status"] = "patched"
         result["output"] = final_path
