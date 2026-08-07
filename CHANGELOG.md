@@ -2,6 +2,8 @@
 
 ## v3.3 - Hi-Res Gating
 
+- **BPS applier: SourceRead/TargetRead action numbers were swapped**, so no real-world `.bps` patch could be applied - each failed its target CRC32 check. Confirmed against two independent implementations of the spec. The test encoder shared the same swapped numbering, which is why the suite never caught it; it now imports the named constants from the module under test, and a new test builds a patch from the spec text inline.
+- **BPS patch creation** via `--create-patch`. Verified on a real 12 MB ROM pair: a 65-byte patch reconstructs the target byte-for-byte.
 - **Undo manifests** via `--manifest`, `--show-manifest` and `--revert`. Records every changed byte run plus both file hashes; revert verifies the restored file against the recorded SHA-1 and refuses if the patched file was altered. Large change sets (delta patches) are summarised and marked non-revertible rather than pretending.
 - **No-Intro/Redump DAT lookup** via `--dat` or `~/.n64patcher/dats/`, reporting verified-dump status and the catalogued name. DAT files are deliberately not bundled. Parsed indexes are cached and invalidated on mtime/size change. Hashing stays lazy so a DAT-less scan costs nothing extra.
 - **Patch recipes moved out of Python into a declarative database** (`patches/*.json`), user-extensible via `~/.n64patcher/patches/`. New `--list-patches`. Malformed entries are reported and skipped, not fatal. See `docs/PATCH_DB.md`.

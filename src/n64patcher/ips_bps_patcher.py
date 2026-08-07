@@ -4,7 +4,7 @@ Applies IPS and BPS community patch files to N64 ROMs.
 
 BPS decoding follows the reference specification by byuu (beat):
 variable-length values use the "+= / shift <<= 7 / += shift" scheme,
-commands are 0=TargetRead, 1=SourceRead, 2=SourceCopy, 3=TargetCopy,
+actions are 0=SourceRead, 1=TargetRead, 2=SourceCopy, 3=TargetCopy,
 and the trailing 12 bytes hold CRC32 checksums (source, target, patch)
 which are all verified here.
 """
@@ -17,6 +17,12 @@ from . import n64_core as core
 
 IPS_EOF = b"EOF"
 BPS_FOOTER_SIZE = 12
+
+# BPS action numbering, fixed by the format spec.
+BPS_SOURCE_READ = 0
+BPS_TARGET_READ = 1
+BPS_SOURCE_COPY = 2
+BPS_TARGET_COPY = 3
 
 # IPS record offsets are 3 bytes, so no record can address past 16 MiB.
 # BPS has no such limit; it is only IPS that silently ignores the tail of
@@ -214,16 +220,20 @@ def apply_bps_patch(rom_path: str, patch_path: str, output_path: str) -> dict[st
                 return {"status": "error",
                         "message": "BPS patch writes beyond declared target size"}
 
-            if command == 0:  # TargetRead: literal bytes from the patch
+            # Action numbering is fixed by the spec: 0=SourceRead,
+            # 1=TargetRead, 2=SourceCopy, 3=TargetCopy. 0 and 1 were
+            # previously swapped here, which made every real-world .bps
+            # patch fail its target CRC32 check.
+            if command == BPS_SOURCE_READ:  # copy from source at output offset
+                if out_pos + length > len(rom_data):
+                    return {"status": "error", "message": "BPS SourceRead beyond source size"}
+                output_data[out_pos:out_pos + length] = rom_data[out_pos:out_pos + length]
+                out_pos += length
+            elif command == BPS_TARGET_READ:  # literal bytes from the patch
                 if pos + length > end:
                     return {"status": "error", "message": "BPS patch truncated in TargetRead"}
                 output_data[out_pos:out_pos + length] = patch_data[pos:pos + length]
                 pos += length
-                out_pos += length
-            elif command == 1:  # SourceRead: copy from source at output offset
-                if out_pos + length > len(rom_data):
-                    return {"status": "error", "message": "BPS SourceRead beyond source size"}
-                output_data[out_pos:out_pos + length] = rom_data[out_pos:out_pos + length]
                 out_pos += length
             elif command == 2:  # SourceCopy: relative copy from source
                 offset_data, pos = _bps_read_vlv(patch_data, pos)
@@ -267,3 +277,106 @@ def apply_bps_patch(rom_path: str, patch_path: str, output_path: str) -> dict[st
         return {"status": "error", "message": f"BPS patch error: {e}"}
     except Exception as e:
         return {"status": "error", "message": f"BPS patch error: {e}"}
+
+
+# ---------------------------------------------------------------------------
+# BPS creation
+#
+# The inverse of apply_bps_patch: given a source and a target, emit a delta
+# that turns one into the other. Appliers are common; differs are not, and
+# without one this tool could consume community patches but never produce
+# them.
+#
+# The encoder is deliberately simple. byuu's reference implementation uses a
+# suffix-array matcher to find long-range copies; that pays off for ROM
+# hacks that move data around, but it is a large amount of machinery. This
+# emits SourceRead for the (very common) runs where target and source agree
+# at the same offset, and TargetRead literals elsewhere. For the patches
+# this tool actually produces - VI instruction edits, checksum restamps,
+# byte pokes - target and source align almost everywhere, so the result is
+# already within a rounding error of optimal.
+#
+# The output is spec-correct either way: any BPS applier will accept it,
+# because the format does not require a particular matching strategy.
+# ---------------------------------------------------------------------------
+
+def _bps_write_vlv(value: int) -> bytes:
+    """Encode one variable-length value (inverse of _bps_read_vlv)."""
+    out = bytearray()
+    while True:
+        x = value & 0x7F
+        value >>= 7
+        if value == 0:
+            out.append(0x80 | x)
+            break
+        out.append(x)
+        value -= 1
+    return bytes(out)
+
+
+def create_bps_patch(source_path: str, target_path: str,
+                     output_path: str, metadata: bytes = b"") -> dict[str, Any]:
+    """Build a .bps that turns *source_path* into *target_path*."""
+    if not os.path.isfile(source_path) or not os.path.isfile(target_path):
+        return {"status": "error", "message": "Source or target file missing"}
+
+    try:
+        with open(source_path, "rb") as f:
+            source = f.read()
+        with open(target_path, "rb") as f:
+            target = f.read()
+
+        if source == target:
+            return {"status": "error",
+                    "message": "Source and target are identical; nothing to diff"}
+
+        body = bytearray(b"BPS1")
+        body += _bps_write_vlv(len(source))
+        body += _bps_write_vlv(len(target))
+        body += _bps_write_vlv(len(metadata))
+        body += metadata
+
+        # SourceRead consumes from the source at the *output* position, so a
+        # run only qualifies while both streams still have that offset.
+        aligned_limit = min(len(source), len(target))
+        pos = 0
+        literals = bytearray()
+
+        def flush_literals() -> None:
+            if literals:
+                body.extend(_bps_write_vlv(((len(literals) - 1) << 2) | BPS_TARGET_READ))
+                body.extend(literals)
+                literals.clear()
+
+        while pos < len(target):
+            run = 0
+            while (pos + run < aligned_limit
+                   and source[pos + run] == target[pos + run]):
+                run += 1
+            # A one-byte SourceRead costs the same as a literal byte plus its
+            # own command, so only break the literal stream for longer runs.
+            if run > 1:
+                flush_literals()
+                body.extend(_bps_write_vlv(((run - 1) << 2) | BPS_SOURCE_READ))
+                pos += run
+            else:
+                literals.append(target[pos])
+                pos += 1
+        flush_literals()
+
+        body += struct.pack("<I", zlib.crc32(source) & 0xFFFFFFFF)
+        body += struct.pack("<I", zlib.crc32(target) & 0xFFFFFFFF)
+        body += struct.pack("<I", zlib.crc32(bytes(body)) & 0xFFFFFFFF)
+
+        with open(output_path, "wb") as out:
+            out.write(bytes(body))
+
+        return {
+            "status": "created",
+            "message": (f"BPS patch created ({len(body)} bytes, "
+                        f"{len(source)} -> {len(target)} byte ROM)"),
+            "output": output_path,
+            "size": len(body),
+        }
+    except OSError as e:
+        return {"status": "error", "message": f"BPS creation error: {e}"}

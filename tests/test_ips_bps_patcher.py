@@ -10,9 +10,14 @@ import unittest
 import zlib
 
 from n64patcher.ips_bps_patcher import (
+    BPS_SOURCE_COPY,
+    BPS_SOURCE_READ,
+    BPS_TARGET_COPY,
+    BPS_TARGET_READ,
     _bps_read_vlv,
     apply_bps_patch,
     apply_ips_patch,
+    create_bps_patch,
     detect_patch_type,
 )
 
@@ -33,6 +38,10 @@ def bps_encode_vlv(n: int) -> bytes:
 
 
 def bps_command(length: int, command: int) -> bytes:
+    """Encode one BPS action. *command* must be one of the BPS_* constants
+    imported from the module under test - hardcoding the numbers here is
+    what previously let the encoder and the applier agree on a swapped
+    convention that no real patch uses."""
     return bps_encode_vlv(((length - 1) << 2) | command)
 
 
@@ -208,7 +217,7 @@ class TestBpsPatcher(WriteHelper):
         target = bytearray(source)
         target[0x10:0x15] = b"HELLO"
         target = bytes(target)
-        commands = bps_command(len(target), 0) + target
+        commands = bps_command(len(target), BPS_TARGET_READ) + target
         patch = make_bps(source, commands, declared_target=target)
         src = self._write("rom.bin", source)
         pst = self._write("patch.bps", patch)
@@ -226,11 +235,11 @@ class TestBpsPatcher(WriteHelper):
                   + source[8:16]     # SourceCopy -16
                   + literal          # TargetRead
                   + source[0:8])     # TargetCopy back to start
-        commands = (bps_command(8, 1)
-                    + bps_command(8, 2) + bps_copy_offset(16, negative=False)
-                    + bps_command(8, 2) + bps_copy_offset(16, negative=True)
-                    + bps_command(8, 0) + literal
-                    + bps_command(8, 3) + bps_copy_offset(0, negative=False))
+        commands = (bps_command(8, BPS_SOURCE_READ)
+                    + bps_command(8, BPS_SOURCE_COPY) + bps_copy_offset(16, negative=False)
+                    + bps_command(8, BPS_SOURCE_COPY) + bps_copy_offset(16, negative=True)
+                    + bps_command(8, BPS_TARGET_READ) + literal
+                    + bps_command(8, BPS_TARGET_COPY) + bps_copy_offset(0, negative=False))
         patch = make_bps(source, commands, declared_target=target)
         src = self._write("rom.bin", source)
         pst = self._write("patch.bps", patch)
@@ -244,8 +253,8 @@ class TestBpsPatcher(WriteHelper):
         # TargetCopy reading into itself produces run-length encoding.
         source = b""  # empty source: everything via TargetRead/TargetCopy
         target = b"Q" + b"Q" * 15  # 16 x 'Q'
-        commands = (bps_command(1, 0) + b"Q"
-                    + bps_command(15, 3) + bps_copy_offset(0, negative=False))
+        commands = (bps_command(1, BPS_TARGET_READ) + b"Q"
+                    + bps_command(15, BPS_TARGET_COPY) + bps_copy_offset(0, negative=False))
         patch = make_bps(source, commands, declared_target=target)
         src = self._write("rom.bin", source)
         pst = self._write("patch.bps", patch)
@@ -259,7 +268,7 @@ class TestBpsPatcher(WriteHelper):
         source = b"abcdef"
         target = b"abcXef"
         meta = b"somefile.txt\x00"
-        commands = bps_command(3, 1) + bps_command(1, 0) + b"X" + bps_command(2, 1)
+        commands = bps_command(3, BPS_SOURCE_READ) + bps_command(1, BPS_TARGET_READ) + b"X" + bps_command(2, BPS_SOURCE_READ)
         patch = make_bps(source, commands, declared_target=target, metadata=meta)
         src = self._write("rom.bin", source)
         pst = self._write("patch.bps", patch)
@@ -272,7 +281,7 @@ class TestBpsPatcher(WriteHelper):
     def test_wrong_source_rejected(self):
         source = b"the right rom data...."
         target = b"THE RIGHT ROM DATA...."
-        commands = bps_command(len(target), 0) + target
+        commands = bps_command(len(target), BPS_TARGET_READ) + target
         patch = make_bps(source, commands, declared_target=target)
         src = self._write("wrong.bin", b"a completely different rom")
         pst = self._write("patch.bps", patch)
@@ -283,8 +292,8 @@ class TestBpsPatcher(WriteHelper):
     def test_corrupt_patch_rejected(self):
         source = b"0123456789"
         target = b"0123XXXX89"
-        commands = (bps_command(4, 1) + bps_command(4, 0) + b"XXXX"
-                    + bps_command(2, 1))
+        commands = (bps_command(4, BPS_SOURCE_READ) + bps_command(4, BPS_TARGET_READ) + b"XXXX"
+                    + bps_command(2, BPS_SOURCE_READ))
         patch = bytearray(make_bps(source, commands, declared_target=target))
         patch[8] ^= 0xFF  # corrupt one body byte -> patch CRC must fail
         src = self._write("rom.bin", source)
@@ -296,7 +305,7 @@ class TestBpsPatcher(WriteHelper):
     def test_target_crc_mismatch_rejected(self):
         source = b"XXXXXXXXXXXXXXXX"
         declared_but_wrong = b"Z" * 16
-        commands = bps_command(16, 1)
+        commands = bps_command(16, BPS_SOURCE_READ)
         # Footer gets the WRONG target CRC, but the patch CRC is computed
         # over the assembled body, so only the target check can fail.
         patch = make_bps(source, commands, declared_target=declared_but_wrong)
@@ -316,3 +325,148 @@ class TestBpsPatcher(WriteHelper):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestBpsSpecConformance(WriteHelper):
+    """Regression: the applier had SourceRead and TargetRead swapped
+    (0 and 1). Our own tests passed because the test encoder used the same
+    swapped convention - a closed loop that agreed with itself and with no
+    real patch. Every genuine .bps failed its target CRC32 check.
+
+    These build patches from the spec text directly, without going through
+    the shared encoder, so the two cannot drift together again.
+    """
+
+    def test_action_constants_match_the_spec(self):
+        self.assertEqual(
+            (BPS_SOURCE_READ, BPS_TARGET_READ, BPS_SOURCE_COPY, BPS_TARGET_COPY),
+            (0, 1, 2, 3))
+
+    def _independent_patch(self, source, target, edit_at, literal):
+        """Encode a patch using only the spec's numbering, inline."""
+        def vlv(n):
+            out = bytearray()
+            while True:
+                x = n & 0x7F
+                n >>= 7
+                if n == 0:
+                    out.append(0x80 | x)
+                    break
+                out.append(x)
+                n -= 1
+            return bytes(out)
+
+        body = bytearray(b"BPS1") + vlv(len(source)) + vlv(len(target)) + vlv(0)
+        body += vlv(((edit_at - 1) << 2) | 0)                    # SourceRead
+        body += vlv(((len(literal) - 1) << 2) | 1) + literal     # TargetRead
+        tail = len(target) - edit_at - len(literal)
+        body += vlv(((tail - 1) << 2) | 0)                       # SourceRead
+        body += struct.pack("<I", zlib.crc32(source) & 0xFFFFFFFF)
+        body += struct.pack("<I", zlib.crc32(target) & 0xFFFFFFFF)
+        body += struct.pack("<I", zlib.crc32(bytes(body)) & 0xFFFFFFFF)
+        return bytes(body)
+
+    def test_applies_a_patch_from_an_independent_encoder(self):
+        source = bytes(range(256)) * 8
+        target = bytearray(source)
+        target[0x100:0x104] = b"HACK"
+        target = bytes(target)
+
+        src = self._write("s.bin", source)
+        pst = self._write("p.bps", self._independent_patch(
+            source, target, 0x100, b"HACK"))
+        out = os.path.join(self.tmp.name, "o.bin")
+        res = apply_bps_patch(src, pst, out)
+        self.assertEqual(res["status"], "patched", res)
+        with open(out, "rb") as f:
+            self.assertEqual(f.read(), target)
+
+
+class TestBpsCreation(WriteHelper):
+    """The differ. Appliers are common; without this the tool could consume
+    community patches but never produce one."""
+
+    def _roundtrip(self, source, target):
+        sp = self._write("s.bin", source)
+        tp = self._write("t.bin", target)
+        pp = os.path.join(self.tmp.name, "p.bps")
+        op = os.path.join(self.tmp.name, "o.bin")
+        created = create_bps_patch(sp, tp, pp)
+        self.assertEqual(created["status"], "created", created)
+        applied = apply_bps_patch(sp, pp, op)
+        self.assertEqual(applied["status"], "patched", applied)
+        with open(op, "rb") as f:
+            self.assertEqual(f.read(), target)
+        return created
+
+    def test_single_edit(self):
+        source = bytes(range(256)) * 4
+        target = bytearray(source)
+        target[100:104] = b"WXYZ"
+        self._roundtrip(source, bytes(target))
+
+    def test_scattered_edits(self):
+        source = bytes(range(256)) * 8
+        target = bytearray(source)
+        for off in (0x10, 0x200, 0x555, 0x7F0):
+            target[off] ^= 0xFF
+        self._roundtrip(source, bytes(target))
+
+    def test_target_longer_than_source(self):
+        source = b"A" * 512
+        self._roundtrip(source, source + b"B" * 128)
+
+    def test_target_shorter_than_source(self):
+        source = b"A" * 512 + b"B" * 128
+        self._roundtrip(source, b"A" * 512)
+
+    def test_completely_different(self):
+        self._roundtrip(b"\x00" * 300, b"\xFF" * 300)
+
+    def test_patch_carries_correct_checksums(self):
+        source = bytes(range(256))
+        target = bytearray(source)
+        target[0] = 0xFF
+        created = self._roundtrip(source, bytes(target))
+        with open(created["output"], "rb") as f:
+            patch = f.read()
+        src_crc, tgt_crc, patch_crc = struct.unpack("<III", patch[-12:])
+        self.assertEqual(src_crc, zlib.crc32(source) & 0xFFFFFFFF)
+        self.assertEqual(tgt_crc, zlib.crc32(bytes(target)) & 0xFFFFFFFF)
+        self.assertEqual(patch_crc, zlib.crc32(patch[:-4]) & 0xFFFFFFFF)
+
+    def test_patch_is_far_smaller_than_the_rom(self):
+        """A one-word edit must not produce a patch the size of the ROM."""
+        source = bytes(0x4000)
+        target = bytearray(source)
+        target[0x2000:0x2004] = b"EDIT"
+        created = self._roundtrip(source, bytes(target))
+        self.assertLess(created["size"], 100, "SourceRead runs are not being used")
+
+    def test_identical_files_refused(self):
+        data = bytes(range(256))
+        sp = self._write("s.bin", data)
+        tp = self._write("t.bin", data)
+        res = create_bps_patch(sp, tp, os.path.join(self.tmp.name, "p.bps"))
+        self.assertEqual(res["status"], "error")
+        self.assertIn("identical", res["message"])
+
+    def test_missing_input_reported(self):
+        res = create_bps_patch(os.path.join(self.tmp.name, "nope"),
+                               self._write("t.bin", b"x"),
+                               os.path.join(self.tmp.name, "p.bps"))
+        self.assertEqual(res["status"], "error")
+
+    def test_created_patch_is_rejected_for_a_different_source(self):
+        """The CRC32 gate must still fire on patches we produced."""
+        source = bytes(range(256))
+        target = bytearray(source)
+        target[5] = 0x99
+        sp = self._write("s.bin", source)
+        tp = self._write("t.bin", bytes(target))
+        pp = os.path.join(self.tmp.name, "p.bps")
+        create_bps_patch(sp, tp, pp)
+        wrong = self._write("wrong.bin", bytes(range(256))[::-1])
+        res = apply_bps_patch(wrong, pp, os.path.join(self.tmp.name, "o.bin"))
+        self.assertEqual(res["status"], "error")
+        self.assertIn("source CRC32", res["message"])

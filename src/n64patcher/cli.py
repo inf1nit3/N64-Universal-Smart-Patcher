@@ -35,7 +35,12 @@ from . import manifest as manifest_mod
 from . import n64_core as core
 from .batch_runner import batch_patch_roms
 from .header_utils import detect_and_strip_scene_header, fix_rom_crc
-from .ips_bps_patcher import apply_bps_patch, apply_ips_patch, detect_patch_type
+from .ips_bps_patcher import (
+    apply_bps_patch,
+    apply_ips_patch,
+    create_bps_patch,
+    detect_patch_type,
+)
 from .presets import PRESETS, apply_preset, list_presets
 from .zip_handler import (
     cleanup_temp_dir,
@@ -240,6 +245,9 @@ def main(argv=None):
                         help="No-Intro/Redump DAT to identify dumps against "
                              "(repeatable). Files in ~/.n64patcher/dats/ are "
                              "picked up automatically.")
+    parser.add_argument("--create-patch", nargs=3,
+                        metavar=("SOURCE", "TARGET", "OUT.bps"),
+                        help="Diff two ROMs into a .bps patch and exit")
     parser.add_argument("--manifest", action="store_true",
                         help="Write a JSON sidecar next to each output listing "
                              "every changed byte run, for auditing or --revert")
@@ -268,6 +276,16 @@ def main(argv=None):
 
     if args.version:
         log(f"n64patcher v{core.VERSION}")
+        return 0
+
+    if args.create_patch:
+        source, target, out = args.create_patch
+        res = create_bps_patch(source, target, out)
+        if res.get("status") != "created":
+            log(f"❌ {res.get('message')}")
+            return 1
+        log(f"✅ {res['message']}")
+        log(f"   {out}")
         return 0
 
     if args.show_manifest:

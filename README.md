@@ -150,6 +150,18 @@ powershell -ExecutionPolicy Bypass -File build_release.ps1   # Windows
 ./build_release.sh                                           # macOS / Linux
 ```
 
+### Creating patches
+
+Diff two ROMs into a `.bps` that any patcher can apply:
+
+```bash
+n64patcher --create-patch original.z64 modified.z64 mypatch.bps
+```
+
+A single instruction edit in a 12 MB ROM produces a **65-byte** patch,
+verified to reconstruct the target byte-for-byte. Useful for distributing
+your own changes without shipping a ROM.
+
 ### Auditing and undoing a patch
 
 The pipeline never modifies an original, so undo is not about rescuing a
@@ -305,13 +317,15 @@ the installed package rather than the working directory):
 - `manifest.py` — Undo manifests: change recording, auditing and revert.
 - `gui.py` — PyQt6 GUI with preset controls, background inspector table, drag & drop & thread exception safety.
 - `cli.py` — Headless CLI runner (`n64patcher`).
-- `tests/` — Synthetic ROM unit suite, 244 tests, no game files required.
+- `tests/` — Synthetic ROM unit suite, 256 tests, no game files required.
 
 ---
 
 ## 📜 Version History
 
 - **v3.3.0 (Hi-Res Gating)**:
+  - **BPS applier fixed**: the `SourceRead`/`TargetRead` action numbers were swapped, so *no real-world `.bps` patch could ever be applied* — every one failed its target CRC32 check. The test suite's own encoder used the same swapped numbering, so the two agreed with each other and with nothing else.
+  - **BPS patch creation** (`--create-patch SOURCE TARGET OUT.bps`). A one-instruction edit in a 12 MB ROM yields a 65-byte patch.
   - **Undo manifests** (`--manifest`): a JSON sidecar recording every changed byte run, with `--show-manifest` to audit it and `--revert` to undo a patch from the output alone. Verified byte-identical on a real 12 MB ROM; refuses when the file no longer matches.
   - **No-Intro/Redump DAT lookup** (`--dat`, or drop files in `~/.n64patcher/dats/`). Reports whether each ROM is a catalogued good dump and its proper name. DATs are not bundled; parsed results are cached (~15x faster on repeat runs).
   - **Patch recipes moved out of Python into a declarative database** (`patches/*.json`). Adding support for a dump is now a data file, not a code change: drop a `.json` in `~/.n64patcher/patches/` and `--list-patches` picks it up. Malformed entries are reported by id and skipped rather than taking the database down. See `docs/PATCH_DB.md`.
