@@ -47,6 +47,16 @@ class PatchDBError(ValueError):
 
 
 def _bundled_patch_dir() -> str:
+    """Where the shipped recipes live.
+
+    In a PyInstaller bundle this module lives inside the archive, so
+    __file__ is not a real directory and the data files are unpacked to
+    sys._MEIPASS instead. The check is duplicated from n64_core rather than
+    imported because n64_core imports this module.
+    """
+    if getattr(sys, "frozen", False):
+        base = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
+        return os.path.join(base, "patches")
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), "patches")
 
 

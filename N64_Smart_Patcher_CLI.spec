@@ -5,7 +5,7 @@ a = Analysis(
     ['launch_cli.py'],
     pathex=['src'],
     binaries=[],
-    datas=[('src/n64patcher/N64noAAPatcher/additionals', 'N64noAAPatcher/additionals'), ('src/n64patcher/N64noAAPatcher/hires_patches', 'N64noAAPatcher/hires_patches')],
+    datas=[('src/n64patcher/patches', 'patches'), ('src/n64patcher/N64noAAPatcher/additionals', 'N64noAAPatcher/additionals'), ('src/n64patcher/N64noAAPatcher/hires_patches', 'N64noAAPatcher/hires_patches')],
     hiddenimports=['n64patcher', 'n64patcher.cli'],
     hookspath=[],
     hooksconfig={},

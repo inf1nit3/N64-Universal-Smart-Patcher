@@ -9,6 +9,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 from n64patcher import n64_core as core
 from n64patcher import patchdb
@@ -193,6 +194,21 @@ class TestShippedDatabase(unittest.TestCase):
     def test_ids_are_unique(self):
         ids = [e["id"] for e in core.PATCH_DB.values()]
         self.assertEqual(len(ids), len(set(ids)))
+
+    def test_bundled_dir_follows_meipass_when_frozen(self):
+        """Regression: a frozen build resolved the recipe directory from
+        __file__, which is not a real path inside a PyInstaller archive, so
+        the shipped EXE loaded zero recipes and reported every verified
+        dump as unsupported."""
+        import sys
+        with mock.patch.object(sys, "frozen", True, create=True),              mock.patch.object(sys, "_MEIPASS", os.path.join("X", "bundle"),
+                               create=True):
+            self.assertEqual(patchdb._bundled_patch_dir(),
+                             os.path.join("X", "bundle", "patches"))
+
+    def test_bundled_dir_uses_the_package_when_not_frozen(self):
+        self.assertTrue(patchdb._bundled_patch_dir().endswith("patches"))
+        self.assertTrue(os.path.isdir(patchdb._bundled_patch_dir()))
 
     def test_describe_mentions_every_entry(self):
         text = patchdb.describe(core.PATCH_DB)
