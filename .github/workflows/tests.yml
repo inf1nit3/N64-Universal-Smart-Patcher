@@ -114,7 +114,8 @@ jobs:
           import glob, zipfile
           wheel = glob.glob("dist/*.whl")[0]
           names = zipfile.ZipFile(wheel).namelist()
-          need = ["N64noAAPatcher/additionals/", "N64noAAPatcher/hires_patches/"]
+          need = ["N64noAAPatcher/additionals/", "N64noAAPatcher/hires_patches/",
+                  "n64patcher/patches/patches.json"]
           for prefix in need:
               hits = [n for n in names if prefix in n]
               assert hits, f"wheel is missing {prefix}"

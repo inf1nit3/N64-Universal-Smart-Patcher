@@ -150,6 +150,17 @@ powershell -ExecutionPolicy Bypass -File build_release.ps1   # Windows
 ./build_release.sh                                           # macOS / Linux
 ```
 
+### Extending the supported dumps
+
+Patch recipes are data, not code. To add a dump, drop a JSON file in
+`~/.n64patcher/patches/` keyed on its CRC1/CRC2 — no fork or rebuild:
+
+```bash
+n64patcher --list-patches      # what is loaded, and from where
+```
+
+Full format in [docs/PATCH_DB.md](docs/PATCH_DB.md).
+
 ### 640x480 hi-res: when it applies
 
 Real 640x480 needs more than a wider VI mode table. The table entry carries
@@ -207,15 +218,17 @@ the installed package rather than the working directory):
 - `ips_bps_patcher.py` — Community `.ips` & `.bps` delta patcher (spec-correct BPS with CRC32 verification; IPS sources are format-checked and byte-order corrected).
 - `batch_runner.py` — Multi-threaded ThreadPoolExecutor engine with cooperative cancellation and single-threaded log draining.
 - `mmap_vi_scanner.py` — Memory-mapped fast VI table scanner (used by inspection).
+- `patchdb.py` — Declarative patch recipe database (`patches/*.json`, user-extensible).
 - `gui.py` — PyQt6 GUI with preset controls, background inspector table, drag & drop & thread exception safety.
 - `cli.py` — Headless CLI runner (`n64patcher`).
-- `tests/` — Synthetic ROM unit suite, 174 tests, no game files required.
+- `tests/` — Synthetic ROM unit suite, 201 tests, no game files required.
 
 ---
 
 ## 📜 Version History
 
 - **v3.3.0 (Hi-Res Gating)**:
+  - **Patch recipes moved out of Python into a declarative database** (`patches/*.json`). Adding support for a dump is now a data file, not a code change: drop a `.json` in `~/.n64patcher/patches/` and `--list-patches` picks it up. Malformed entries are reported by id and skipped rather than taking the database down. See `docs/PATCH_DB.md`.
   - **640x480 is no longer offered for ROMs that cannot take it.** Widening an `OSViMode` entry changes one field; the framebuffer the game allocated and the RDP coordinates it draws with still assume 320. On hardware (verified on a SummerCart64) that produces a doubled image, menus rendered at the wrong size and UI in the wrong position. Hi-res now applies only where a verified per-dump patch exists; everything else is reported and skipped, with the reason. `--force-hires` applies it anyway and labels the result EXPERIMENTAL.
   - Inspection reports `hires_support` (`verified` / `native` / `unsupported`) plus a reason, in the CLI listing, the Inspector table and the CSV/JSON export.
   - The GUI's High-Res checkbox is disabled when no loaded ROM has a verified patch, with a tooltip explaining why; it names the count when some do.

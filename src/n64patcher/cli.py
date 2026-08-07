@@ -31,6 +31,7 @@ if sys.platform == "win32":
             pass
 
 from . import n64_core as core
+from . import patchdb
 from .batch_runner import batch_patch_roms
 from .header_utils import detect_and_strip_scene_header, fix_rom_crc
 from .ips_bps_patcher import apply_bps_patch, apply_ips_patch, detect_patch_type
@@ -232,6 +233,8 @@ def main(argv=None):
     parser.add_argument("--inspect-only", action="store_true", help="Inspect only, do not patch")
     parser.add_argument("--export", help="Export a report as CSV or JSON")
     parser.add_argument("--list-presets", action="store_true", help="List the available presets")
+    parser.add_argument("--list-patches", action="store_true",
+                        help="List the patch recipes and the directories they load from")
     parser.add_argument("--dry-run", action="store_true",
                         help="Show what would be done without writing any files")
     parser.add_argument("--verify", action="store_true",
@@ -249,6 +252,15 @@ def main(argv=None):
     if args.version:
         log(f"n64patcher v{core.VERSION}")
         return 0
+
+    if args.list_patches:
+        log(patchdb.describe(core.PATCH_DB))
+        problems = core.patch_db_problems()
+        for problem in problems:
+            log(f"⚠️  {problem}")
+        # Non-zero so a malformed recipe fails a CI check rather than
+        # being noticed only when a ROM quietly misses its patch.
+        return 1 if problems else 0
 
     if args.list_presets:
         log("\n🎮 Available presets:\n")

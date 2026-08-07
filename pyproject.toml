@@ -57,6 +57,7 @@ where = ["src"]
 n64patcher = [
     "N64noAAPatcher/additionals/*",
     "N64noAAPatcher/hires_patches/*",
+    "patches/*.json",
     "app_icon.ico",
 ]
 

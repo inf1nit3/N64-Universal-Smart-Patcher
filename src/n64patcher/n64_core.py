@@ -32,12 +32,16 @@ import threading
 import traceback
 from dataclasses import dataclass
 
+from . import patchdb
 from ._version import __version__
 
 # Public alias: the GUI title bar and `--version` read core.VERSION.
 # An assignment rather than `import ... as VERSION`, which linters strip
 # as an unused import.
 VERSION = __version__
+
+# Populated at import by load_patch_db; surfaced via patch_db_problems().
+_patch_db_problems: list[str] = []
 
 # ---------------------------------------------------------------------------
 # Paths (frozen-aware for PyInstaller bundles)
@@ -585,7 +589,7 @@ def apply_dynamic_vi_patch(z64_path, no_aa=True, no_dither=True, log=None):
 
 
 # ---------------------------------------------------------------------------
-# SubDrag verified .xdelta patches, keyed on the exact dump they target
+# Verified per-dump patch recipes, keyed on the exact dump they target
 #
 # An xdelta delta applies only to the ROM it was built against, so the
 # header CRC1/CRC2 pair is the right key. Every value below was derived by
@@ -598,35 +602,39 @@ def apply_dynamic_vi_patch(z64_path, no_aa=True, no_dither=True, log=None):
 # silently never received their patch. Title matching also could not
 # distinguish revisions - the Banjo delta applies to Rev A only, and would
 # have been attempted and failed on the far more common base USA dump.
+#
+# The recipes themselves live in patches/*.json rather than in this file, so
+# the supported set can grow without a code change. See patchdb.
 # ---------------------------------------------------------------------------
 
-# (crc1, crc2) at header 0x10/0x14 -> (patch filename, human label)
+# The recipes now live in data files (see patchdb). Loaded once at import:
+# a per-ROM reload would re-read the directory for every file in a batch.
+PATCH_DB = patchdb.load_patch_db(on_error=_patch_db_problems.append)
+
+# Compatibility view: {(crc1, crc2): (xdelta filename, human label)} for the
+# hi-res entries. Kept because it is the shape the pipeline and its tests
+# already speak; find_patch_entry() exposes the full recipe.
 SUBDRAG_PATCHES = {
-    (0x635A2BFF, 0x8B022326): (
-        "Super Mario 64 (U) [!] 640 x 480i No AA[SubDrag].xdelta",
-        "Super Mario 64 (USA)"),
-    (0xDCBC50D1, 0x09FD1AA3): (
-        "GE640x480iEnhanced[SubDragTrevorZoinkity].xdelta",
-        "GoldenEye 007 (USA)"),
-    (0xCD7559AC, 0xB26CF5AE): (
-        "Banjo-Kazooie (U) (V1.1) 640 x 480i NoAA[SubDrag].xdelta",
-        "Banjo-Kazooie (USA) Rev A / v1.1"),
-    (0xB30ED978, 0x3003C9F9): (
-        "F-ZERO X (U) 640x480i No AA[SubDrag].xdelta",
-        "F-Zero X (USA)"),
-    (0x9E330C01, 0x8C0314BA): (
-        "Forsaken 64 (U) 640x480i NoAA [SubDrag].xdelta",
-        "Forsaken 64 (USA)"),
-    (0xCA12B547, 0x71FA4EE4): (
-        "PokemonSnap640x480iNoAA.xdelta",
-        "Pokemon Snap (USA)"),
-    (0xBDA8F143, 0xB1AF2D62): (
-        "Quake II (U) [!] 640 x 480i NoAA[SubDrag].xdelta",
-        "Quake II (USA)"),
-    (0x4690FB1C, 0x4CD56D44): (
-        "GoldenNugget 640 x 480i CrapsCrashes[SubDrag].xdelta",
-        "Golden Nugget 64 (USA)"),
+    key: (entry["operations"][0].get("file", ""), entry["name"])
+    for key, entry in PATCH_DB.items()
+    if "hires" in entry["provides"]
+    and entry["operations"] and entry["operations"][0]["type"] == "xdelta"
 }
+
+
+def patch_db_problems():
+    """Messages from recipe files that failed to load. Empty when clean."""
+    return list(_patch_db_problems)
+
+
+def find_patch_entry(crc1, crc2):
+    """Full recipe for this exact dump, or None. Accepts ints or hex text."""
+    try:
+        key = (int(crc1, 16) if isinstance(crc1, str) else int(crc1),
+               int(crc2, 16) if isinstance(crc2, str) else int(crc2))
+    except (TypeError, ValueError):
+        return None
+    return PATCH_DB.get(key)
 
 
 def get_subdrag_patch(crc1, crc2):

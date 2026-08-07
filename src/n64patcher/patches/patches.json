@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "description": "Verified per-dump patch recipes, keyed on the CRC1/CRC2 of the exact ROM each was built against - a delta only applies to that dump. Extend this without editing Python by dropping .json files into a patches directory; see docs/PATCH_DB.md.",
+  "patches": [
+    {
+      "id": "banjo-kazooie-usa-rev-a-640x480",
+      "name": "Banjo-Kazooie (USA) Rev A / v1.1 - 640x480 No-AA",
+      "source": "SubDrag",
+      "match": {
+        "crc1": "CD7559AC",
+        "crc2": "B26CF5AE"
+      },
+      "provides": [
+        "hires",
+        "noaa"
+      ],
+      "operations": [
+        {
+          "type": "xdelta",
+          "file": "Banjo-Kazooie (U) (V1.1) 640 x 480i NoAA[SubDrag].xdelta"
+        }
+      ]
+    },
+    {
+      "id": "f-zero-x-usa-640x480",
+      "name": "F-Zero X (USA) - 640x480 No-AA",
+      "source": "SubDrag",
+      "match": {
+        "crc1": "B30ED978",
+        "crc2": "3003C9F9"
+      },
+      "provides": [
+        "hires",
+        "noaa"
+      ],
+      "operations": [
+        {
+          "type": "xdelta",
+          "file": "F-ZERO X (U) 640x480i No AA[SubDrag].xdelta"
+        }
+      ]
+    },
+    {
+      "id": "forsaken-64-usa-640x480",
+      "name": "Forsaken 64 (USA) - 640x480 No-AA",
+      "source": "SubDrag",
+      "match": {
+        "crc1": "9E330C01",
+        "crc2": "8C0314BA"
+      },
+      "provides": [
+        "hires",
+        "noaa"
+      ],
+      "operations": [
+        {
+          "type": "xdelta",
+          "file": "Forsaken 64 (U) 640x480i NoAA [SubDrag].xdelta"
+        }
+      ]
+    },
+    {
+      "id": "golden-nugget-64-usa-640x480",
+      "name": "Golden Nugget 64 (USA) - 640x480",
+      "source": "SubDrag",
+      "match": {
+        "crc1": "4690FB1C",
+        "crc2": "4CD56D44"
+      },
+      "provides": [
+        "hires"
+      ],
+      "operations": [
+        {
+          "type": "xdelta",
+          "file": "GoldenNugget 640 x 480i CrapsCrashes[SubDrag].xdelta"
+        }
+      ]
+    },
+    {
+      "id": "goldeneye-007-usa-640x480",
+      "name": "GoldenEye 007 (USA) - 640x480",
+      "source": "SubDrag",
+      "match": {
+        "crc1": "DCBC50D1",
+        "crc2": "09FD1AA3"
+      },
+      "provides": [
+        "hires"
+      ],
+      "operations": [
+        {
+          "type": "xdelta",
+          "file": "GE640x480iEnhanced[SubDragTrevorZoinkity].xdelta"
+        }
+      ]
+    },
+    {
+      "id": "pokemon-snap-usa-640x480",
+      "name": "Pokemon Snap (USA) - 640x480 No-AA",
+      "source": "SubDrag",
+      "match": {
+        "crc1": "CA12B547",
+        "crc2": "71FA4EE4"
+      },
+      "provides": [
+        "hires",
+        "noaa"
+      ],
+      "operations": [
+        {
+          "type": "xdelta",
+          "file": "PokemonSnap640x480iNoAA.xdelta"
+        }
+      ]
+    },
+    {
+      "id": "quake-ii-usa-640x480",
+      "name": "Quake II (USA) - 640x480 No-AA",
+      "source": "SubDrag",
+      "match": {
+        "crc1": "BDA8F143",
+        "crc2": "B1AF2D62"
+      },
+      "provides": [
+        "hires",
+        "noaa"
+      ],
+      "operations": [
+        {
+          "type": "xdelta",
+          "file": "Quake II (U) [!] 640 x 480i NoAA[SubDrag].xdelta"
+        }
+      ]
+    },
+    {
+      "id": "super-mario-64-usa-640x480",
+      "name": "Super Mario 64 (USA) - 640x480 No-AA",
+      "source": "SubDrag",
+      "match": {
+        "crc1": "635A2BFF",
+        "crc2": "8B022326"
+      },
+      "provides": [
+        "hires",
+        "noaa"
+      ],
+      "operations": [
+        {
+          "type": "xdelta",
+          "file": "Super Mario 64 (U) [!] 640 x 480i No AA[SubDrag].xdelta"
+        }
+      ]
+    }
+  ]
+}
