@@ -454,6 +454,139 @@ class TestOutputCollisions(unittest.TestCase):
         self.assertFalse(os.path.exists(payload))
 
 
+class TestHiresSupportGate(unittest.TestCase):
+    """Regression: the generic VI-table width flip shipped enabled for every
+    ROM and renders incorrectly on hardware. Widening an OSViMode entry
+    changes one field; the framebuffer the game allocated and the RDP
+    coordinates it draws with still assume 320, so the image doubles and the
+    UI lands in the wrong place. Confirmed on a SummerCart64. Hi-res is now
+    offered only where a verified per-dump delta exists."""
+
+    SM64 = (0x635A2BFF, 0x8B022326)
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.patch_dir = os.path.join(self.tmp.name, "hires")
+        os.makedirs(self.patch_dir)
+        with open(os.path.join(self.patch_dir, "sm64.xdelta"), "wb") as f:
+            f.write(bytes.fromhex("d6c3c400"))
+        self.table = {self.SM64: ("sm64.xdelta", "Super Mario 64 (USA)")}
+
+    def _write(self, name, data):
+        p = os.path.join(self.tmp.name, name)
+        with open(p, "wb") as f:
+            f.write(data)
+        return p
+
+    @staticmethod
+    def _read(path):
+        with open(path, "rb") as f:
+            return f.read()
+
+    def _rom(self, crc=(0xDEADBEEF, 0x12345678), tables=2, hires=False):
+        rom = bytearray(make_synthetic_rom(vi_tables=0, size=0x4000))
+        rom[0x10:0x14] = crc[0].to_bytes(4, "big")
+        rom[0x14:0x18] = crc[1].to_bytes(4, "big")
+        width = core.WIDTH_640_DATA if hires else core.WIDTH_320_DATA
+        for i in range(tables):
+            off = 0x1000 + i * 0x40
+            rom[off:off + 4] = width
+            rom[off + 4:off + 8] = core.NTSC_BURST
+        return bytes(rom)
+
+    def _inspect(self, **kw):
+        p = self._write("g.z64", self._rom(**kw))
+        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
+             mock.patch.object(core, "SUBDRAG_PATCHES", self.table):
+            return core.inspect_rom_details(p)
+
+    # --- classification ---------------------------------------------------
+
+    def test_verified_dump(self):
+        info = self._inspect(crc=self.SM64)
+        self.assertEqual(info["hires_support"], core.HIRES_VERIFIED)
+
+    def test_unknown_dump_is_unsupported(self):
+        info = self._inspect()
+        self.assertEqual(info["hires_support"], core.HIRES_UNSUPPORTED)
+        self.assertIn("framebuffer", info["hires_support_reason"])
+
+    def test_native_hires_rom_needs_nothing(self):
+        info = self._inspect(hires=True)
+        self.assertEqual(info["hires_support"], core.HIRES_NATIVE)
+
+    def test_rom_without_vi_tables_is_unsupported(self):
+        info = self._inspect(tables=0)
+        self.assertEqual(info["hires_support"], core.HIRES_UNSUPPORTED)
+
+    # --- the gate itself --------------------------------------------------
+
+    def test_unsupported_rom_is_not_widened(self):
+        """The actual hardware bug: this used to rewrite the width words."""
+        src = self._write("game.z64", self._rom())
+        before = self._read(src)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        logs = []
+        res = core.patch_rom(src, opts, log=logs.append)
+
+        self.assertEqual(res["status"], "skipped", res)
+        self.assertNotIn("HR", res["applied"])
+        self.assertIn("NOT SUPPORTED", " ".join(logs))
+        # Original untouched, and no widened output was produced.
+        self.assertEqual(self._read(src), before)
+        self.assertEqual([f for f in os.listdir(self.tmp.name) if "[" in f], [])
+
+    def test_force_hires_still_allows_it(self):
+        src = self._write("game.z64", self._rom())
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)
+        logs = []
+        res = core.patch_rom(src, opts, log=logs.append)
+        self.assertEqual(res["status"], "patched", res)
+        self.assertIn("HR", res["applied"])
+        joined = " ".join(logs)
+        self.assertIn("EXPERIMENTAL", joined)
+        self.assertIn("WARNING", joined)
+
+    def test_native_hires_rom_is_left_alone(self):
+        src = self._write("game.z64", self._rom(hires=True))
+        before = self._read(src)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        core.patch_rom(src, opts, log=lambda m: None)
+        self.assertEqual(self._read(src), before)
+
+    def test_skip_reason_names_the_cause(self):
+        src = self._write("game.z64", self._rom())
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        res = core.patch_rom(src, opts, log=lambda m: None)
+        self.assertIn("640x480 not supported", res["message"])
+
+    def test_verified_dump_is_not_blocked(self):
+        """The gate must not break the games that do work."""
+        src = self._write("game.z64", self._rom(crc=self.SM64))
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
+             mock.patch.object(core, "SUBDRAG_PATCHES", self.table), \
+             mock.patch.object(core, "check_tools", lambda: {
+                 "u64aap": False, "rn64crc": False, "xdelta3": False,
+                 "hires_patches": True, "crc_native": True}):
+            logs = []
+            core.patch_rom(src, opts, log=logs.append)
+        # xdelta3 unavailable here, so it falls through to the table engine
+        # rather than refusing outright.
+        self.assertNotIn("NOT SUPPORTED", " ".join(logs))
+
+    def test_export_carries_support_columns(self):
+        info = self._inspect()
+        out = os.path.join(self.tmp.name, "r.csv")
+        core.export_report([info], out)
+        with open(out, encoding="utf-8") as f:
+            header = f.readline()
+        self.assertIn("hires_support", header)
+        self.assertIn("hires_support_reason", header)
+
+
 class TestSubdragCrcMatching(unittest.TestCase):
     """Deltas are keyed on the CRC1/CRC2 of the exact dump they were built
     against, each value derived by actually applying the delta. Title
@@ -745,7 +878,8 @@ class TestCrcHeaderValidity(unittest.TestCase):
             stdout = "Unable to calculate!"
             stderr = ""
 
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
         logs = []
         fake_tools = {"rn64crc": True, "u64aap": False, "xdelta3": False,
                       "hires_patches": False, "crc_native": True}
@@ -804,7 +938,8 @@ class TestTempFilePlacement(unittest.TestCase):
                 return False
             return real_access(path, mode, *a, **kw)
 
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
         with mock.patch("os.access", no_write_to_src):
             res = core.patch_rom(src, opts, log=lambda m: None, output_dir=out_dir)
         self.assertEqual(res["status"], "patched", res)
@@ -832,7 +967,8 @@ class TestPatchPipeline(unittest.TestCase):
     def test_hires_pipeline_creates_tagged_output_and_preserves_original(self):
         rom = make_synthetic_rom(vi_tables=2)
         src = self._write("game.z64", rom)
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
         logs = []
         res = core.patch_rom(src, opts, log=logs.append)
         self.assertEqual(res["status"], "patched")
@@ -853,14 +989,16 @@ class TestPatchPipeline(unittest.TestCase):
     def test_skip_when_nothing_patchable(self):
         rom = make_synthetic_rom(vi_tables=0)
         src = self._write("bare.z64", rom)
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
         res = core.patch_rom(src, opts, log=lambda m: None)
         self.assertEqual(res["status"], "skipped")
 
     def test_cancel_aborts_run(self):
         rom = make_synthetic_rom(vi_tables=1)
         src = self._write("cancelme.z64", rom)
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
         res = core.patch_rom(src, opts, log=lambda m: None, should_cancel=lambda: True)
         self.assertEqual(res["status"], "cancelled")
         # No temp files left behind
@@ -897,7 +1035,8 @@ class TestPatchPipeline(unittest.TestCase):
         fake_delta = os.path.join(fake_dir, "sm64 NoAA hires.xdelta")
         shutil.copy(delta, fake_delta)
 
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
         logs = []
         with mock.patch.object(core, "HIRES_PATCHES_DIR", fake_dir), \
              mock.patch.object(core, "SUBDRAG_PATCHES",
@@ -1074,7 +1213,8 @@ class TestOutputDirAndTags(unittest.TestCase):
             with open(src, "wb") as f:
                 f.write(rom)
             outdir = os.path.join(tmp, "out", "nested")
-            opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+            opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
             res = core.patch_rom(src, opts, log=lambda m: None, output_dir=outdir)
             self.assertEqual(res["status"], "patched")
             self.assertEqual(os.path.dirname(res["output"]), outdir)

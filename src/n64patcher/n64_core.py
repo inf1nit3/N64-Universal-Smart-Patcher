@@ -650,6 +650,47 @@ def get_subdrag_patch(crc1, crc2):
     return None
 
 
+# ---------------------------------------------------------------------------
+# Hi-res capability
+#
+# Widening an OSViMode entry from 320 to 640 changes ONE field. The struct
+# also carries xScale/yScale, and the game separately allocated a 320-wide
+# framebuffer and draws into it with RDP coordinates that assume that width.
+# Flip the width alone and the VI reads two lines' worth of data per line
+# while the game keeps drawing at the old scale: doubled image, UI in the
+# wrong place, menus rendered at the wrong size.
+#
+# Confirmed on hardware (SummerCart64, 2026-08): every ROM patched by the
+# generic table flip rendered incorrectly; the same ROMs were fine
+# unpatched. Real hi-res needs the framebuffer allocation and the RDP
+# pipeline patched too, which is exactly what the hand-made SubDrag deltas
+# do - and why they exist for only a handful of dumps.
+#
+# So hi-res is offered only where it is known to work:
+#   verified - an exact-CRC SubDrag delta exists for this dump
+#   native   - the ROM already ships 640-wide VI tables; nothing to do
+#   unsupported - only the generic width flip applies; known broken
+# ---------------------------------------------------------------------------
+
+HIRES_VERIFIED = "verified"
+HIRES_NATIVE = "native"
+HIRES_UNSUPPORTED = "unsupported"
+
+
+def hires_support(info):
+    """Classify a ROM's 640x480 support. Returns (status, reason)."""
+    if get_subdrag_patch(info.get("crc1"), info.get("crc2")):
+        return HIRES_VERIFIED, "Verified SubDrag patch exists for this exact dump"
+    if info.get("is_hires_640x480"):
+        return HIRES_NATIVE, "ROM already renders at 640x480; no patch needed"
+    if info.get("vi_table_count"):
+        return (HIRES_UNSUPPORTED,
+                "No verified patch for this dump. Widening the VI tables alone "
+                "leaves the framebuffer and RDP scaling at 320, which renders "
+                "incorrectly on hardware")
+    return HIRES_UNSUPPORTED, "No patchable VI mode tables found"
+
+
 def patch_includes_noaa(patch_path):
     return "noaa" in os.path.basename(patch_path).lower().replace(" ", "").replace("-", "")
 
@@ -736,6 +777,8 @@ def inspect_rom_details(rom_path, with_hashes=False):
         "vi_table_count": 0,
         "vi_table_640_count": 0,
         "has_subdrag_patch": False,
+        "hires_support": HIRES_UNSUPPORTED,
+        "hires_support_reason": "ROM not recognized",
     }
 
     fn_lower = os.path.basename(rom_path).lower()
@@ -806,6 +849,7 @@ def inspect_rom_details(rom_path, with_hashes=False):
 
     info["has_subdrag_patch"] = get_subdrag_patch(
         info["crc1"], info["crc2"]) is not None
+    info["hires_support"], info["hires_support_reason"] = hires_support(info)
 
     if with_hashes:
         info["md5"], info["sha1"] = _hash_file(rom_path)
@@ -824,6 +868,10 @@ class PatchOptions:
     no_divot: bool = False
     no_gamma: bool = False
     hires: bool = False
+    # The generic VI-table width flip renders incorrectly on hardware (see
+    # hires_support). Requesting hi-res on a dump with no verified patch is
+    # a no-op unless this is set explicitly.
+    force_hires: bool = False
 
 
 MAX_FILENAME_BYTES = 255  # single name component on ext4/NTFS/APFS
@@ -1078,16 +1126,30 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
 
         # --- Stage 3: Smart Hi-Res fallback --------------------------------
         if options.hires and not subdrag_used:
-            if not patched_exists:
-                with open(temp_z64, "rb") as f_in, open(patched_z64, "wb") as f_out:
-                    f_out.write(f_in.read())
-                patched_exists = True
-            hires_ok, _count, hires_msg = apply_smart_hires_patch(patched_z64)
-            if hires_ok:
-                applied.add("HR")
-                log(f"  Hi-Res Engine: SUCCESS (Smart VI Table) - {hires_msg}")
+            support = info.get("hires_support", HIRES_UNSUPPORTED)
+            if support == HIRES_NATIVE:
+                log("  Hi-Res Engine: SKIPPED - ROM already renders at 640x480")
+            elif support == HIRES_UNSUPPORTED and not options.force_hires:
+                # Refusing here is the fix for the hardware bug: the generic
+                # width flip produced doubled/misplaced output on every ROM.
+                log(f"  Hi-Res Engine: NOT SUPPORTED - {info.get('hires_support_reason', '')}")
+                log("    Use --force-hires to apply it anyway (expect broken rendering).")
             else:
-                log(f"  Hi-Res Engine: SKIPPED - {hires_msg}")
+                if not patched_exists:
+                    with open(temp_z64, "rb") as f_in, open(patched_z64, "wb") as f_out:
+                        f_out.write(f_in.read())
+                    patched_exists = True
+                hires_ok, _count, hires_msg = apply_smart_hires_patch(patched_z64)
+                if hires_ok:
+                    applied.add("HR")
+                    label = ("EXPERIMENTAL" if support == HIRES_UNSUPPORTED
+                             else "Smart VI Table")
+                    log(f"  Hi-Res Engine: SUCCESS ({label}) - {hires_msg}")
+                    if support == HIRES_UNSUPPORTED:
+                        log("    WARNING: forced on an unverified dump - "
+                            "rendering is expected to be wrong on hardware.")
+                else:
+                    log(f"  Hi-Res Engine: SKIPPED - {hires_msg}")
 
         # --- Verdict ---------------------------------------------------------
         if not applied:
@@ -1097,6 +1159,11 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
                 reason = "Already patched with No-AA & No-Dither (no re-patch needed)"
             elif info["is_hires_640x480"] and options.hires:
                 reason = "Already 640x480 hi-res (native or previously patched)"
+            elif (options.hires
+                  and info.get("hires_support") == HIRES_UNSUPPORTED
+                  and not options.force_hires):
+                reason = (f"640x480 not supported for this dump - "
+                          f"{info.get('hires_support_reason', '')}")
             else:
                 reason = "ROM contains no patchable VI data (compressed or non-standard)"
             result["status"] = "skipped"
@@ -1295,6 +1362,7 @@ def export_report(infos, path):
     keys = ["filename", "path", "size_mb", "format", "title", "game_id", "region",
             "crc1", "crc2", "no_aa", "no_dither", "is_60fps_or_mod",
             "is_hires_640x480", "is_mixed_resolution", "vi_table_count",
-            "vi_table_640_count", "has_subdrag_patch", "md5", "sha1"]
+            "vi_table_640_count", "has_subdrag_patch", "hires_support",
+            "hires_support_reason", "md5", "sha1"]
     rows = [{k: info.get(k, "") for k in keys} for info in infos]
     return export_rows(rows, path, keys)

@@ -317,7 +317,8 @@ class N64PatcherGUI(QMainWindow):
         self.tree.setColumnCount(13)
         self.tree.setHeaderLabels([
             "File", "Title", "Region", "Format", "Size (MB)", "Resolution",
-            "AA", "VI tables", "CRC1", "CRC2", "SubDrag patch", "MD5", "SHA1"
+            "AA", "VI tables", "640x480", "CRC1", "CRC2", "SubDrag patch",
+            "MD5", "SHA1"
         ])
         self.tree.setAlternatingRowColors(True)
         self.tree.setSortingEnabled(True)
@@ -355,6 +356,8 @@ class N64PatcherGUI(QMainWindow):
             for cb in [self.cb_no_aa, self.cb_no_dither, self.cb_no_divot,
                        self.cb_no_gamma, self.cb_hires]:
                 cb.setEnabled(True)
+            # Re-assert the hi-res gate; "custom" just re-enabled everything.
+            self.update_hires_availability()
         else:
             options = apply_preset(preset_key)
             self.cb_no_aa.setChecked(options.no_aa)
@@ -367,7 +370,13 @@ class N64PatcherGUI(QMainWindow):
                        self.cb_no_gamma, self.cb_hires]:
                 cb.setEnabled(False)
 
-            warnings = get_preset_warnings(preset_key)
+            warnings = list(get_preset_warnings(preset_key))
+            # A preset asking for hi-res on ROMs that cannot take it would
+            # otherwise show a ticked box that quietly does nothing.
+            if options.hires and self.rom_list and not self._any_hires_supported():
+                warnings.append(
+                    "640x480 will be skipped: none of the loaded ROMs has a "
+                    "verified patch (widening alone breaks rendering).")
             if warnings:
                 self.preset_warning_label.setText("\n".join(f"⚠️ {w}" for w in warnings))
             else:
@@ -398,6 +407,7 @@ class N64PatcherGUI(QMainWindow):
             except Exception as e:
                 self.log(f"⚠️ Error adding {path}: {e}")
         self.update_status_bar()
+        self.update_hires_availability()
 
     def _add_rom(self, path):
         if path not in self.rom_list:
@@ -451,9 +461,67 @@ class N64PatcherGUI(QMainWindow):
             cleanup_temp_dir(temp_dir)
         self.temp_dirs.clear()
         self.update_status_bar()
+        self.update_hires_availability()
         self.log("🗑️ List cleared")
 
     # ------------------------------------------------------- Helpers
+
+    def _hires_supported_names(self):
+        """Basenames of loaded ROMs that have a verified 640x480 patch."""
+        names = []
+        for rom in self.rom_list:
+            try:
+                info = core.inspect_rom_details(rom)
+            except Exception:
+                continue
+            if info.get("hires_support") == core.HIRES_VERIFIED:
+                names.append(os.path.basename(rom))
+        return names
+
+    def _any_hires_supported(self):
+        return bool(self._hires_supported_names())
+
+    def update_hires_availability(self):
+        """Enable the 640x480 checkbox only when a loaded ROM can take it.
+
+        The generic VI-table widening renders incorrectly on hardware, so
+        offering it for arbitrary ROMs produced broken output. Verified
+        dumps and ROMs that are already hi-res are the only cases where the
+        box does anything useful.
+        """
+        if not self.rom_list:
+            self.cb_hires.setEnabled(True)
+            self.cb_hires.setToolTip(
+                "Load ROMs to see whether 640x480 is available for them.")
+            return
+
+        supported = self._hires_supported_names()
+
+        if supported:
+            self.cb_hires.setEnabled(True)
+            shown = "\n".join(f"  • {n}" for n in supported[:5])
+            more = (f"\n  … and {len(supported) - 5} more"
+                    if len(supported) > 5 else "")
+            self.cb_hires.setToolTip(
+                f"Verified 640x480 patch available for {len(supported)} of "
+                f"{len(self.rom_list)} ROM(s):\n{shown}{more}\n\n"
+                "ROMs without a verified patch are skipped, not broken.")
+            self.cb_hires.setText(
+                f"High-Res 640x480 — verified for {len(supported)} "
+                f"of {len(self.rom_list)} ROM(s)")
+        else:
+            self.cb_hires.setChecked(False)
+            self.cb_hires.setEnabled(False)
+            self.cb_hires.setToolTip(
+                "No loaded ROM has a verified 640x480 patch.\n\n"
+                "Widening the VI tables alone leaves the framebuffer and RDP "
+                "scaling at 320, which renders incorrectly on real hardware: "
+                "doubled image, menus and UI in the wrong place.\n\n"
+                "Verified patches exist for 8 dumps (Super Mario 64, GoldenEye, "
+                "Banjo-Kazooie Rev A, F-Zero X, Forsaken 64, Pokemon Snap, "
+                "Quake II, Golden Nugget 64).")
+            self.cb_hires.setText(
+                "High-Res 640x480 — not available for these ROMs")
 
     def log(self, message):
         self.log_widget.appendPlainText(str(message))
@@ -505,6 +573,10 @@ class N64PatcherGUI(QMainWindow):
             res,
             aa,
             str(info.get("vi_table_count", 0)),
+            {core.HIRES_VERIFIED: "verified",
+             core.HIRES_NATIVE: "native",
+             core.HIRES_UNSUPPORTED: "unsupported"}.get(
+                info.get("hires_support"), ""),
             info.get("crc1", ""),
             info.get("crc2", ""),
             "✓" if info.get("has_subdrag_patch") else "",

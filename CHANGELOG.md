@@ -1,5 +1,11 @@
 # Changelog
 
+## v3.3 - Hi-Res Gating
+
+- **640x480 is no longer offered for ROMs that cannot take it.** Widening an `OSViMode` entry changes one field; the framebuffer the game allocated and the RDP coordinates it draws with still assume 320. On hardware (verified on a SummerCart64) that produces a doubled image, menus rendered at the wrong size and UI in the wrong position. Hi-res now applies only where a verified per-dump patch exists; everything else is reported and skipped, with the reason. `--force-hires` applies it anyway and labels the result EXPERIMENTAL.
+- Inspection reports `hires_support` (`verified` / `native` / `unsupported`) plus a reason, in the CLI listing, the Inspector table and the CSV/JSON export.
+- The GUI's High-Res checkbox is disabled when no loaded ROM has a verified patch, with a tooltip explaining why; it names the count when some do.
+
 ## v3.2 - Production Hardening
 
 - **SubDrag patches keyed on CRC1/CRC2 instead of the internal title.** Title matching never worked for Banjo-Kazooie (internal title `Banjo-Kazooie`, key `BANJO KAZOOIE`) or Forsaken 64 (internal title `Forsaken`, key `FORSAKEN 64`) - two of the eight advertised integrations were dead. Every checksum pair was derived empirically by applying the delta to candidate dumps and recording which succeeded; the Banjo delta turns out to target Rev A only, which region gating could not have expressed.

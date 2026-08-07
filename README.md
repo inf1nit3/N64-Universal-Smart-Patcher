@@ -150,6 +150,36 @@ powershell -ExecutionPolicy Bypass -File build_release.ps1   # Windows
 ./build_release.sh                                           # macOS / Linux
 ```
 
+### 640x480 hi-res: when it applies
+
+Real 640x480 needs more than a wider VI mode table. The table entry carries
+`xScale`/`yScale`, and the game separately allocated a 320-wide framebuffer
+and draws into it with RDP coordinates that assume that width. Widening the
+table alone leaves all of that at 320, so the Video Interface reads two
+lines' worth of data per line while the game keeps drawing at the old scale.
+On real hardware that shows up as a doubled image, menus at the wrong size,
+and UI in the wrong position.
+
+That is why the hand-made SubDrag deltas exist for a handful of dumps: they
+patch the framebuffer allocation and the render pipeline too.
+
+So the tool classifies every ROM:
+
+| `hires_support` | Meaning | `--hires` behaviour |
+|---|---|---|
+| `verified` | An exact-CRC delta exists for this dump | Applied |
+| `native` | ROM already renders at 640x480 | Nothing to do |
+| `unsupported` | Only the generic table widening applies | Skipped, with reason |
+
+`--force-hires` overrides the last row. It is experimental and expected to
+render incorrectly; the log says so and the run is labelled EXPERIMENTAL.
+
+Check before patching:
+
+```bash
+n64patcher "D:\N64 ROMs" -r --inspect-only    # prints hi-res: verified|native|unsupported
+```
+
 ### Verifying your own results
 
 `--verify` re-opens every patched file and checks it independently of the
@@ -179,12 +209,16 @@ the installed package rather than the working directory):
 - `mmap_vi_scanner.py` — Memory-mapped fast VI table scanner (used by inspection).
 - `gui.py` — PyQt6 GUI with preset controls, background inspector table, drag & drop & thread exception safety.
 - `cli.py` — Headless CLI runner (`n64patcher`).
-- `tests/` — Synthetic ROM unit suite, 158 tests, no game files required.
+- `tests/` — Synthetic ROM unit suite, 174 tests, no game files required.
 
 ---
 
 ## 📜 Version History
 
+- **v3.3.0 (Hi-Res Gating)**:
+  - **640x480 is no longer offered for ROMs that cannot take it.** Widening an `OSViMode` entry changes one field; the framebuffer the game allocated and the RDP coordinates it draws with still assume 320. On hardware (verified on a SummerCart64) that produces a doubled image, menus rendered at the wrong size and UI in the wrong position. Hi-res now applies only where a verified per-dump patch exists; everything else is reported and skipped, with the reason. `--force-hires` applies it anyway and labels the result EXPERIMENTAL.
+  - Inspection reports `hires_support` (`verified` / `native` / `unsupported`) plus a reason, in the CLI listing, the Inspector table and the CSV/JSON export.
+  - The GUI's High-Res checkbox is disabled when no loaded ROM has a verified patch, with a tooltip explaining why; it names the count when some do.
 - **v3.2.0 (Production Hardening)**:
   - **SubDrag patches are matched on CRC1/CRC2**, not the ROM's internal title. Title matching was wrong for two of the eight supported games - the keys `BANJO KAZOOIE` and `FORSAKEN 64` never matched the real titles `Banjo-Kazooie` and `Forsaken`, so those two silently never received their patch. Each checksum pair was derived by actually applying the delta to candidate dumps. This also pins revisions: the Banjo delta targets Rev A only.
   - **Flashcart CRC repair actually repairs**: `fix_rom_crc` reported success while leaving the checksums untouched, because `rn64crc` exits 0 even when it fails. Affected `--fix-crc` and the GUI flashcart checkbox.

@@ -85,6 +85,14 @@ jobs:
         run: |
           python -c "import n64patcher.gui"
           python -c "import n64patcher.cli"
+      # The GUI hi-res gating tests need PyQt6, so they skip in core-tests.
+      # This is the only job with it installed - run them here.
+      - name: GUI tests (offscreen)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          pip install pytest
+          python -m pytest tests/test_gui_hires_gate.py -v
 
   # The wheel must actually contain the bundled helper tools and patches;
   # a missing package-data glob only shows up at runtime otherwise.

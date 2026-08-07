@@ -24,7 +24,8 @@ class TestBatchRunner(unittest.TestCase):
         good1 = self._write("good1.z64", make_synthetic_rom(vi_tables=1))
         good2 = self._write("good2.z64", make_synthetic_rom(vi_tables=2))
         junk = self._write("junk.z64", b"\x00" * 1024)  # bad magic -> skipped
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
         summary = batch_patch_roms([good1, junk, good2], opts,
                                    max_workers=2, log_func=lambda m: None)
         self.assertEqual(summary["patched"], 2)
@@ -39,7 +40,8 @@ class TestBatchRunner(unittest.TestCase):
     def test_output_dir_passthrough(self):
         src = self._write("rom.z64", make_synthetic_rom(vi_tables=1))
         outdir = os.path.join(self.tmp.name, "batch_out")
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
         summary = batch_patch_roms([src], opts, max_workers=1,
                                    log_func=lambda m: None, output_dir=outdir)
         self.assertEqual(summary["patched"], 1)
@@ -49,7 +51,8 @@ class TestBatchRunner(unittest.TestCase):
 
     def test_exception_in_worker_becomes_error_result(self):
         src = self._write("rom.z64", make_synthetic_rom(vi_tables=1))
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
 
         def boom(*args, **kwargs):
             raise RuntimeError("worker exploded")
@@ -83,7 +86,8 @@ class TestBatchCancellation(unittest.TestCase):
 
     def test_cancel_flag_reaches_workers(self):
         roms = self._roms(8)
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
         summary = batch_patch_roms(roms, opts, max_workers=2,
                                    log_func=lambda m: None,
                                    should_cancel=lambda: True)
@@ -97,7 +101,8 @@ class TestBatchCancellation(unittest.TestCase):
 
     def test_cancel_midway_still_reports_finished_work(self):
         roms = self._roms(10)
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
         seen = threading.Event()
         done = []
         lock = threading.Lock()
@@ -128,7 +133,8 @@ class TestBatchCancellation(unittest.TestCase):
 
     def test_default_is_not_cancelled(self):
         roms = self._roms(2)
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 force_hires=True)  # synthetic fixture: no verified dump
         summary = batch_patch_roms(roms, opts, max_workers=2,
                                    log_func=lambda m: None)
         self.assertFalse(summary["cancelled"])

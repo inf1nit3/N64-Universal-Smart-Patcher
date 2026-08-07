@@ -202,7 +202,13 @@ def main(argv=None):
                         help="Use a preconfigured preset profile")
 
     # Individual options (override the preset when given)
-    parser.add_argument("--hires", action="store_true", help="640x480 hi-res patching")
+    parser.add_argument("--hires", action="store_true",
+                        help="640x480 hi-res patching (only applied to dumps with "
+                             "a verified patch; others are reported and skipped)")
+    parser.add_argument("--force-hires", action="store_true",
+                        help="Apply the generic VI-table widening even without a "
+                             "verified patch. Renders incorrectly on hardware: "
+                             "doubled image, misplaced UI. Experimental.")
     parser.add_argument("--keep-aa", action="store_true", help="KEEP anti-aliasing")
     parser.add_argument("--no-dither", action="store_true", help="REMOVE dithering")
     parser.add_argument("--no-divot", action="store_true", help="REMOVE the divot filter")
@@ -333,8 +339,14 @@ def main(argv=None):
                 infos.append(info)
                 res = "640x480" if info["is_hires_640x480"] else "320x240"
                 aa = "No-AA" if info["no_aa"] else "AA"
+                hires_label = {
+                    core.HIRES_VERIFIED: "hi-res: verified",
+                    core.HIRES_NATIVE: "hi-res: native",
+                    core.HIRES_UNSUPPORTED: "hi-res: unsupported",
+                }.get(info.get("hires_support"), "hi-res: ?")
                 log(f"{info['filename']}: {info['title']} [{info['region']}] "
-                    f"{info['format']} | {res} | {aa} | VI: {info['vi_table_count']}")
+                    f"{info['format']} | {res} | {aa} | VI: {info['vi_table_count']} "
+                    f"| {hires_label}")
 
             if args.export:
                 core.export_report(infos, args.export)
@@ -387,6 +399,13 @@ def main(argv=None):
                 no_gamma=args.no_gamma,
                 hires=args.hires,
             )
+        options.force_hires = args.force_hires
+        if args.force_hires:
+            options.hires = True
+            log("⚠️  --force-hires: applying the generic VI-table widening to "
+                "unverified dumps.\n"
+                "   This renders incorrectly on hardware (doubled image, "
+                "misplaced UI).\n")
 
         # Header-Stripping (vor dem Patchen)
         stripped_tmp_files = []
