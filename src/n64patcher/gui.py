@@ -249,7 +249,9 @@ class N64PatcherGUI(QMainWindow):
         flashcart_group.setLayout(flashcart_layout)
         patch_layout.addWidget(flashcart_group)
 
-        list_group = QGroupBox("📁 ROM library (drag & drop supported)")
+        # No bare "&" in a QGroupBox title: Qt reads it as a mnemonic marker
+        # and renders "drag & drop" as "drag _drop".
+        list_group = QGroupBox("📁 ROM library (drag and drop supported)")
         list_layout = QVBoxLayout()
         self.rom_list_widget = QListWidget()
         list_layout.addWidget(self.rom_list_widget)

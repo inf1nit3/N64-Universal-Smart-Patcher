@@ -2,7 +2,7 @@
 
 ![N64 Smart Patcher Icon](app_icon.png)
 
-A modern, high-performance GUI + CLI ROM patcher and inspection utility for Nintendo 64 games. Features the **Smart VI Mode Table Engine v2.0** for zero-false-positive 640x480 high-resolution patching, anti-aliasing (No-AA) removal, dither/divot/gamma filter toggles, SubDrag `.xdelta` integration, preset profiles, archive extraction, and Flashcart CRC/Header tools.
+A modern, high-performance GUI + CLI ROM patcher and inspection utility for Nintendo 64 games. Features the **Smart VI Mode Table Engine v2.0** for structurally-verified 640x480 high-resolution patching, anti-aliasing (No-AA) removal, dither/divot/gamma filter toggles, SubDrag `.xdelta` integration, preset profiles, archive extraction, and Flashcart CRC/Header tools.
 
 **Cross-platform**: the bundled Windows helpers (`u64aap.exe`, `rn64crc.exe`, `xdelta3.exe`) are used when runnable, with graceful fallbacks everywhere else — a **built-in pure-Python CRC1/CRC2 engine** (works on macOS/Linux), the dynamic VI instruction patcher for No-AA, and an optional system `xdelta3` from PATH.
 
@@ -18,9 +18,11 @@ Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M6
     known burst constant are modified, so unrelated data that merely contains
     `0x00000140` is left alone. See *Technical Details* for what this does and
     does not guarantee.
-  - Compatibility across a large ROM set has not been measured in a form we can
-    publish. `--verify` (below) generates a per-ROM pass/fail matrix from your
-    own library if you want the number for your collection.
+  - The CRC engine behind every patched output is measured: it reproduces the
+    publisher's stamped checksums on **1,492 of 1,496** real ROMs
+    (see *Validation against a real ROM library*). End-to-end patch
+    compatibility is not claimed as a single number - generate it for your own
+    collection with `--verify-report`.
 
 - **📋 One-Click Preset Profiles**:
   - `📺 CRT Authentic`: Preserves original N64 blur for CRT displays.
@@ -30,7 +32,7 @@ Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M6
 
 - **💾 Flashcart & EverDrive Compatibility Tools**:
   - **Scene-Header Stripper**: Automatically detects and strips obsolete 512/1024-byte scene release headers (`iN0000`, `PARADOX`, etc.) so `.xdelta` patches and cover arts match cleanly.
-  - **CRC1 / CRC2 Checksum Repairer**: Recalculates and updates N64 boot checksums to prevent blackscreen boots on real hardware — via `rn64crc.exe` where runnable, otherwise via the **built-in pure-Python CRC engine** (macOS/Linux included).
+  - **CRC1 / CRC2 Checksum Repairer**: Recalculates and updates N64 boot checksums to prevent blackscreen boots on real hardware — via `rn64crc.exe` when it is runnable *and* its output actually verifies, otherwise via the **built-in pure-Python CRC engine** (macOS/Linux included).
 
 - **📦 Archive & Community Patch Support**:
   - **Direct Archive Support**: Processes `.zip` and `.7z` archives directly.
@@ -40,7 +42,7 @@ Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M6
   - Automatically detects and applies verified high-res patches for *Super Mario 64*, *GoldenEye 007*, *Banjo-Kazooie*, *F-Zero X*, *Forsaken 64*, *Pokemon Snap*, *Quake II*, and *Golden Nugget 64*.
 
 - **🚀 Multi-Threaded Batch Runner**:
-  - Parallel ThreadPoolExecutor batch processing with bulletproof exception handling so bad files won't crash batch runs.
+  - Parallel ThreadPoolExecutor batch processing. A bad file cannot crash the run, output is logged from a single thread, and Ctrl+C stops the batch while keeping everything already finished.
 
 - **🛡️ 100% Non-Destructive**:
   - Original ROMs are **never modified or overwritten**. Always outputs a new tagged file (` [HR+NoAA].z64`).
@@ -177,7 +179,7 @@ the installed package rather than the working directory):
 - `mmap_vi_scanner.py` — Memory-mapped fast VI table scanner (used by inspection).
 - `gui.py` — PyQt6 GUI with preset controls, background inspector table, drag & drop & thread exception safety.
 - `cli.py` — Headless CLI runner (`n64patcher`).
-- `tests/` — Synthetic ROM unit suite, 148 tests, no game files required.
+- `tests/` — Synthetic ROM unit suite, 158 tests, no game files required.
 
 ---
 
@@ -195,8 +197,8 @@ the installed package rather than the working directory):
   - **Archive hardening**: the extraction cap is enforced on bytes as they arrive rather than on attacker-controlled declared sizes; compression-ratio limit; symlink members rejected; members are written to the validated path instead of letting the extractor choose.
   - **Concurrency**: batch runs are cancellable (Ctrl+C included, keeping finished work), log output is drained on a single thread, and working files no longer land in a possibly read-only input directory.
   - **New**: `--verify` / `--verify-report` re-check every output independently and emit a publishable pass/fail matrix (hashes + result, no ROM data).
-  - **Tooling**: `ruff` and `mypy` clean and enforced in CI; test suite grown to 148; CI additionally proves a dependency-free install and that the wheel actually contains the bundled helpers.
-  - Also fixed: IPS patches applied to byte-swapped ROMs without complaint; `no_aa` was OR'd with `no_dither`, so dither-patched ROMs were skipped as fully patched; `header_utils` reported a 3-character game code where the core reported 4; SubDrag deltas are region-gated instead of attempted on any title match.
+  - **Tooling**: `ruff` and `mypy` clean and enforced in CI; test suite grown to 158; CI additionally proves a dependency-free install and that the wheel actually contains the bundled helpers.
+  - Also fixed: IPS patches applied to byte-swapped ROMs without complaint; `no_aa` was OR'd with `no_dither`, so dither-patched ROMs were skipped as fully patched; `header_utils` reported a 3-character game code where the core reported 4.
 - **v3.1.0 (Quality & Cross-Platform)**:
   - Added built-in pure-Python N64 boot CRC engine (CIC 6101-6106 + 64DD/Aleck64 detection) — CRC1/CRC2 repair now works on macOS/Linux.
   - Rewrote BPS patcher to the reference spec (fixed VLV decode, copy commands) with full CRC32 verification; hardened IPS patcher.
@@ -294,19 +296,25 @@ This application was developed using **Vibecoding** — a modern AI-assisted sof
 
 ### 🛠️ AI Development Toolchain:
 - **AI Coding Agent**: **Google DeepMind Antigravity Agentic AI**
-- **LLM Engines**: **Qwen 3.8 Max**, **Kimi K3**, **Gemini 3.6 Flash** & **Claude 3.5 / 4.6 Thinking**
+- **LLM Engines**: **Claude Opus 5**, **Qwen 3.8 Max**, **Kimi K3**, **Gemini 3.6 Flash** & **Claude 3.5 / 4.6 Thinking**
 - **Image Synthesis**: Antigravity `generate_image` (retro-futuristic 3D N64 app icon)
 - **Deployment Automation**: GitHub CLI (`gh`), Git, and PyInstaller
+
+The v3.2 hardening pass — the CRC engine correction, the output-collision and
+external-tool-trust fixes, the package restructure and the SubDrag CRC table —
+was carried out with **Claude Opus 5** in Claude Code, working against a real
+1,549-ROM library rather than synthetic fixtures alone.
 
 ---
 
 ## 🔍 Transparency & Verifiability
 
 **100% of everything this tool does is fully verifiable:**
-1. **Full Open-Source Code**: Every line of code is open-source in [`n64_core.py`](n64_core.py) and [`N64_Smart_Patcher_GUI.py`](N64_Smart_Patcher_GUI.py).
+1. **Full Open-Source Code**: Every line is open source under [`src/n64patcher/`](src/n64patcher) — the engine in [`n64_core.py`](src/n64patcher/n64_core.py), the GUI in [`gui.py`](src/n64patcher/gui.py).
 2. **Detailed Execution Logs**: Execution logs are saved to `%APPDATA%\N64SmartPatcher\N64_Patcher_Log.txt`.
 3. **Hex & Binary Diff Auditing**: Originals are never overwritten; compare files with `fc /b` or HxD.
 4. **Self-Inspecting ROM Tree**: Drag patched ROMs back in to audit header CRCs and VI statuses.
+5. **Independent Re-Verification**: `--verify` re-opens each output and re-derives its checksums from the data, rather than trusting the code that wrote it. `--verify-report` emits the per-ROM result as CSV/JSON.
 
 ---
 
