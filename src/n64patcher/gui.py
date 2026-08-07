@@ -41,6 +41,7 @@ from PyQt6.QtWidgets import (
 )
 
 from . import n64_core as core
+from . import theme
 from .header_utils import detect_and_strip_scene_header, fix_rom_crc
 from .presets import apply_preset, get_preset_warnings, list_presets
 from .zip_handler import (
@@ -220,8 +221,10 @@ class N64PatcherGUI(QMainWindow):
         preset_layout.addWidget(self.preset_combo)
 
         self.preset_warning_label = QLabel("")
-        self.preset_warning_label.setStyleSheet("color: #ff6b6b; font-weight: bold;")
+        self.preset_warning_label.setStyleSheet(
+            f"color: {theme.DANGER}; font-weight: bold;")
         self.preset_warning_label.setWordWrap(True)
+        self.preset_warning_label.setVisible(False)
         preset_layout.addWidget(self.preset_warning_label)
 
         preset_group.setLayout(preset_layout)
@@ -348,11 +351,17 @@ class N64PatcherGUI(QMainWindow):
 
     # ------------------------------------------------------- Presets
 
+    def _set_preset_warning(self, text):
+        """Show the warning line only when there is one; an empty label
+        still reserves vertical space."""
+        self.preset_warning_label.setText(text)
+        self.preset_warning_label.setVisible(bool(text))
+
     def on_preset_changed(self, index):
         preset_key = self.preset_combo.currentData()
 
         if preset_key == "custom":
-            self.preset_warning_label.setText("")
+            self._set_preset_warning("")
             for cb in [self.cb_no_aa, self.cb_no_dither, self.cb_no_divot,
                        self.cb_no_gamma, self.cb_hires]:
                 cb.setEnabled(True)
@@ -378,9 +387,9 @@ class N64PatcherGUI(QMainWindow):
                     "640x480 will be skipped: none of the loaded ROMs has a "
                     "verified patch (widening alone breaks rendering).")
             if warnings:
-                self.preset_warning_label.setText("\n".join(f"⚠️ {w}" for w in warnings))
+                self._set_preset_warning("\n".join(f"⚠️ {w}" for w in warnings))
             else:
-                self.preset_warning_label.setText("")
+                self._set_preset_warning("")
 
     # -------------------------------------------------- Drag & Drop
 
@@ -735,49 +744,7 @@ def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
 
-    app.setStyleSheet("""
-        QMainWindow { background-color: #2b2b2b; }
-        QWidget { background-color: #2b2b2b; color: #e0e0e0; }
-        QGroupBox {
-            border: 1px solid #555;
-            border-radius: 5px;
-            margin-top: 10px;
-            padding-top: 10px;
-        }
-        QGroupBox::title {
-            subcontrol-origin: margin;
-            left: 10px;
-            padding: 0 5px;
-        }
-        QPushButton {
-            background-color: #4a4a4a;
-            border: 1px solid #666;
-            border-radius: 3px;
-            padding: 5px 10px;
-            color: #e0e0e0;
-        }
-        QPushButton:hover { background-color: #5a5a5a; }
-        QPushButton:pressed { background-color: #3a3a3a; }
-        QPushButton:disabled { background-color: #333; color: #666; }
-        QComboBox, QListWidget, QTreeWidget, QPlainTextEdit {
-            background-color: #1e1e1e;
-            border: 1px solid #555;
-        }
-        QCheckBox { spacing: 5px; }
-        QProgressBar {
-            border: 1px solid #555;
-            border-radius: 3px;
-            text-align: center;
-        }
-        QProgressBar::chunk {
-            background-color: #4CAF50;
-        }
-        QHeaderView::section {
-            background-color: #3a3a3a;
-            border: 1px solid #555;
-            padding: 2px 6px;
-        }
-    """)
+    app.setStyleSheet(theme.stylesheet())
 
     window = N64PatcherGUI()
     window.show()

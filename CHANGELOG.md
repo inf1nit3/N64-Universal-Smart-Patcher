@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Console-era GUI theme in `theme.py`: dark moulded-plastic panels, bevelled controls with real press travel, four primary accent colours used functionally, coloured tab underlines. Contains no Nintendo logo, wordmark, typeface or character art, and the module documents those limits inline.
+- Fixed a state bug the theme exposed: a checkbox that was checked *and* disabled (which is what a locked preset produces) rendered as unchecked, so the UI misreported what a run would do. Checked-disabled now shows a dimmed fill.
+- The preset warning label no longer reserves a blank strip when there is nothing to warn about.
+- README gained a trademark section stating the project is unaffiliated with Nintendo and ships no ROMs.
+
 ## v3.3 - Hi-Res Gating
 
 - Frozen builds now bundle `patches/*.json` and resolve it via `sys._MEIPASS`. Without this the shipped EXE loaded zero recipes and reported every verified dump as unsupported - caught by running the built binary rather than trusting the build.

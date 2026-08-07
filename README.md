@@ -96,7 +96,14 @@ in scripts. Run `n64patcher --help` for the full list.
 
 ![Universal N64 Smart Patcher GUI](gui_screenshot.png)
 
-Features a PyQt6 dark-mode interface with preset dropdowns, Flashcart checkboxes, tabbed execution logs, and property tooltips.
+![Inspector table](docs/inspector_screenshot.png)
+
+PyQt6 interface themed after mid-90s console hardware: dark moulded-plastic
+panels, chunky bevelled controls, and four primary accent colours used to
+separate functions. Preset profiles lock the individual filters (shown
+dimmed but still ticked, so the UI never misreports what it will do), the
+640x480 box reports how many loaded ROMs actually support it, and the status
+bar shows which helper tools resolved.
 
 ---
 
@@ -464,6 +471,24 @@ was carried out with **Claude Opus 5** in Claude Code, working against a real
 5. **Independent Re-Verification**: `--verify` re-opens each output and re-derives its checksums from the data, rather than trusting the code that wrote it. `--verify-report` emits the per-ROM result as CSV/JSON.
 
 ---
+
+---
+
+## ⚖️ Trademarks
+
+This is an independent, unofficial tool. It is **not affiliated with,
+endorsed by, or sponsored by Nintendo**.
+
+"Nintendo 64" and "N64" are trademarks of Nintendo. They are used here only
+descriptively, to say what file formats and hardware this tool works with —
+nominative fair use. The interface takes visual cues from the era's
+industrial design (dark plastic, bevelled controls, primary accent colours);
+it deliberately contains no Nintendo logo, wordmark, typeface, or character
+artwork, and reproduces no part of any Nintendo mark. See
+`src/n64patcher/theme.py`, which states those limits where the styling lives.
+
+This tool ships **no game ROMs** and none of its features require or
+distribute copyrighted game data. Supply your own dumps of games you own.
 
 ## 📜 License
 
