@@ -2,6 +2,7 @@
 
 ## v3.3 - Hi-Res Gating
 
+- **No-Intro/Redump DAT lookup** via `--dat` or `~/.n64patcher/dats/`, reporting verified-dump status and the catalogued name. DAT files are deliberately not bundled. Parsed indexes are cached and invalidated on mtime/size change. Hashing stays lazy so a DAT-less scan costs nothing extra.
 - **Patch recipes moved out of Python into a declarative database** (`patches/*.json`), user-extensible via `~/.n64patcher/patches/`. New `--list-patches`. Malformed entries are reported and skipped, not fatal. See `docs/PATCH_DB.md`.
 - **640x480 is no longer offered for ROMs that cannot take it.** Widening an `OSViMode` entry changes one field; the framebuffer the game allocated and the RDP coordinates it draws with still assume 320. On hardware (verified on a SummerCart64) that produces a doubled image, menus rendered at the wrong size and UI in the wrong position. Hi-res now applies only where a verified per-dump patch exists; everything else is reported and skipped, with the reason. `--force-hires` applies it anyway and labels the result EXPERIMENTAL.
 - Inspection reports `hires_support` (`verified` / `native` / `unsupported`) plus a reason, in the CLI listing, the Inspector table and the CSV/JSON export.

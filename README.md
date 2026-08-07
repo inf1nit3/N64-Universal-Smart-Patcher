@@ -150,6 +150,48 @@ powershell -ExecutionPolicy Bypass -File build_release.ps1   # Windows
 ./build_release.sh                                           # macOS / Linux
 ```
 
+### Identifying dumps with a No-Intro / Redump DAT
+
+A DAT file is a catalogue of known-good dumps. Matching against one answers
+what the ROM header cannot: is this an unmodified dump, which revision is
+it, and what is it actually called.
+
+DAT files are **not bundled** — they are large, revised constantly, and
+their redistribution terms are unclear, so a shipped copy would be both
+wrong to include and quickly out of date. Supply your own from
+[No-Intro](https://datomatic.no-intro.org/) or Redump:
+
+```bash
+n64patcher "D:\N64 ROMs" -r --inspect-only --dat "Nintendo - Nintendo 64.dat"
+```
+
+Or drop `.dat` files in `~/.n64patcher/dats/` and they are picked up
+automatically. `n64patcher --list-dats` shows what is loaded.
+
+```
+Quake II (U) [!].z64: QUAKE II [USA] ... | hi-res: verified | dump: verified (Quake II (U) [!])
+F-Zero X (U) [!].z64: F-ZERO X [USA] ... | hi-res: verified | dump: NOT in DAT
+```
+
+`dump: NOT in DAT` means the file is a hack, a bad dump, an overdump, or
+simply newer than your DAT. It does not block patching — recipes key on the
+boot checksums, which are independent — but it is worth knowing before you
+flash something.
+
+Two different keys are in play, and they are unrelated:
+
+| | Keyed on | Answers |
+|---|---|---|
+| Patch database | Boot CRC1/CRC2 (header `0x10`/`0x14`) | Is there a verified patch for this dump? |
+| DAT lookup | CRC32/MD5/SHA-1 of the **file** | Is this a catalogued good dump? |
+
+A ROM can be a verified dump with no patch recipe, and vice versa.
+
+Parsed DATs are cached under `~/.n64patcher/dat-cache/`, keyed on the file's
+path, size and mtime — a 3,500-entry DAT parses in ~34 ms cold and ~2 ms
+warm. Hashing is only done when a DAT is loaded or `--export` asks for it,
+which keeps a full-library scan from paying ~26 ms per ROM it does not need.
+
 ### Extending the supported dumps
 
 Patch recipes are data, not code. To add a dump, drop a JSON file in
@@ -219,15 +261,17 @@ the installed package rather than the working directory):
 - `batch_runner.py` — Multi-threaded ThreadPoolExecutor engine with cooperative cancellation and single-threaded log draining.
 - `mmap_vi_scanner.py` — Memory-mapped fast VI table scanner (used by inspection).
 - `patchdb.py` — Declarative patch recipe database (`patches/*.json`, user-extensible).
+- `datdb.py` — No-Intro/Redump DAT parsing, hash indexing and caching.
 - `gui.py` — PyQt6 GUI with preset controls, background inspector table, drag & drop & thread exception safety.
 - `cli.py` — Headless CLI runner (`n64patcher`).
-- `tests/` — Synthetic ROM unit suite, 201 tests, no game files required.
+- `tests/` — Synthetic ROM unit suite, 226 tests, no game files required.
 
 ---
 
 ## 📜 Version History
 
 - **v3.3.0 (Hi-Res Gating)**:
+  - **No-Intro/Redump DAT lookup** (`--dat`, or drop files in `~/.n64patcher/dats/`). Reports whether each ROM is a catalogued good dump and its proper name. DATs are not bundled; parsed results are cached (~15x faster on repeat runs).
   - **Patch recipes moved out of Python into a declarative database** (`patches/*.json`). Adding support for a dump is now a data file, not a code change: drop a `.json` in `~/.n64patcher/patches/` and `--list-patches` picks it up. Malformed entries are reported by id and skipped rather than taking the database down. See `docs/PATCH_DB.md`.
   - **640x480 is no longer offered for ROMs that cannot take it.** Widening an `OSViMode` entry changes one field; the framebuffer the game allocated and the RDP coordinates it draws with still assume 320. On hardware (verified on a SummerCart64) that produces a doubled image, menus rendered at the wrong size and UI in the wrong position. Hi-res now applies only where a verified per-dump patch exists; everything else is reported and skipped, with the reason. `--force-hires` applies it anyway and labels the result EXPERIMENTAL.
   - Inspection reports `hires_support` (`verified` / `native` / `unsupported`) plus a reason, in the CLI listing, the Inspector table and the CSV/JSON export.

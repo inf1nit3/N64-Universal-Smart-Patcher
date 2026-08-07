@@ -30,8 +30,8 @@ if sys.platform == "win32":
         except (OSError, ValueError):
             pass
 
+from . import datdb, patchdb
 from . import n64_core as core
-from . import patchdb
 from .batch_runner import batch_patch_roms
 from .header_utils import detect_and_strip_scene_header, fix_rom_crc
 from .ips_bps_patcher import apply_bps_patch, apply_ips_patch, detect_patch_type
@@ -235,6 +235,13 @@ def main(argv=None):
     parser.add_argument("--list-presets", action="store_true", help="List the available presets")
     parser.add_argument("--list-patches", action="store_true",
                         help="List the patch recipes and the directories they load from")
+    parser.add_argument("--dat", action="append", metavar="FILE",
+                        help="No-Intro/Redump DAT to identify dumps against "
+                             "(repeatable). Files in ~/.n64patcher/dats/ are "
+                             "picked up automatically.")
+    parser.add_argument("--list-dats", action="store_true",
+                        help="Show which DAT files are loaded and how many dumps "
+                             "they index")
     parser.add_argument("--dry-run", action="store_true",
                         help="Show what would be done without writing any files")
     parser.add_argument("--verify", action="store_true",
@@ -252,6 +259,14 @@ def main(argv=None):
     if args.version:
         log(f"n64patcher v{core.VERSION}")
         return 0
+
+    if args.list_dats:
+        problems = []
+        index = datdb.load_dats(args.dat, on_error=problems.append)
+        log(datdb.describe(index))
+        for problem in problems:
+            log(f"⚠️  {problem}")
+        return 1 if problems else 0
 
     if args.list_patches:
         log(patchdb.describe(core.PATCH_DB))
@@ -287,6 +302,15 @@ def main(argv=None):
         log(f"⚠️  WARNING: tools not runnable: {', '.join(missing)}")
         log("   (affected stages fall back: No-AA via the dynamic patcher, "
             "CRC via the pure-Python engine)\n")
+
+    # One index per run: re-parsing a few thousand DAT entries for every
+    # ROM would dominate a large batch.
+    dat_problems = []
+    dat_index = datdb.load_dats(args.dat, on_error=dat_problems.append)
+    for problem in dat_problems:
+        log(f"⚠️  {problem}")
+    if dat_index:
+        log(f"📚 {datdb.describe(dat_index).splitlines()[0]}")
 
     # Collect input files
     log("🔍 Scanning inputs...")
@@ -344,7 +368,7 @@ def main(argv=None):
             infos = []
             for rom in roms:
                 try:
-                    info = core.inspect_rom_details(rom, with_hashes=True)
+                    info = core.inspect_rom_details(rom, with_hashes=True, dat=dat_index)
                 except Exception as e:
                     log(f"⚠️  Error inspecting {os.path.basename(rom)}: {e}")
                     continue
@@ -356,9 +380,15 @@ def main(argv=None):
                     core.HIRES_NATIVE: "hi-res: native",
                     core.HIRES_UNSUPPORTED: "hi-res: unsupported",
                 }.get(info.get("hires_support"), "hi-res: ?")
+                dump = {
+                    "verified": " | dump: verified",
+                    "unknown": " | dump: NOT in DAT",
+                }.get(info.get("dump_status"), "")
+                if info.get("dump_name"):
+                    dump += f" ({info['dump_name']})"
                 log(f"{info['filename']}: {info['title']} [{info['region']}] "
                     f"{info['format']} | {res} | {aa} | VI: {info['vi_table_count']} "
-                    f"| {hires_label}")
+                    f"| {hires_label}{dump}")
 
             if args.export:
                 core.export_report(infos, args.export)

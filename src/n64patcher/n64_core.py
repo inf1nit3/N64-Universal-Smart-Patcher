@@ -32,7 +32,7 @@ import threading
 import traceback
 from dataclasses import dataclass
 
-from . import patchdb
+from . import datdb, patchdb
 from ._version import __version__
 
 # Public alias: the GUI title bar and `--version` read core.VERSION.
@@ -753,19 +753,12 @@ AA_SCAN_LIMIT = CODE_REGION_END
 
 
 def _hash_file(path, chunk_size=1024 * 1024):
-    md5 = hashlib.md5()
-    sha1 = hashlib.sha1()
-    with open(path, "rb") as f:
-        while True:
-            chunk = f.read(chunk_size)
-            if not chunk:
-                break
-            md5.update(chunk)
-            sha1.update(chunk)
-    return md5.hexdigest().upper(), sha1.hexdigest().upper()
+    """(md5, sha1) as uppercase hex. See datdb.file_hashes for CRC32 too."""
+    h = datdb.file_hashes(path, chunk_size)
+    return h["md5"], h["sha1"]
 
 
-def inspect_rom_details(rom_path, with_hashes=False):
+def inspect_rom_details(rom_path, with_hashes=False, dat=None):
     info = {
         "filename": os.path.basename(rom_path),
         "path": rom_path,
@@ -787,6 +780,9 @@ def inspect_rom_details(rom_path, with_hashes=False):
         "has_subdrag_patch": False,
         "hires_support": HIRES_UNSUPPORTED,
         "hires_support_reason": "ROM not recognized",
+        "dump_status": "",
+        "dump_name": "",
+        "crc32": "",
     }
 
     fn_lower = os.path.basename(rom_path).lower()
@@ -859,8 +855,23 @@ def inspect_rom_details(rom_path, with_hashes=False):
         info["crc1"], info["crc2"]) is not None
     info["hires_support"], info["hires_support_reason"] = hires_support(info)
 
-    if with_hashes:
-        info["md5"], info["sha1"] = _hash_file(rom_path)
+    # A DAT lookup needs a file hash, so only pay for one when a DAT is
+    # loaded or hashes were asked for. Both come from the same read pass.
+    if with_hashes or dat:
+        hashes = datdb.file_hashes(rom_path)
+        info["md5"] = hashes["md5"]
+        info["sha1"] = hashes["sha1"]
+        info["crc32"] = hashes["crc32"]
+        if dat:
+            hit = dat.lookup(**hashes)
+            if hit is not None:
+                info["dump_status"] = "verified"
+                info["dump_name"] = hit["game"]
+            else:
+                # Not a catalogued dump: a hack, a bad dump, an overdump, or
+                # simply newer than the DAT. Patch recipes key on the boot
+                # checksums and are unaffected, but it is worth surfacing.
+                info["dump_status"] = "unknown"
 
     return info
 
@@ -1371,6 +1382,7 @@ def export_report(infos, path):
             "crc1", "crc2", "no_aa", "no_dither", "is_60fps_or_mod",
             "is_hires_640x480", "is_mixed_resolution", "vi_table_count",
             "vi_table_640_count", "has_subdrag_patch", "hires_support",
-            "hires_support_reason", "md5", "sha1"]
+            "hires_support_reason", "dump_status", "dump_name",
+            "crc32", "md5", "sha1"]
     rows = [{k: info.get(k, "") for k in keys} for info in infos]
     return export_rows(rows, path, keys)
