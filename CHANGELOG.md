@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Console-era GUI theme in `theme.py`: dark moulded-plastic panels, bevelled controls with real press travel, four primary accent colours used functionally, coloured tab underlines. Contains no Nintendo logo, wordmark, typeface or character art, and the module documents those limits inline.
+- Console-era GUI theme in `theme.py`: faceplate strip over a four-segment accent rule, cartridge-label panels with coloured spines, bevelled controls with real press travel, and bitmap-era typography (Fixedsys/Terminal where present, graceful fallbacks elsewhere). Monospace is reserved for technical readouts; prose keeps the body face, which also stops preset descriptions forcing the window wider than its configured geometry.
+- Front-panel indicator in the status bar tracks run state: idle, working, clean, errors.
+- Superseded first theme pass: dark moulded-plastic panels, bevelled controls with real press travel, four primary accent colours used functionally, coloured tab underlines. Contains no Nintendo logo, wordmark, typeface or character art, and the module documents those limits inline.
 - Fixed a state bug the theme exposed: a checkbox that was checked *and* disabled (which is what a locked preset produces) rendered as unchecked, so the UI misreported what a run would do. Checked-disabled now shows a dimmed fill.
 - The preset warning label no longer reserves a blank strip when there is nothing to warn about.
 - README gained a trademark section stating the project is unaffiliated with Nintendo and ships no ROMs.

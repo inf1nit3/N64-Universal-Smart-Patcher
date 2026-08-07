@@ -24,6 +24,7 @@ from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
+    QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -197,10 +198,52 @@ class N64PatcherGUI(QMainWindow):
 
     # ------------------------------------------------------------------ UI
 
+    def _build_faceplate(self):
+        """Front-panel strip: title plate over a four-segment colour rule.
+
+        The rule is a plain row of coloured blocks - a common retro device,
+        not a recreation of anyone's mark. See theme.py for the limits this
+        styling keeps to.
+        """
+        plate = QFrame()
+        plate.setObjectName("faceplate")
+        outer = QVBoxLayout(plate)
+        outer.setContentsMargins(14, 10, 14, 0)
+        outer.setSpacing(8)
+
+        row = QHBoxLayout()
+        text_col = QVBoxLayout()
+        text_col.setSpacing(1)
+        # QLabel renders "&&" literally, so use a separator instead.
+        title = QLabel("ROM INSPECTOR · SMART PATCHER")
+        title.setObjectName("faceplateTitle")
+        subtitle = QLabel(f"v{core.VERSION}  //  CARTRIDGE TOOLKIT")
+        subtitle.setObjectName("faceplateSub")
+        text_col.addWidget(title)
+        text_col.addWidget(subtitle)
+        row.addLayout(text_col)
+        row.addStretch()
+        outer.addLayout(row)
+
+        rule = QFrame()
+        rule.setObjectName("accentRule")
+        rule.setFixedHeight(5)
+        rule_layout = QHBoxLayout(rule)
+        rule_layout.setContentsMargins(0, 0, 0, 0)
+        rule_layout.setSpacing(0)
+        for colour in theme.ACCENTS:
+            seg = QFrame()
+            seg.setStyleSheet(f"background-color: {colour}; border: none;")
+            rule_layout.addWidget(seg)
+        outer.addWidget(rule)
+        return plate
+
     def init_ui(self):
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
+
+        layout.addWidget(self._build_faceplate())
 
         tabs = QTabWidget()
         layout.addWidget(tabs)
@@ -211,6 +254,7 @@ class N64PatcherGUI(QMainWindow):
         tabs.addTab(patch_tab, "🎮 Patching")
 
         preset_group = QGroupBox("📋 Choose a preset profile")
+        self._accent_group(preset_group, 0)
         preset_layout = QVBoxLayout()
 
         self.preset_combo = QComboBox()
@@ -231,6 +275,7 @@ class N64PatcherGUI(QMainWindow):
         patch_layout.addWidget(preset_group)
 
         options_group = QGroupBox("🎨 Visual filters (individual settings)")
+        self._accent_group(options_group, 1)
         options_layout = QVBoxLayout()
         self.cb_no_aa = QCheckBox("Remove anti-aliasing (No-AA) - sharper edges")
         self.cb_no_dither = QCheckBox("Remove dither filter - no 16-bit artifacts")
@@ -244,6 +289,7 @@ class N64PatcherGUI(QMainWindow):
         patch_layout.addWidget(options_group)
 
         flashcart_group = QGroupBox("💾 Flashcart options")
+        self._accent_group(flashcart_group, 2)
         flashcart_layout = QVBoxLayout()
         self.cb_strip_header = QCheckBox("Strip scene header (iN0000 etc.)")
         self.cb_fix_crc = QCheckBox("Repair CRC1/CRC2 (EverDrive compatible)")
@@ -255,6 +301,7 @@ class N64PatcherGUI(QMainWindow):
         # No bare "&" in a QGroupBox title: Qt reads it as a mnemonic marker
         # and renders "drag & drop" as "drag _drop".
         list_group = QGroupBox("📁 ROM library (drag and drop supported)")
+        self._accent_group(list_group, 3)
         list_layout = QVBoxLayout()
         self.rom_list_widget = QListWidget()
         list_layout.addWidget(self.rom_list_widget)
@@ -282,7 +329,9 @@ class N64PatcherGUI(QMainWindow):
         action_layout = QHBoxLayout()
         self.btn_inspect = QPushButton("🔍 Inspect (table)")
         self.btn_patch = QPushButton("🚀 Start patching")
+        self.btn_patch.setObjectName("primaryAction")
         self.btn_cancel = QPushButton("⛔ Cancel")
+        self.btn_cancel.setObjectName("dangerAction")
         self.btn_cancel.setEnabled(False)
         self.btn_inspect.clicked.connect(self.start_inspection)
         self.btn_patch.clicked.connect(self.start_patching)
@@ -338,8 +387,11 @@ class N64PatcherGUI(QMainWindow):
         self.log_widget.setFont(QFont("Menlo", 9))
         log_layout.addWidget(self.log_widget)
 
-        # Statusleiste
+        # Status bar
         self.status_bar = self.statusBar()
+        self.status_led = QLabel("\u25cf")
+        self.status_bar.addWidget(self.status_led)
+        self._set_led("idle")
         self.status_tool_label = QLabel("")
         self.status_count_label = QLabel("")
         self.status_bar.addWidget(self.status_tool_label)
@@ -350,6 +402,30 @@ class N64PatcherGUI(QMainWindow):
         self.log(f"📂 Log file: {core.get_log_path()}")
 
     # ------------------------------------------------------- Presets
+
+    @staticmethod
+    def _accent_group(group, index):
+        """Give a section a coloured spine, like a cartridge label band."""
+        colour = theme.accent_for(index)
+        group.setStyleSheet(
+            f"QGroupBox {{ border-left: 5px solid {colour}; }}"
+            f"QGroupBox::title {{ color: {colour}; }}")
+        return group
+
+    def _set_led(self, state):
+        """Front-panel indicator: idle, working, done, or trouble."""
+        colour = {
+            "idle": theme.LABEL_DIM,
+            "busy": theme.ACCENT_YELLOW,
+            "ok": theme.ACCENT_GREEN,
+            "error": theme.ACCENT_RED,
+        }.get(state, theme.LABEL_DIM)
+        tip = {"idle": "Idle", "busy": "Working",
+               "ok": "Last run finished cleanly",
+               "error": "Last run reported errors"}.get(state, "Idle")
+        self.status_led.setStyleSheet(
+            f"color: {colour}; font-size: 14px; background: transparent;")
+        self.status_led.setToolTip(tip)
 
     def _set_preset_warning(self, text):
         """Show the warning line only when there is one; an empty label
@@ -644,6 +720,7 @@ class N64PatcherGUI(QMainWindow):
         self.btn_patch.setEnabled(False)
         self.btn_inspect.setEnabled(False)
         self.btn_cancel.setEnabled(True)
+        self._set_led("busy")
         self.progress_bar.setVisible(True)
         self.progress_bar.setMaximum(len(self.rom_list))
         self.progress_bar.setValue(0)
@@ -677,6 +754,7 @@ class N64PatcherGUI(QMainWindow):
         self.btn_cancel.setEnabled(False)
         self.progress_bar.setVisible(False)
         self.progress_label.setText("")
+        self._set_led("error" if results.get("errors") else "ok")
 
         self.log(f"\n{'='*60}")
         self.log(f"✅ Done. Patched: {results['patched']}, "

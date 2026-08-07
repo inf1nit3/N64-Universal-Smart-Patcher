@@ -98,12 +98,17 @@ in scripts. Run `n64patcher --help` for the full list.
 
 ![Inspector table](docs/inspector_screenshot.png)
 
-PyQt6 interface themed after mid-90s console hardware: dark moulded-plastic
-panels, chunky bevelled controls, and four primary accent colours used to
-separate functions. Preset profiles lock the individual filters (shown
-dimmed but still ticked, so the UI never misreports what it will do), the
-640x480 box reports how many loaded ROMs actually support it, and the status
-bar shows which helper tools resolved.
+PyQt6 interface themed after mid-90s console hardware: a faceplate strip
+over a four-segment accent rule, cartridge-label panels each with a coloured
+spine, chunky bevelled controls that visibly travel on press, and bitmap-era
+typography (Fixedsys / Terminal where present, falling back gracefully
+elsewhere). Monospace is reserved for technical readouts — filenames, table
+cells, log lines — while prose stays legible in the body face.
+
+Preset profiles lock the individual filters, shown dimmed but still ticked
+so the UI never misreports what it will do. The 640x480 box reports how many
+loaded ROMs actually support it. The front-panel indicator at bottom-left
+tracks run state: grey idle, amber working, green clean, red errors.
 
 ---
 
