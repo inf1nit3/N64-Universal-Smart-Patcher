@@ -127,12 +127,50 @@ def stylesheet() -> str:
         }}
         QPushButton:focus {{ border-color: {FOCUS}; }}
 
-        /* The run/stop pair carries its meaning in colour. */
-        QPushButton#primaryAction {{
-            border-bottom: 4px solid {ACCENT_GREEN};
-            color: #FFFFFF;
+        /* The run control is a round red START key, the way a 90s pad put
+           it: domed plastic, recessed collar, sinks when pressed. A red
+           circle labelled START is generic industrial design - no shape or
+           mark here belongs to anyone. */
+        QPushButton#startButton {{
+            background-color: qradialgradient(
+                cx: 0.5, cy: 0.32, radius: 0.85, fx: 0.5, fy: 0.22,
+                stop: 0 #F0584C, stop: 0.55 {ACCENT_RED}, stop: 1 #8E211A);
+            border: 3px solid {BEVEL_DARK};
+            border-top-color: #6B2721;
+            border-radius: 41px;
+            color: #FFF1EE;
+            font-family: {MONO_STACK};
+            font-size: 13px;
+            font-weight: bold;
+            padding: 0;
         }}
-        QPushButton#primaryAction:hover {{ background-color: #3D4A3F; }}
+        QPushButton#startButton:hover {{
+            background-color: qradialgradient(
+                cx: 0.5, cy: 0.32, radius: 0.85, fx: 0.5, fy: 0.22,
+                stop: 0 #FF6D60, stop: 0.55 #E6463A, stop: 1 #9C2620);
+        }}
+        QPushButton#startButton:pressed {{
+            background-color: qradialgradient(
+                cx: 0.5, cy: 0.45, radius: 0.85, fx: 0.5, fy: 0.6,
+                stop: 0 #A82A22, stop: 1 #7A1B15);
+            border-top-color: {BEVEL_DARK};
+            border-bottom-color: #6B2721;
+            padding-top: 3px;
+        }}
+        QPushButton#startButton:disabled {{
+            background-color: qradialgradient(
+                cx: 0.5, cy: 0.32, radius: 0.85, fx: 0.5, fy: 0.22,
+                stop: 0 #5A4340, stop: 1 #3A2A28);
+            color: {DISABLED};
+            border-color: {BEVEL_DARK};
+        }}
+        /* The collar the key sits in. */
+        QFrame#startCollar {{
+            background-color: {PLASTIC_LIGHT};
+            border: 2px solid {BEVEL_DARK};
+            border-top-color: {BEVEL_LIGHT};
+            border-radius: 52px;
+        }}
         QPushButton#dangerAction {{ border-bottom: 4px solid {ACCENT_RED}; }}
         QPushButton#dangerAction:hover {{ background-color: #4A3A38; }}
         QPushButton#dangerAction:disabled {{ border-bottom-color: {BEVEL_DARK}; }}

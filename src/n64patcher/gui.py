@@ -17,7 +17,7 @@ import os
 import sys
 from datetime import datetime
 
-from PyQt6.QtCore import QSettings, QThread, pyqtSignal
+from PyQt6.QtCore import QSettings, Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon
 from PyQt6.QtWidgets import (
     QApplication,
@@ -328,16 +328,32 @@ class N64PatcherGUI(QMainWindow):
 
         action_layout = QHBoxLayout()
         self.btn_inspect = QPushButton("🔍 Inspect (table)")
-        self.btn_patch = QPushButton("🚀 Start patching")
-        self.btn_patch.setObjectName("primaryAction")
         self.btn_cancel = QPushButton("⛔ Cancel")
         self.btn_cancel.setObjectName("dangerAction")
         self.btn_cancel.setEnabled(False)
+
+        # Round red START key, centred between the two flanking controls -
+        # the layout a 90s pad used. The label stays plain text so screen
+        # readers and tests still see a normal button.
+        self.btn_patch = QPushButton("START")
+        self.btn_patch.setObjectName("startButton")
+        self.btn_patch.setFixedSize(82, 82)
+        self.btn_patch.setToolTip("Start patching the loaded ROMs")
+        self.btn_patch.setAccessibleName("Start patching")
+        self.btn_patch.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        collar = QFrame()
+        collar.setObjectName("startCollar")
+        collar.setFixedSize(104, 104)
+        collar_layout = QVBoxLayout(collar)
+        collar_layout.setContentsMargins(0, 0, 0, 0)
+        collar_layout.addWidget(self.btn_patch, 0, Qt.AlignmentFlag.AlignCenter)
+
         self.btn_inspect.clicked.connect(self.start_inspection)
         self.btn_patch.clicked.connect(self.start_patching)
         self.btn_cancel.clicked.connect(self.cancel_patching)
         action_layout.addWidget(self.btn_inspect)
-        action_layout.addWidget(self.btn_patch)
+        action_layout.addWidget(collar, 0, Qt.AlignmentFlag.AlignCenter)
         action_layout.addWidget(self.btn_cancel)
         patch_layout.addLayout(action_layout)
 

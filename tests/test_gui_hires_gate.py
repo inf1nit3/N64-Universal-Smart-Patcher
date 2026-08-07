@@ -9,6 +9,7 @@ import importlib.util
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 from n64patcher import n64_core as core
 from tests.test_n64_core import make_synthetic_rom
@@ -105,6 +106,52 @@ class TestGuiHiresGate(unittest.TestCase):
         src = os.path.join(os.path.dirname(self.gui_mod.__file__), "gui.py")
         with open(src, encoding="utf-8") as f:
             self.assertNotIn("force_hires", f.read())
+
+
+@unittest.skipUnless(HAVE_QT, "PyQt6 not installed")
+class TestStartButton(unittest.TestCase):
+    """The run control is styled as a round START key. Styling must not cost
+    it its identity: automation, screen readers and keyboard users all still
+    need a normal button underneath."""
+
+    @classmethod
+    def setUpClass(cls):
+        from PyQt6.QtWidgets import QApplication
+
+        from n64patcher import gui as gui_mod
+
+        cls.app = QApplication.instance() or QApplication([])
+        cls.gui = gui_mod.N64PatcherGUI()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.gui.close()
+
+    def test_is_a_real_button_with_an_accessible_name(self):
+        from PyQt6.QtWidgets import QPushButton
+        self.assertIsInstance(self.gui.btn_patch, QPushButton)
+        self.assertEqual(self.gui.btn_patch.accessibleName(), "Start patching")
+        self.assertTrue(self.gui.btn_patch.toolTip())
+
+    def test_click_is_connected(self):
+        self.assertGreater(
+            self.gui.btn_patch.receivers(self.gui.btn_patch.clicked), 0)
+
+    def test_round_key_stays_square_so_the_radius_reads_as_a_circle(self):
+        b = self.gui.btn_patch
+        self.assertEqual(b.width(), b.height())
+
+    def test_clicking_with_no_roms_warns_instead_of_running(self):
+        """QMessageBox is modal and would block a headless run forever, so
+        the dialog is stubbed and only the fact that it fired is checked."""
+        from n64patcher import gui as gui_mod
+        self.gui.rom_list = []
+        seen = []
+        with mock.patch.object(gui_mod.QMessageBox, "warning",
+                               side_effect=lambda *a, **k: seen.append(a)):
+            self.gui.btn_patch.click()
+        self.assertTrue(seen, "no warning shown for an empty ROM list")
+        self.assertIsNone(self.gui.worker)
 
 
 if __name__ == "__main__":

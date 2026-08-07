@@ -105,6 +105,11 @@ typography (Fixedsys / Terminal where present, falling back gracefully
 elsewhere). Monospace is reserved for technical readouts — filenames, table
 cells, log lines — while prose stays legible in the body face.
 
+The run control is a round red START key seated in a recessed collar,
+flanked by Inspect and Cancel — the layout a 90s pad used. It is an ordinary
+`QPushButton` underneath, with an accessible name and tooltip, so keyboard
+and screen-reader users are unaffected by the styling.
+
 Preset profiles lock the individual filters, shown dimmed but still ticked
 so the UI never misreports what it will do. The 640x480 box reports how many
 loaded ROMs actually support it. The front-panel indicator at bottom-left
