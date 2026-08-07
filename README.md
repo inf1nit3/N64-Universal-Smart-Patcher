@@ -340,6 +340,11 @@ the installed package rather than the working directory):
 
 ## 📜 Version History
 
+- **v3.3.1 (Console Theme)**:
+  - Console-era interface: faceplate strip over a four-segment accent rule, cartridge-label panels with coloured spines, bevelled controls with real press travel, bitmap-era typography (Fixedsys/Terminal where present).
+  - The run control is a round red START key in a recessed collar. It stays an ordinary button underneath, with an accessible name, so keyboard and screen-reader use is unaffected.
+  - Front-panel indicator tracks run state: idle, working, clean, errors.
+  - Fixed a state bug the theme exposed: a checkbox that was checked *and* disabled (what a locked preset produces) rendered as unchecked, so the UI misreported what a run would do.
 - **v3.3.0 (Hi-Res Gating)**:
   - **BPS applier fixed**: the `SourceRead`/`TargetRead` action numbers were swapped, so *no real-world `.bps` patch could ever be applied* — every one failed its target CRC32 check. The test suite's own encoder used the same swapped numbering, so the two agreed with each other and with nothing else.
   - **BPS patch creation** (`--create-patch SOURCE TARGET OUT.bps`). A one-instruction edit in a 12 MB ROM yields a 65-byte patch.
