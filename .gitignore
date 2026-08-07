@@ -4,7 +4,18 @@ __pycache__/
 *$py.class
 build/
 dist/
-*.spec
+*.egg-info/
+.eggs/
+# NOTE: the two .spec files ARE tracked - they define the reproducible
+# frozen build and build_release.* invoke them by name.
+
+# Test / tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 
 # Logs & temporary files
 *.log

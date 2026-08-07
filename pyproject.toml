@@ -1,0 +1,118 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "n64patcher"
+description = "Universal N64 ROM inspector and VI-filter/hi-res patcher with a pure-Python boot CRC engine"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+dynamic = ["version"]
+keywords = ["n64", "rom", "patcher", "emulation", "flashcart", "everdrive"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Games/Entertainment",
+    "Topic :: System :: Archiving",
+]
+# The engine is pure standard library on purpose: `pip install n64patcher`
+# must not drag in a GUI toolkit. Both extras degrade gracefully when absent
+# (see check_tools() and zip_handler's lazy py7zr import).
+dependencies = []
+
+[project.optional-dependencies]
+gui = ["PyQt6>=6.5"]
+archive = ["py7zr>=0.20"]
+all = ["PyQt6>=6.5", "py7zr>=0.20"]
+dev = [
+    "PyQt6>=6.5",
+    "py7zr>=0.20",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pyinstaller>=6.0",
+]
+
+[project.scripts]
+n64patcher = "n64patcher.cli:main"
+
+[project.gui-scripts]
+n64patcher-gui = "n64patcher.gui:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "n64patcher._version.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+n64patcher = [
+    "N64noAAPatcher/additionals/*",
+    "N64noAAPatcher/hires_patches/*",
+    "app_icon.ico",
+]
+
+# ---------------------------------------------------------------------------
+# Test / lint / type configuration
+# ---------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "RUF"]
+ignore = [
+    "E501",    # long lines are handled by line-length, not worth churn here
+    "SIM105",  # contextlib.suppress is not clearer than a 3-line try/except
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests reach into private helpers deliberately, and the reference CRC
+# implementation mirrors C variable names on purpose.
+"tests/*" = ["SLF001", "E741", "SIM117"]
+# Emoji in the German UI labels are intentional, not ambiguous typos.
+"src/n64patcher/gui.py" = ["RUF001"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src/n64patcher"]
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+
+# --strict on the modules that were reviewed and are dependency-free.
+# gui.py (PyQt6) and cli.py (argparse-heavy) are held to the baseline above
+# until they get the same treatment; tightening them is tracked in the README.
+[[tool.mypy.overrides]]
+module = [
+    "n64patcher.ips_bps_patcher",
+    "n64patcher.zip_handler",
+    "n64patcher.batch_runner",
+    "n64patcher.presets",
+    "n64patcher._version",
+]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_return_any = true
+strict_equality = true
+
+[tool.coverage.run]
+source = ["n64patcher"]
+branch = true

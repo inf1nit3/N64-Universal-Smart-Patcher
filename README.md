@@ -1,21 +1,26 @@
-# 🎮 Universal N64 ROM Inspector & Smart Patcher v3.1
+# 🎮 Universal N64 ROM Inspector & Smart Patcher v3.2
 
 ![N64 Smart Patcher Icon](app_icon.png)
 
 A modern, high-performance GUI + CLI ROM patcher and inspection utility for Nintendo 64 games. Features the **Smart VI Mode Table Engine v2.0** for zero-false-positive 640x480 high-resolution patching, anti-aliasing (No-AA) removal, dither/divot/gamma filter toggles, SubDrag `.xdelta` integration, preset profiles, archive extraction, and Flashcart CRC/Header tools.
 
-**Cross-platform since v3.1**: the bundled Windows helpers (`u64aap.exe`, `rn64crc.exe`, `xdelta3.exe`) are used when runnable, with graceful fallbacks everywhere else — a **built-in pure-Python CRC1/CRC2 engine** (works on macOS/Linux), the dynamic VI instruction patcher for No-AA, and an optional system `xdelta3` from PATH.
+**Cross-platform**: the bundled Windows helpers (`u64aap.exe`, `rn64crc.exe`, `xdelta3.exe`) are used when runnable, with graceful fallbacks everywhere else — a **built-in pure-Python CRC1/CRC2 engine** (works on macOS/Linux), the dynamic VI instruction patcher for No-AA, and an optional system `xdelta3` from PATH.
 
 Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M64), flashcarts (SummerCart 64, EverDrive 64), and N64 emulators (Simple64, Ares, RMG).
 
 ---
 
-## ✨ Key Features in v3.1
+## ✨ Key Features
 
 - **🎯 Smart VI Mode Table Engine v2.0**:
   - Structural data pattern matching using 32-bit width words (`0x00000140`) paired with hardware NTSC/PAL/M-PAL burst-timing signatures (`0x03E52239`, `0x0404233A`, `0x04651E39`).
-  - **87% ROM Compatibility** (tested across 1,233 N64 ROMs).
-  - **Zero False Positives / Zero Code Corruption**: Modifies only verified Video Interface configuration tables.
+  - **Structurally constrained**: only width fields immediately followed by a
+    known burst constant are modified, so unrelated data that merely contains
+    `0x00000140` is left alone. See *Technical Details* for what this does and
+    does not guarantee.
+  - Compatibility across a large ROM set has not been measured in a form we can
+    publish. `--verify` (below) generates a per-ROM pass/fail matrix from your
+    own library if you want the number for your collection.
 
 - **📋 One-Click Preset Profiles**:
   - `📺 CRT Authentic`: Preserves original N64 blur for CRT displays.
@@ -42,38 +47,46 @@ Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M6
 
 ---
 
-## ⌨️ Command-Line Interface (CLI v3.1)
+## ⌨️ Command-Line Interface
 
-The same patch engine is available headless via `n64_patcher_cli.py`:
+The same patch engine is available headless as `n64patcher`
+(equivalently `python -m n64patcher`):
 
 ```bash
-# List available preset profiles
-python n64_patcher_cli.py --list-presets
+# List the preset profiles and the keys --preset accepts
+n64patcher --list-presets
 
 # Show what would be done without writing any files
-python n64_patcher_cli.py "D:\N64 ROMs" --preset modern_4k -r --dry-run
+n64patcher "D:\N64 ROMs" --preset modern_4k -r --dry-run
 
 # Patch a directory using the Modern 4K preset
-python n64_patcher_cli.py "D:\N64 ROMs" --preset modern_4k -r
+n64patcher "D:\N64 ROMs" --preset modern_4k -r
 
 # Write all outputs to a separate directory
-python n64_patcher_cli.py "D:\N64 ROMs" --preset modern_crisp -r -o "D:\Patched"
+n64patcher "D:\N64 ROMs" --preset modern_crisp -r -o "D:\Patched"
 
 # Batch patch directly from a ZIP or 7z archive
-python n64_patcher_cli.py roms.zip --preset modern_crisp
+n64patcher roms.zip --preset modern_crisp
 
-# Apply Flashcart tools (strip scene headers + fix CRC checksums)
-python n64_patcher_cli.py "D:\N64 ROMs" -r --strip-header --fix-crc --preset speedrun
+# Verify every output and write a publishable pass/fail matrix
+n64patcher "D:\N64 ROMs" -r --preset modern_4k --verify --verify-report matrix.csv
+
+# Apply flashcart tools (strip scene headers + repair CRC checksums)
+n64patcher "D:\N64 ROMs" -r --strip-header --fix-crc --preset speedrun
 
 # Apply a custom .ips or .bps community patch to all ROMs
 # (applied to the CLEAN ROM; community patches target pristine dumps)
-python n64_patcher_cli.py "D:\N64 ROMs" --patch-file sm64_widescreen.ips
+n64patcher "D:\N64 ROMs" --patch-file sm64_widescreen.ips
 
 # Inspect a folder with MD5/SHA-1 hashes and export to CSV
-python n64_patcher_cli.py "D:\N64 ROMs" --inspect-only --export report.csv
+n64patcher "D:\N64 ROMs" --inspect-only --export report.csv
 ```
 
-Notes: individual flags (`--keep-aa`, `--no-dither`, `--no-divot`, `--no-gamma`, `--hires`) override the selected preset. `--fix-crc` also creates `[CRCFIX]` copies of ROMs the engine skips (flashcart repair mode). Run `python n64_patcher_cli.py --help` for all options.
+Individual flags (`--keep-aa`, `--no-dither`, `--no-divot`, `--no-gamma`,
+`--hires`) override the selected preset. `--fix-crc` also creates `[CRCFIX]`
+copies of ROMs the engine skips (flashcart repair mode). `--verify` exits
+with code 1 if any output fails its checks, which makes it usable as a gate
+in scripts. Run `n64patcher --help` for the full list.
 
 ---
 
@@ -85,12 +98,22 @@ Features a PyQt6 dark-mode interface with preset dropdowns, Flashcart checkboxes
 
 ---
 
-## 🚀 Quick Start (Portable EXE)
+## 🚀 Quick Start
 
-1. Download the latest standalone executable from the **[Releases](../../releases/tag/v3.0.0)** tab.
+**Portable EXE (Windows)**
+
+1. Download the latest standalone executable from the **[Releases](../../releases)** tab.
 2. Double-click `N64_Smart_Patcher.exe` (no installation required).
 3. Drag & drop your N64 ROMs (`.z64`, `.n64`, `.v64`, `.zip`, `.7z`) or an entire folder.
-4. Select a Preset Profile or custom options and click **PATCH ROMS NOW**.
+4. Pick a preset profile or set custom options and click **🚀 Start patching**.
+
+**From source (any platform)**
+
+```bash
+pip install -e ".[gui]"   # omit [gui] for the CLI only - it needs no dependencies
+n64patcher-gui            # desktop app
+n64patcher --help         # command line
+```
 
 ---
 
@@ -101,36 +124,78 @@ Features a PyQt6 dark-mode interface with preset dropdowns, Flashcart checkboxes
 git clone https://github.com/inf1nit3/N64-Universal-Smart-Patcher.git
 cd N64-Universal-Smart-Patcher
 
-# Install dependencies
-pip install -r requirements.txt
+# Install. The engine and CLI have NO third-party dependencies;
+# the GUI and .7z support are optional extras.
+pip install -e .              # engine + CLI
+pip install -e ".[gui]"       # + PyQt6 desktop app
+pip install -e ".[archive]"   # + .7z archive support
+pip install -e ".[all]"       # both
+pip install -e ".[dev]"       # everything + pytest/ruff/mypy/pyinstaller
 
-# Run the 90-test unit suite (synthetic ROMs, no game files needed)
-python -m unittest discover -s . -p "test_*.py" -v
+# Run the unit suite (synthetic ROMs, no game files needed)
+python -m pytest
 
-# Run GUI
-python N64_Smart_Patcher_GUI.py
+# Lint and type-check
+python -m ruff check .
+python -m mypy
 
-# Build release executables (GUI + CLI)
+# Run
+n64patcher --help             # CLI  (also: python -m n64patcher)
+n64patcher-gui                # GUI  (requires the [gui] extra)
+
+# Build release executables (GUI + CLI) and wheel/sdist
 powershell -ExecutionPolicy Bypass -File build_release.ps1   # Windows
 ./build_release.sh                                           # macOS / Linux
 ```
 
+### Verifying your own results
+
+`--verify` re-opens every patched file and checks it independently of the
+code that produced it: the image is a recognizable ROM, the CIC boot chip is
+identifiable, and the boot checksums recompute to the values stored in the
+header. Failures set exit code 1.
+
+```bash
+n64patcher ~/roms --hires --verify --verify-report matrix.csv
+```
+
+`--verify-report` writes one row per ROM with the input MD5/SHA-1, what was
+applied and whether it verified — a compatibility matrix you can publish
+without distributing any ROM data.
+
 ### Modular System Architecture
-- `n64_core.py` — Core patch engine, struct VI scanner, SubDrag xdelta, inspection, **pure-Python N64 boot CRC engine** (CIC detection + CRC1/CRC2).
-- `header_utils.py` — Scene header detector/stripper & CRC checksum repairer (`rn64crc.exe` when runnable, native engine otherwise).
+
+Installable package under `src/n64patcher/` (src layout, so tests run against
+the installed package rather than the working directory):
+
+- `n64_core.py` — Core patch engine, struct VI scanner, SubDrag xdelta, inspection, **pure-Python N64 boot CRC engine** (CIC detection + CRC1/CRC2), post-patch verification.
+- `header_utils.py` — Scene header detector/stripper & CRC checksum repairer (`rn64crc.exe` when runnable *and* verified, native engine otherwise).
 - `presets.py` — Preset profile definitions and warning validators.
-- `zip_handler.py` — Hardened archive handling for `.zip` and `.7z` files (zip-slip protected, size-capped).
-- `ips_bps_patcher.py` — Community `.ips` & `.bps` delta patcher (spec-correct BPS with CRC32 verification).
-- `batch_runner.py` — Multi-threaded ThreadPoolExecutor engine.
+- `zip_handler.py` — Hardened archive handling for `.zip` and `.7z` (zip-slip protected, streaming size cap, compression-ratio limit, symlink members rejected).
+- `ips_bps_patcher.py` — Community `.ips` & `.bps` delta patcher (spec-correct BPS with CRC32 verification; IPS sources are format-checked and byte-order corrected).
+- `batch_runner.py` — Multi-threaded ThreadPoolExecutor engine with cooperative cancellation and single-threaded log draining.
 - `mmap_vi_scanner.py` — Memory-mapped fast VI table scanner (used by inspection).
-- `N64_Smart_Patcher_GUI.py` — PyQt6 GUI with preset controls, background inspector table, drag & drop & thread exception safety.
-- `n64_patcher_cli.py` — Headless CLI runner.
-- `test_n64_core.py`, `test_ips_bps_patcher.py`, `test_header_utils.py`, `test_presets.py`, `test_batch_runner.py`, `test_zip_handler.py` — Synthetic ROM unit test suite (91 tests).
+- `gui.py` — PyQt6 GUI with preset controls, background inspector table, drag & drop & thread exception safety.
+- `cli.py` — Headless CLI runner (`n64patcher`).
+- `tests/` — Synthetic ROM unit suite, 148 tests, no game files required.
 
 ---
 
 ## 📜 Version History
 
+- **v3.2.0 (Production Hardening)**:
+  - **Flashcart CRC repair actually repairs**: `fix_rom_crc` reported success while leaving the checksums untouched, because `rn64crc` exits 0 even when it fails. Affected `--fix-crc` and the GUI flashcart checkbox.
+  - **Fully English UI**: GUI labels, CLI help and messages, and the remaining German docstrings were translated.
+  - **Packaging**: installable `n64patcher` package (src layout), console entry points `n64patcher` / `n64patcher-gui`, and a dependency split — the engine and CLI now install with **no third-party dependencies**; PyQt6 and py7zr are extras.
+  - **Data-loss fixes**: output filenames no longer collide (long names keep a digest instead of being truncated to a shared prefix; `(2)`, `(3)`... disambiguate; names are claimed atomically so parallel workers cannot race).
+  - **CRC engine**: corrected an off-by-equality in the mixing loop (`a2 == d` took the wrong branch, producing a wrong CRC2 with a correct CRC1); byte-swapped `.v64`/`.n64` images are now handled and keep their byte order; verified against an independent reference implementation across all 9 supported CIC variants.
+  - **External tools are no longer trusted on exit code alone**: `rn64crc` exits 0 even when it cannot identify the boot chip and leaves the header untouched — outputs are now checked and fall back to the native engine. Same for `u64aap`, which was detected by grepping stdout for an English phrase.
+  - **Dynamic VI patcher** is bounded to the code segment (`0x1000`–8 MB), requires word alignment, and aborts on implausible match density. It previously rewrote every 4-byte match in the whole ROM, including IPL3 bootcode — which breaks CIC identification outright.
+  - **Archive hardening**: the extraction cap is enforced on bytes as they arrive rather than on attacker-controlled declared sizes; compression-ratio limit; symlink members rejected; members are written to the validated path instead of letting the extractor choose.
+  - **Concurrency**: batch runs are cancellable (Ctrl+C included, keeping finished work), log output is drained on a single thread, and working files no longer land in a possibly read-only input directory.
+  - **New**: `--verify` / `--verify-report` re-check every output independently and emit a publishable pass/fail matrix (hashes + result, no ROM data).
+  - **Tooling**: `ruff` and `mypy` clean and enforced in CI; test suite grown to 148; CI additionally proves a dependency-free install and that the wheel actually contains the bundled helpers.
+  - Also fixed: IPS patches applied to byte-swapped ROMs without complaint; `no_aa` was OR'd with `no_dither`, so dither-patched ROMs were skipped as fully patched; `header_utils` reported a 3-character game code where the core reported 4; SubDrag deltas are region-gated instead of attempted on any title match.
 - **v3.1.0 (Quality & Cross-Platform)**:
   - Added built-in pure-Python N64 boot CRC engine (CIC 6101-6106 + 64DD/Aleck64 detection) — CRC1/CRC2 repair now works on macOS/Linux.
   - Rewrote BPS patcher to the reference spec (fixed VLV decode, copy commands) with full CRC32 verification; hardened IPS patcher.
@@ -147,7 +212,7 @@ powershell -ExecutionPolicy Bypass -File build_release.ps1   # Windows
   - Added Multi-threaded batch processing engine (`ThreadPoolExecutor`).
   - Added bulletproof Qt Thread exception handling to prevent batch crashes.
 - **v2.0.0**:
-  - Introduced Smart VI Mode Table Engine v2.0 (87% compatibility, 0% corruption).
+  - Introduced Smart VI Mode Table Engine v2.0 (structural table matching instead of blind instruction search).
   - Integrated SubDrag `.xdelta` verified patches for 8 major titles.
   - Built PyQt6 GUI and initial CLI.
 - **v1.0.0**:
@@ -157,7 +222,7 @@ powershell -ExecutionPolicy Bypass -File build_release.ps1   # Windows
 
 ## 🔬 Technical Details: Smart VI Mode Table Engine
 
-Traditional blind binary search-and-replace for MIPS instructions (`addiu $t6, $zero, 320`) frequently corrupts game logic (11% corruption rate across 1,200+ games).
+Blind binary search-and-replace for MIPS instructions (`addiu $t6, $zero, 320`) can corrupt game logic, because the same four bytes occur in compressed asset data as often as in code.
 
 Our **Smart VI Engine** searches for N64 SDK `OSViMode` struct data definitions:
 
@@ -165,7 +230,20 @@ Our **Smart VI Engine** searches for N64 SDK `OSViMode` struct data definitions:
 [VI_CTRL] [WIDTH = 0x00000140] [BURST = 0x03E52239 (NTSC) / 0x0404233A (PAL)] ...
 ```
 
-Because the hardware timing burst constant `0x03E52239` is unique to video interface register configs, pairing it with the width field guarantees exact identification of VI display mode tables with zero false positives.
+The burst constants are hardware timing values specific to Video Interface
+register configuration, so requiring one immediately after a width field is a
+far stronger signal than the width alone. This is a structural heuristic, not a
+proof: an eight-byte coincidence in asset data is possible in principle, and no
+exhaustive survey has been run to rule it out. Two things bound the risk in
+practice — the pairing requirement itself, and `--verify`, which re-inspects
+every output and reports whether the CRC validates and the VI tables ended up in
+the expected state.
+
+The separate *dynamic instruction patcher* (the No-AA fallback used when
+`u64aap` has no database entry) is a genuine pattern rewrite. It is restricted
+to the code segment (ROM offset `0x1000` to 8 MB), requires word alignment, and
+aborts if it finds an implausible number of match sites — see
+`apply_dynamic_vi_patch`.
 
 ---
 

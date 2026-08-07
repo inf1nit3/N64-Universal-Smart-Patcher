@@ -1,5 +1,21 @@
 # Changelog
 
+## v3.2 - Production Hardening
+
+- **Flashcart CRC repair actually repairs**: `header_utils.fix_rom_crc` (behind `--fix-crc`, `--patch-file --fix-crc` and the GUI flashcart checkbox) reported `CRC1/CRC2 repaired (rn64crc)` while the checksums stayed untouched, because rn64crc exits 0 on failure. It now re-reads the file and falls back to the native engine.
+- **UI is fully English**: every GUI label, CLI help string, runtime message and the `header_utils` docstrings were German or mixed; all translated.
+- `--list-presets` now prints the key `--preset` expects, not just the display name.
+- **Packaging**: installable `n64patcher` package (src layout), console entry points `n64patcher` / `n64patcher-gui`, and a dependency split — the engine and CLI now install with **no third-party dependencies**; PyQt6 and py7zr are extras.
+- **Data-loss fixes**: output filenames no longer collide (long names keep a digest instead of being truncated to a shared prefix; `(2)`, `(3)`... disambiguate; names are claimed atomically so parallel workers cannot race).
+- **CRC engine**: corrected an off-by-equality in the mixing loop (`a2 == d` took the wrong branch, producing a wrong CRC2 with a correct CRC1); byte-swapped `.v64`/`.n64` images are now handled and keep their byte order; verified against an independent reference implementation across all 9 supported CIC variants.
+- **External tools are no longer trusted on exit code alone**: `rn64crc` exits 0 even when it cannot identify the boot chip and leaves the header untouched — outputs are now checked and fall back to the native engine. Same for `u64aap`, which was detected by grepping stdout for an English phrase.
+- **Dynamic VI patcher** is bounded to the code segment (`0x1000`–8 MB), requires word alignment, and aborts on implausible match density. It previously rewrote every 4-byte match in the whole ROM, including IPL3 bootcode — which breaks CIC identification outright.
+- **Archive hardening**: the extraction cap is enforced on bytes as they arrive rather than on attacker-controlled declared sizes; compression-ratio limit; symlink members rejected; members are written to the validated path instead of letting the extractor choose.
+- **Concurrency**: batch runs are cancellable (Ctrl+C included, keeping finished work), log output is drained on a single thread, and working files no longer land in a possibly read-only input directory.
+- **New**: `--verify` / `--verify-report` re-check every output independently and emit a publishable pass/fail matrix (hashes + result, no ROM data).
+- **Tooling**: `ruff` and `mypy` clean and enforced in CI; test suite grown to 148; CI additionally proves a dependency-free install and that the wheel actually contains the bundled helpers.
+- Also fixed: IPS patches applied to byte-swapped ROMs without complaint; `no_aa` was OR'd with `no_dither`, so dither-patched ROMs were skipped as fully patched; `header_utils` reported a 3-character game code where the core reported 4; SubDrag deltas are region-gated instead of attempted on any title match.
+
 ## v3.1
 
 **Critical fixes**

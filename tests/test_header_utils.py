@@ -2,11 +2,16 @@
 import os
 import tempfile
 import unittest
+from unittest import mock
 
-import n64_core as core
-from header_utils import (detect_scene_header, detect_and_strip_scene_header,
-                          fix_rom_crc, get_rom_info_from_header)
-from test_n64_core import make_synthetic_rom, make_cic6102_rom
+from n64patcher import n64_core as core
+from n64patcher.header_utils import (
+    detect_and_strip_scene_header,
+    detect_scene_header,
+    fix_rom_crc,
+    get_rom_info_from_header,
+)
+from tests.test_n64_core import make_cic6102_rom, make_synthetic_rom
 
 
 class HeaderTestBase(unittest.TestCase):
@@ -67,7 +72,7 @@ class TestSceneHeaderStrip(HeaderTestBase):
         out = os.path.join(self.tmp.name, "junk.out")
         res = detect_and_strip_scene_header(src, out)
         self.assertFalse(res["stripped"])
-        self.assertIn("Unbekanntes ROM-Format", res["message"])
+        self.assertIn("Unknown ROM format", res["message"])
         self.assertFalse(os.path.exists(out))
 
 
@@ -112,3 +117,59 @@ class TestFixRomCrc(HeaderTestBase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestFixRomCrcTrustsTheFileNotTheTool(HeaderTestBase):
+    """Regression: rn64crc exits 0 even when it cannot identify the boot
+    chip and leaves the header untouched. fix_rom_crc reported
+    'CRC1/CRC2 repaired (rn64crc)' while the checksums stayed at their old
+    values - so --fix-crc, --patch-file --fix-crc and the GUI flashcart
+    checkbox all silently produced ROMs that black-screen on the hardware
+    this feature exists to serve.
+    """
+
+    def test_repairs_and_reports_truthfully(self):
+        p = self._write("rom.z64", make_cic6102_rom())
+        self.assertFalse(core.crc_header_is_valid(p), "fixture should start invalid")
+        res = fix_rom_crc(p)
+        self.assertEqual(res["status"], "fixed", res)
+        self.assertTrue(core.crc_header_is_valid(p),
+                        f"reported {res['message']!r} but checksums are still wrong")
+
+    def test_falls_back_when_tool_exits_zero_without_doing_anything(self):
+        p = self._write("rom.z64", make_cic6102_rom())
+        with open(p, "rb") as f:
+            original = f.read()
+
+        class FakeResult:
+            returncode = 0
+            stdout = "Unable to calculate!"
+            stderr = ""
+
+        def fake_run(*args, **kwargs):
+            return FakeResult()
+
+        with mock.patch.object(core, "_is_runnable", lambda _p: True), \
+             mock.patch("n64patcher.header_utils.subprocess.run", fake_run):
+            res = fix_rom_crc(p)
+
+        self.assertEqual(res["status"], "fixed", res)
+        self.assertIn("natively", res["message"])
+        self.assertTrue(core.crc_header_is_valid(p))
+        with open(p, "rb") as f:
+            self.assertNotEqual(f.read(), original)
+
+    def test_byte_swapped_rom_is_repaired_in_place(self):
+        swapped = bytearray(make_cic6102_rom())
+        swapped[0::2], swapped[1::2] = bytes(swapped[1::2]), bytes(swapped[0::2])
+        p = self._write("rom.v64", bytes(swapped))
+        res = fix_rom_crc(p)
+        self.assertEqual(res["status"], "fixed", res)
+        self.assertTrue(core.crc_header_is_valid(p))
+        with open(p, "rb") as f:
+            self.assertEqual(core.detect_format(f.read())[0], "v64")
+
+    def test_unknown_cic_reports_error_instead_of_false_success(self):
+        p = self._write("nocic.z64", make_synthetic_rom(vi_tables=0))
+        res = fix_rom_crc(p)
+        self.assertEqual(res["status"], "error", res)

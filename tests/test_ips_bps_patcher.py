@@ -9,9 +9,12 @@ import tempfile
 import unittest
 import zlib
 
-from ips_bps_patcher import (apply_ips_patch, apply_bps_patch,
-                             detect_patch_type, _bps_read_vlv)
-
+from n64patcher.ips_bps_patcher import (
+    _bps_read_vlv,
+    apply_bps_patch,
+    apply_ips_patch,
+    detect_patch_type,
+)
 
 # ---------------------------------------------------------------- helpers
 
@@ -37,7 +40,7 @@ def bps_copy_offset(magnitude: int, negative: bool) -> bytes:
     return bps_encode_vlv((magnitude << 1) | (1 if negative else 0))
 
 
-def make_bps(source: bytes, commands: bytes, declared_target: bytes = None,
+def make_bps(source: bytes, commands: bytes, declared_target: bytes | None = None,
              metadata: bytes = b"") -> bytes:
     """Assemble a complete BPS patch. When declared_target is given its
     CRC32 is written to the footer (allows building corrupt-target tests);
@@ -104,7 +107,7 @@ class TestIpsPatcher(WriteHelper):
         src = self._write("rom.bin", rom)
         pst = self._write("patch.ips", patch)
         out = os.path.join(self.tmp.name, "out.bin")
-        res = apply_ips_patch(src, pst, out)
+        res = apply_ips_patch(src, pst, out, require_n64=False)
         self.assertEqual(res["status"], "patched", res)
         with open(out, "rb") as f:
             patched = f.read()
@@ -122,7 +125,7 @@ class TestIpsPatcher(WriteHelper):
         src = self._write("rom.bin", rom)
         pst = self._write("patch.ips", patch)
         out = os.path.join(self.tmp.name, "out.bin")
-        res = apply_ips_patch(src, pst, out)
+        res = apply_ips_patch(src, pst, out, require_n64=False)
         self.assertEqual(res["status"], "patched", res)
         with open(out, "rb") as f:
             patched = f.read()
@@ -132,15 +135,69 @@ class TestIpsPatcher(WriteHelper):
     def test_invalid_header(self):
         src = self._write("rom.bin", b"\x00" * 16)
         pst = self._write("bad.ips", b"NOPES" + b"\x00" * 4)
-        res = apply_ips_patch(src, pst, os.path.join(self.tmp.name, "o"))
+        res = apply_ips_patch(src, pst, os.path.join(self.tmp.name, "o"),
+                              require_n64=False)
         self.assertEqual(res["status"], "error")
         self.assertIn("Invalid IPS", res["message"])
 
     def test_truncated_patch(self):
         src = self._write("rom.bin", b"\x00" * 16)
         pst = self._write("trunc.ips", b"PATCH" + b"\x00\x00\x00" + b"\x00\x10")  # claims 16 bytes, none follow
-        res = apply_ips_patch(src, pst, os.path.join(self.tmp.name, "o"))
+        res = apply_ips_patch(src, pst, os.path.join(self.tmp.name, "o"),
+                              require_n64=False)
         self.assertEqual(res["status"], "error")
+
+
+class TestIpsRomFormatGuard(WriteHelper):
+    """IPS carries no checksum, so a wrong-byte-order source produces
+    garbage and reports success. BPS is only safe here because its CRC32
+    gate happens to catch it."""
+
+    PATCH = b"PATCH" + b"\x00\x10\x00" + b"\x00\x04" + b"WXYZ" + b"EOF"
+
+    def _z64(self, size=0x2000):
+        rom = bytearray(size)
+        rom[0:4] = bytes.fromhex("80371240")
+        rom[32:52] = b"TEST GAME".ljust(20, b" ")
+        return bytes(rom)
+
+    def _apply(self, rom_bytes, name="rom.z64"):
+        src = self._write(name, rom_bytes)
+        pst = self._write("p.ips", self.PATCH)
+        out = os.path.join(self.tmp.name, "out.z64")
+        return apply_ips_patch(src, pst, pst and out), out
+
+    def test_z64_applies_unchanged(self):
+        res, out = self._apply(self._z64())
+        self.assertEqual(res["status"], "patched", res)
+        self.assertEqual(res["warnings"], [])
+        with open(out, "rb") as f:
+            self.assertEqual(f.read()[0x1000:0x1004], b"WXYZ")
+
+    def test_v64_is_converted_not_corrupted(self):
+        """The regression: a byte-swapped dump used to be patched raw."""
+        z64 = self._z64()
+        swapped = bytearray(z64)
+        swapped[0::2], swapped[1::2] = bytes(swapped[1::2]), bytes(swapped[0::2])
+        res, out = self._apply(bytes(swapped), "rom.v64")
+        self.assertEqual(res["status"], "patched", res)
+        self.assertIn("converted .v64", res["message"])
+        with open(out, "rb") as f:
+            patched = f.read()
+        # Output is native big-endian and the record landed at its offset.
+        self.assertEqual(patched[:4], bytes.fromhex("80371240"))
+        self.assertEqual(patched[0x1000:0x1004], b"WXYZ")
+
+    def test_non_rom_is_rejected(self):
+        res, _ = self._apply(b"\xFF" * 0x2000)
+        self.assertEqual(res["status"], "error")
+        self.assertIn("Not a recognizable N64 ROM", res["message"])
+
+    def test_oversized_rom_warns_about_3_byte_offsets(self):
+        from n64patcher.ips_bps_patcher import IPS_MAX_ADDRESSABLE
+        res, _ = self._apply(self._z64(IPS_MAX_ADDRESSABLE + 0x2000))
+        self.assertEqual(res["status"], "patched", res)
+        self.assertTrue(any("3 bytes" in w for w in res["warnings"]), res)
 
 
 class TestBpsPatcher(WriteHelper):

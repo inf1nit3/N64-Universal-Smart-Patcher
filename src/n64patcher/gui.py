@@ -1,41 +1,59 @@
 """
-N64_Smart_Patcher_GUI.py (v3.1)
+n64patcher.gui - PyQt6 desktop interface
 Universal N64 ROM Inspector & Smart Patcher - PyQt6 GUI
 
-Verbesserungen in v3.1:
-  - PatchWorker emittiert 'done' statt das QThread-eigene 'finished' zu
-    überschatten; Worker wird beim Schließen sauber gestoppt.
-  - Inspektion läuft in einem Hintergrund-Thread und füllt eine
-    QTreeWidget-Tabelle (Titel, Region, CRC1/CRC2, Hashes ...).
-  - Drag & Drop für Dateien, Ordner und Archive.
-  - Statusleiste zeigt Tool-Verfügbarkeit; Logs gehen zusätzlich in die
-    persistente Logdatei (core.append_log).
-  - Extraktions-Tempverzeichnisse liegen im System-Temp und werden auch
-    beim Schließen ohne vorherigen Patchlauf aufgeräumt.
+Design notes:
+  - PatchWorker emits 'done' rather than shadowing QThread's own
+    'finished' signal; the worker is stopped cleanly on close.
+  - Inspection runs on a background thread and fills a QTreeWidget table
+    (title, region, CRC1/CRC2, hashes, ...).
+  - Drag & drop accepts files, folders and archives.
+  - The status bar shows tool availability; log lines are additionally
+    written to the persistent log file (core.append_log).
+  - Extraction temp directories live in the system temp area and are
+    cleaned up on close even when no patch run happened.
 """
 import os
 import sys
 from datetime import datetime
 
-from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QCheckBox, QListWidget, QFileDialog,
-    QProgressBar, QGroupBox, QTreeWidget, QTreeWidgetItem,
-    QComboBox, QMessageBox, QTabWidget, QPlainTextEdit
-)
-from PyQt6.QtCore import QThread, QSettings, pyqtSignal
+from PyQt6.QtCore import QSettings, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QMainWindow,
+    QMessageBox,
+    QPlainTextEdit,
+    QProgressBar,
+    QPushButton,
+    QTabWidget,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
-import n64_core as core
-from presets import list_presets, apply_preset, get_preset_warnings
-from zip_handler import (is_archive, extract_roms_from_archive,
-                         cleanup_temp_dir, create_extraction_dir)
-from header_utils import detect_and_strip_scene_header, fix_rom_crc
+from . import n64_core as core
+from .header_utils import detect_and_strip_scene_header, fix_rom_crc
+from .presets import apply_preset, get_preset_warnings, list_presets
+from .zip_handler import (
+    cleanup_temp_dir,
+    create_extraction_dir,
+    extract_roms_from_archive,
+    is_archive,
+)
 
 
 class PatchWorker(QThread):
     progress = pyqtSignal(int, int, str)
-    done = pyqtSignal(dict)  # bewusst NICHT 'finished' (QThread-Kollision)
+    done = pyqtSignal(dict)  # deliberately NOT 'finished' (collides with QThread's)
     log_message = pyqtSignal(str)
 
     def __init__(self, roms, options, strip_header=False, fix_crc=False):
@@ -60,7 +78,7 @@ class PatchWorker(QThread):
 
         for i, rom in enumerate(self.roms, 1):
             if self.should_cancel:
-                self._log("⛔ Abgebrochen durch User")
+                self._log("⛔ Cancelled by user")
                 break
 
             filename = os.path.basename(rom)
@@ -69,12 +87,12 @@ class PatchWorker(QThread):
             temp_stripped = None
 
             try:
-                # Header-Stripping
+                # Strip the scene header first
                 if self.strip_header:
                     temp_stripped = rom + ".stripped.z64"
                     header_result = detect_and_strip_scene_header(rom, temp_stripped)
                     if header_result.get("stripped"):
-                        self._log(f"🔧 Header entfernt: {filename}")
+                        self._log(f"🔧 Header stripped: {filename}")
                         working_rom = temp_stripped
 
                 # Patching
@@ -90,7 +108,7 @@ class PatchWorker(QThread):
 
                 out_file = result.get("output")
 
-                # Optionaler (idempotenter) CRC-Durchlauf für Flashcarts
+                # Optional (idempotent) CRC pass for flashcarts
                 if self.fix_crc and result.get("status") == "patched" \
                         and out_file and os.path.isfile(out_file):
                     crc_result = fix_rom_crc(out_file)
@@ -113,7 +131,7 @@ class PatchWorker(QThread):
                 self._log(f"❌ Error on {filename}: {e}")
 
             finally:
-                # Cleanup des gestrippten Temp-ROMs
+                # Clean up the stripped temp ROM
                 if temp_stripped and os.path.isfile(temp_stripped):
                     try:
                         os.remove(temp_stripped)
@@ -124,8 +142,8 @@ class PatchWorker(QThread):
 
 
 class InspectWorker(QThread):
-    """Hintergrund-Inspektion, damit die GUI bei großen Bibliotheken
-    nicht blockiert."""
+    """Background inspection so the GUI stays responsive on large
+    libraries."""
     item_ready = pyqtSignal(dict)
     done = pyqtSignal(list)
 
@@ -142,7 +160,7 @@ class InspectWorker(QThread):
             except Exception as e:
                 info = {
                     "filename": os.path.basename(rom), "path": rom,
-                    "format": f"Fehler: {e}", "title": "", "region": "",
+                    "format": f"Error: {e}", "title": "", "region": "",
                     "size_mb": 0, "no_aa": False, "is_hires_640x480": False,
                     "vi_table_count": 0, "crc1": "", "crc2": "",
                     "has_subdrag_patch": False,
@@ -191,11 +209,11 @@ class N64PatcherGUI(QMainWindow):
         patch_layout = QVBoxLayout(patch_tab)
         tabs.addTab(patch_tab, "🎮 Patching")
 
-        preset_group = QGroupBox("📋 Preset-Profil wählen")
+        preset_group = QGroupBox("📋 Choose a preset profile")
         preset_layout = QVBoxLayout()
 
         self.preset_combo = QComboBox()
-        self.preset_combo.addItem("⚙️ Benutzerdefiniert (Individual Settings)", "custom")
+        self.preset_combo.addItem("⚙️ Custom (individual settings)", "custom")
         for preset in list_presets():
             self.preset_combo.addItem(f"{preset['name']} - {preset['description']}", preset['key'])
         self.preset_combo.currentIndexChanged.connect(self.on_preset_changed)
@@ -209,12 +227,12 @@ class N64PatcherGUI(QMainWindow):
         preset_group.setLayout(preset_layout)
         patch_layout.addWidget(preset_group)
 
-        options_group = QGroupBox("🎨 Visuelle Filter (Individual Settings)")
+        options_group = QGroupBox("🎨 Visual filters (individual settings)")
         options_layout = QVBoxLayout()
-        self.cb_no_aa = QCheckBox("Anti-Aliasing entfernen (No-AA) - Schärfere Kanten")
-        self.cb_no_dither = QCheckBox("Dither-Filter entfernen - Keine 16-bit Artefakte")
-        self.cb_no_divot = QCheckBox("Divot-Filter entfernen - Keine Edge-Blurring")
-        self.cb_no_gamma = QCheckBox("Gamma-Boost entfernen - Akkurate Farben")
+        self.cb_no_aa = QCheckBox("Remove anti-aliasing (No-AA) - sharper edges")
+        self.cb_no_dither = QCheckBox("Remove dither filter - no 16-bit artifacts")
+        self.cb_no_divot = QCheckBox("Remove divot filter - no edge blurring")
+        self.cb_no_gamma = QCheckBox("Remove gamma boost - accurate colors")
         self.cb_hires = QCheckBox("High-Res 640x480 (Smart VI Table Engine)")
         for cb in [self.cb_no_aa, self.cb_no_dither, self.cb_no_divot,
                    self.cb_no_gamma, self.cb_hires]:
@@ -222,24 +240,24 @@ class N64PatcherGUI(QMainWindow):
         options_group.setLayout(options_layout)
         patch_layout.addWidget(options_group)
 
-        flashcart_group = QGroupBox("💾 Flashcart-Optionen")
+        flashcart_group = QGroupBox("💾 Flashcart options")
         flashcart_layout = QVBoxLayout()
-        self.cb_strip_header = QCheckBox("Scene-Header entfernen (iN0000 etc.)")
-        self.cb_fix_crc = QCheckBox("CRC1/CRC2 reparieren (EverDrive kompatibel)")
+        self.cb_strip_header = QCheckBox("Strip scene header (iN0000 etc.)")
+        self.cb_fix_crc = QCheckBox("Repair CRC1/CRC2 (EverDrive compatible)")
         flashcart_layout.addWidget(self.cb_strip_header)
         flashcart_layout.addWidget(self.cb_fix_crc)
         flashcart_group.setLayout(flashcart_layout)
         patch_layout.addWidget(flashcart_group)
 
-        list_group = QGroupBox("📁 ROM-Bibliothek (auch per Drag & Drop)")
+        list_group = QGroupBox("📁 ROM library (drag & drop supported)")
         list_layout = QVBoxLayout()
         self.rom_list_widget = QListWidget()
         list_layout.addWidget(self.rom_list_widget)
 
         btn_layout = QHBoxLayout()
-        self.btn_add_files = QPushButton("➕ Dateien hinzufügen")
-        self.btn_add_folder = QPushButton("📂 Ordner hinzufügen")
-        self.btn_clear = QPushButton("🗑️ Liste leeren")
+        self.btn_add_files = QPushButton("➕ Add files")
+        self.btn_add_folder = QPushButton("📂 Add folder")
+        self.btn_clear = QPushButton("🗑️ Clear list")
         self.btn_add_files.clicked.connect(self.add_files)
         self.btn_add_folder.clicked.connect(self.add_folder)
         self.btn_clear.clicked.connect(self.clear_list)
@@ -257,9 +275,9 @@ class N64PatcherGUI(QMainWindow):
         patch_layout.addWidget(self.progress_bar)
 
         action_layout = QHBoxLayout()
-        self.btn_inspect = QPushButton("🔍 Inspizieren (Tabelle)")
-        self.btn_patch = QPushButton("🚀 Patchen starten")
-        self.btn_cancel = QPushButton("⛔ Abbrechen")
+        self.btn_inspect = QPushButton("🔍 Inspect (table)")
+        self.btn_patch = QPushButton("🚀 Start patching")
+        self.btn_cancel = QPushButton("⛔ Cancel")
         self.btn_cancel.setEnabled(False)
         self.btn_inspect.clicked.connect(self.start_inspection)
         self.btn_patch.clicked.connect(self.start_patching)
@@ -275,7 +293,7 @@ class N64PatcherGUI(QMainWindow):
         tabs.addTab(inspect_tab, "🔍 Inspector")
 
         inspect_ctrl = QHBoxLayout()
-        self.cb_hashes = QCheckBox("MD5/SHA-1 berechnen (langsam)")
+        self.cb_hashes = QCheckBox("Compute MD5/SHA-1 (slow)")
         self.cb_hashes.setChecked(True)
         self.btn_export_csv = QPushButton("💾 Export CSV")
         self.btn_export_json = QPushButton("💾 Export JSON")
@@ -296,8 +314,8 @@ class N64PatcherGUI(QMainWindow):
         self.tree = QTreeWidget()
         self.tree.setColumnCount(13)
         self.tree.setHeaderLabels([
-            "Datei", "Titel", "Region", "Format", "Größe (MB)", "Auflösung",
-            "AA", "VI-Tabellen", "CRC1", "CRC2", "SubDrag-Patch", "MD5", "SHA1"
+            "File", "Title", "Region", "Format", "Size (MB)", "Resolution",
+            "AA", "VI tables", "CRC1", "CRC2", "SubDrag patch", "MD5", "SHA1"
         ])
         self.tree.setAlternatingRowColors(True)
         self.tree.setSortingEnabled(True)
@@ -321,9 +339,9 @@ class N64PatcherGUI(QMainWindow):
         self.status_bar.addWidget(self.status_tool_label)
         self.status_bar.addPermanentWidget(self.status_count_label)
 
-        self.log(f"🎮 N64 Smart Patcher v{core.VERSION} gestartet")
+        self.log(f"🎮 N64 Smart Patcher v{core.VERSION} started")
         self.log(f"📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        self.log(f"📂 Logdatei: {core.get_log_path()}")
+        self.log(f"📂 Log file: {core.get_log_path()}")
 
     # ------------------------------------------------------- Presets
 
@@ -376,7 +394,7 @@ class N64PatcherGUI(QMainWindow):
                 elif core.is_rom_file(path) and not core.is_tool_output(path):
                     self._add_rom(path)
             except Exception as e:
-                self.log(f"⚠️ Fehler beim Hinzufügen von {path}: {e}")
+                self.log(f"⚠️ Error adding {path}: {e}")
         self.update_status_bar()
 
     def _add_rom(self, path):
@@ -385,7 +403,7 @@ class N64PatcherGUI(QMainWindow):
             self.rom_list_widget.addItem(os.path.basename(path))
 
     def _add_archive(self, path):
-        self.log(f"📦 Extrahiere Archiv: {os.path.basename(path)}")
+        self.log(f"📦 Extracting archive: {os.path.basename(path)}")
         temp_dir = create_extraction_dir()
         try:
             extracted = extract_roms_from_archive(path, temp_dir)
@@ -396,7 +414,7 @@ class N64PatcherGUI(QMainWindow):
         self.temp_dirs.append(temp_dir)
         for rom in extracted:
             self._add_rom(rom)
-        self.log(f"   ✓ {len(extracted)} ROM(s) extrahiert")
+        self.log(f"   ✓ {len(extracted)} ROM(s) extracted")
 
     def _add_folder_contents(self, folder):
         for root, _, files in os.walk(folder):
@@ -408,21 +426,21 @@ class N64PatcherGUI(QMainWindow):
                     elif core.is_rom_file(file) and not core.is_tool_output(full_path):
                         self._add_rom(full_path)
                 except Exception as e:
-                    self.log(f"⚠️ Fehler bei Datei {file}: {e}")
+                    self.log(f"⚠️ Error on file {file}: {e}")
 
     def add_files(self):
         files, _ = QFileDialog.getOpenFileNames(
-            self, "ROM-Dateien auswählen", "",
-            "N64 ROMs & Archive (*.z64 *.v64 *.n64 *.zip *.7z);;Alle Dateien (*)"
+            self, "Select ROM files", "",
+            "N64 ROMs & archives (*.z64 *.v64 *.n64 *.zip *.7z);;All files (*)"
         )
         self.add_paths(files)
-        self.log(f"📊 {len(self.rom_list)} ROM(s) in der Liste")
+        self.log(f"📊 {len(self.rom_list)} ROM(s) in the list")
 
     def add_folder(self):
-        folder = QFileDialog.getExistingDirectory(self, "Ordner auswählen")
+        folder = QFileDialog.getExistingDirectory(self, "Select folder")
         if folder:
             self.add_paths([folder])
-            self.log(f"📊 {len(self.rom_list)} ROM(s) in der Liste")
+            self.log(f"📊 {len(self.rom_list)} ROM(s) in the list")
 
     def clear_list(self):
         self.rom_list.clear()
@@ -431,7 +449,7 @@ class N64PatcherGUI(QMainWindow):
             cleanup_temp_dir(temp_dir)
         self.temp_dirs.clear()
         self.update_status_bar()
-        self.log("🗑️ Liste geleert")
+        self.log("🗑️ List cleared")
 
     # ------------------------------------------------------- Helpers
 
@@ -446,13 +464,13 @@ class N64PatcherGUI(QMainWindow):
             parts.append(f"{label}: {'✓' if tools.get(name) else '✗ (Fallback)'}")
         parts.append("CRC-Engine: Pure-Python ✓")
         self.status_tool_label.setText("  |  ".join(parts))
-        self.status_count_label.setText(f"{len(self.rom_list)} ROM(s) geladen")
+        self.status_count_label.setText(f"{len(self.rom_list)} ROM(s) loaded")
 
-    # ---------------------------------------------------- Inspektion
+    # ---------------------------------------------------- Inspection
 
     def start_inspection(self):
         if not self.rom_list:
-            QMessageBox.warning(self, "Keine ROMs", "Bitte zuerst ROMs hinzufügen!")
+            QMessageBox.warning(self, "No ROMs", "Add some ROMs first.")
             return
 
         self.tree.setSortingEnabled(False)
@@ -465,7 +483,7 @@ class N64PatcherGUI(QMainWindow):
         self.inspect_progress.setMaximum(len(self.rom_list))
         self.inspect_progress.setValue(0)
 
-        self.log("\n🔍 Inspiziere ROMs im Hintergrund...")
+        self.log("\n🔍 Inspecting ROMs in the background...")
         self.inspect_worker = InspectWorker(self.rom_list,
                                             with_hashes=self.cb_hashes.isChecked())
         self.inspect_worker.item_ready.connect(self.on_inspect_item)
@@ -504,14 +522,14 @@ class N64PatcherGUI(QMainWindow):
         self.tree.setSortingEnabled(True)
         for i in range(self.tree.columnCount()):
             self.tree.resizeColumnToContents(i)
-        self.log(f"\n✅ Inspektion abgeschlossen ({len(infos)} ROM(s))")
+        self.log(f"\n✅ Inspection complete ({len(infos)} ROM(s))")
 
     def export_report(self, fmt):
         if not self.last_infos:
             return
         default_name = f"n64_report.{fmt}"
         path, _ = QFileDialog.getSaveFileName(
-            self, "Report exportieren", default_name,
+            self, "Export report", default_name,
             "CSV (*.csv)" if fmt == "csv" else "JSON (*.json)")
         if not path:
             return
@@ -521,15 +539,15 @@ class N64PatcherGUI(QMainWindow):
             path += ".json"
         try:
             core.export_report(self.last_infos, path)
-            self.log(f"💾 Report geschrieben: {path}")
+            self.log(f"💾 Report written: {path}")
         except Exception as e:
-            QMessageBox.critical(self, "Export fehlgeschlagen", str(e))
+            QMessageBox.critical(self, "Export failed", str(e))
 
     # ----------------------------------------------------- Patching
 
     def start_patching(self):
         if not self.rom_list:
-            QMessageBox.warning(self, "Keine ROMs", "Bitte zuerst ROMs hinzufügen!")
+            QMessageBox.warning(self, "No ROMs", "Add some ROMs first.")
             return
 
         options = core.PatchOptions(
@@ -547,7 +565,7 @@ class N64PatcherGUI(QMainWindow):
         self.progress_bar.setMaximum(len(self.rom_list))
         self.progress_bar.setValue(0)
 
-        self.log(f"\n🚀 Starte Patching von {len(self.rom_list)} ROM(s)...")
+        self.log(f"\n🚀 Patching {len(self.rom_list)} ROM(s)...")
 
         self.worker = PatchWorker(
             self.rom_list,
@@ -568,7 +586,7 @@ class N64PatcherGUI(QMainWindow):
     def cancel_patching(self):
         if self.worker:
             self.worker.cancel()
-            self.log("⛔ Abbruch angefordert...")
+            self.log("⛔ Cancellation requested...")
 
     def on_finished(self, results):
         self.btn_patch.setEnabled(True)
@@ -578,7 +596,7 @@ class N64PatcherGUI(QMainWindow):
         self.progress_label.setText("")
 
         self.log(f"\n{'='*60}")
-        self.log(f"✅ Fertig! Patched: {results['patched']}, "
+        self.log(f"✅ Done. Patched: {results['patched']}, "
                  f"Skipped: {results['skipped']}, Errors: {results['errors']}")
         self.log(f"{'='*60}\n")
 
@@ -590,7 +608,7 @@ class N64PatcherGUI(QMainWindow):
                 pass
 
         QMessageBox.information(
-            self, "Patching abgeschlossen",
+            self, "Patching complete",
             f"Patched: {results['patched']}\n"
             f"Skipped: {results['skipped']}\n"
             f"Errors: {results['errors']}"
@@ -626,7 +644,7 @@ class N64PatcherGUI(QMainWindow):
 
     def closeEvent(self, event):
         # Sauberer Shutdown: laufende Worker stoppen, Temp-Verzeichnisse
-        # aufräumen, Einstellungen sichern.
+        # clean up, persist settings.
         self.save_settings()
         if self.worker is not None and self.worker.isRunning():
             self.worker.cancel()

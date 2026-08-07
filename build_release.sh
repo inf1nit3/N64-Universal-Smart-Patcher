@@ -4,21 +4,27 @@
 # Usage: ./build_release.sh
 set -euo pipefail
 
+echo "==> Installing package (editable) with dev extras..."
+python3 -m pip install -e ".[dev]"
+
+echo "==> Linting..."
+python3 -m ruff check .
+
+echo "==> Type checking..."
+python3 -m mypy
+
 echo "==> Running test suite..."
-python3 -m unittest discover -s . -p 'test_*.py' || { echo "Tests failed - aborting release build."; exit 1; }
+python3 -m pytest || { echo "Tests failed - aborting release build."; exit 1; }
 
 echo "==> Building GUI executable..."
-python3 -m PyInstaller --onefile --noconsole --name "N64_Smart_Patcher" \
-  --add-data "N64noAAPatcher/additionals:N64noAAPatcher/additionals" \
-  --add-data "N64noAAPatcher/hires_patches:N64noAAPatcher/hires_patches" \
-  --add-data "app_icon.png:." \
-  N64_Smart_Patcher_GUI.py
+python3 -m PyInstaller --noconfirm N64_Smart_Patcher.spec
 
 echo "==> Building CLI executable..."
-python3 -m PyInstaller --onefile --console --name "N64_Smart_Patcher_CLI" \
-  --add-data "N64noAAPatcher/additionals:N64noAAPatcher/additionals" \
-  --add-data "N64noAAPatcher/hires_patches:N64noAAPatcher/hires_patches" \
-  n64_patcher_cli.py
+python3 -m PyInstaller --noconfirm N64_Smart_Patcher_CLI.spec
+
+echo "==> Building wheel and sdist..."
+python3 -m pip install -q build
+python3 -m build
 
 echo "==> Done. Artifacts in dist/"
 ls -la dist/

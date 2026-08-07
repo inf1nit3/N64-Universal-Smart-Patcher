@@ -1,2 +1,2 @@
--r requirements.txt
-pyinstaller>=6.0
+# See requirements.txt - the real source is pyproject.toml.
+-e .[dev]

@@ -1,8 +1,8 @@
 """Unit tests for presets (immutability guarantees)."""
 import unittest
 
-import n64_core as core
-from presets import PRESETS, list_presets, apply_preset, get_preset_warnings
+from n64patcher import n64_core as core
+from n64patcher.presets import PRESETS, apply_preset, get_preset_warnings, list_presets
 
 
 class TestPresets(unittest.TestCase):

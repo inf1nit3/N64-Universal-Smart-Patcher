@@ -11,10 +11,17 @@ which are all verified here.
 import os
 import struct
 import zlib
-from typing import Dict, Any
+from typing import Any
+
+from . import n64_core as core
 
 IPS_EOF = b"EOF"
 BPS_FOOTER_SIZE = 12
+
+# IPS record offsets are 3 bytes, so no record can address past 16 MiB.
+# BPS has no such limit; it is only IPS that silently ignores the tail of
+# a 32/64 Mbit cartridge dump.
+IPS_MAX_ADDRESSABLE = 0x1000000
 
 
 def detect_patch_type(patch_path: str) -> str:
@@ -36,14 +43,37 @@ def detect_patch_type(patch_path: str) -> str:
     return "unknown"
 
 
-def apply_ips_patch(rom_path: str, patch_path: str, output_path: str) -> Dict[str, Any]:
-    """Applies a standard IPS patch to the ROM file."""
+def apply_ips_patch(rom_path: str, patch_path: str, output_path: str,
+                    require_n64: bool = True) -> dict[str, Any]:
+    """Applies a standard IPS patch to the ROM file.
+
+    Unlike BPS, IPS carries no checksum, so nothing in the format itself
+    notices a wrong-byte-order source: feeding it a .v64 would write
+    byte-swapped garbage and report success. The source is therefore
+    format-checked and converted to native big-endian first. Pass
+    require_n64=False to run the record decoder on non-ROM data.
+    """
     if not os.path.isfile(rom_path) or not os.path.isfile(patch_path):
         return {"status": "error", "message": "Source ROM or patch file missing"}
 
     try:
         with open(rom_path, "rb") as f:
             rom_data = bytearray(f.read())
+
+        notes = []
+        if require_n64:
+            fmt, label = core.detect_format(rom_data)
+            if fmt is None:
+                return {"status": "error",
+                        "message": f"Not a recognizable N64 ROM ({label}) - IPS "
+                                   f"patches are built against big-endian .z64 dumps"}
+            if fmt != "z64":
+                rom_data = bytearray(core.to_big_endian(bytes(rom_data), fmt))
+                notes.append(f"converted .{fmt} to .z64 first")
+            if len(rom_data) > IPS_MAX_ADDRESSABLE:
+                notes.append(f"IPS offsets are 3 bytes: nothing past "
+                             f"{IPS_MAX_ADDRESSABLE // (1024 * 1024)} MB of this "
+                             f"{len(rom_data) // (1024 * 1024)} MB ROM is addressable")
 
         with open(patch_path, "rb") as f:
             patch_data = f.read()
@@ -98,16 +128,20 @@ def apply_ips_patch(rom_path: str, patch_path: str, output_path: str) -> Dict[st
         with open(output_path, "wb") as f:
             f.write(rom_data)
 
+        message = f"IPS patch applied ({records_applied} records)"
+        if notes:
+            message += " - " + "; ".join(notes)
         return {
             "status": "patched",
-            "message": f"IPS patch applied ({records_applied} records)",
+            "message": message,
             "output": output_path,
+            "warnings": notes,
         }
 
     except Exception as e:
         return {"status": "error", "message": f"IPS patch error: {e}"}
 
-def _bps_read_vlv(patch_data: bytes, pos: int):
+def _bps_read_vlv(patch_data: bytes, pos: int) -> tuple[int, int]:
     """Decode one BPS variable-length value (byuu's reference scheme).
     Returns (value, new_pos). Raises ValueError on truncated input."""
     data = 0
@@ -125,7 +159,7 @@ def _bps_read_vlv(patch_data: bytes, pos: int):
     return data, pos
 
 
-def apply_bps_patch(rom_path: str, patch_path: str, output_path: str) -> Dict[str, Any]:
+def apply_bps_patch(rom_path: str, patch_path: str, output_path: str) -> dict[str, Any]:
     """Applies a BPS patch with full CRC32 verification."""
     if not os.path.isfile(rom_path) or not os.path.isfile(patch_path):
         return {"status": "error", "message": "Source ROM or patch file missing"}

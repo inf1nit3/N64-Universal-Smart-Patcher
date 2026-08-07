@@ -1,2 +1,9 @@
-PyQt6>=6.5
-py7zr>=0.20
+# Dependencies are declared in pyproject.toml; this file exists so the
+# familiar `pip install -r requirements.txt` still gets a working GUI.
+#
+#   pip install -e .            engine + CLI only (no third-party deps)
+#   pip install -e ".[archive]" adds .7z support
+#   pip install -e ".[gui]"     adds the PyQt6 desktop app
+#   pip install -e ".[dev]"     everything plus test/lint/build tooling
+#
+-e .[all]

@@ -28,9 +28,16 @@ import struct
 import subprocess
 import sys
 import tempfile
+import threading
+import traceback
 from dataclasses import dataclass
 
-VERSION = "3.1.0"
+from ._version import __version__
+
+# Public alias: the GUI title bar and `--version` read core.VERSION.
+# An assignment rather than `import ... as VERSION`, which linters strip
+# as an unused import.
+VERSION = __version__
 
 # ---------------------------------------------------------------------------
 # Paths (frozen-aware for PyInstaller bundles)
@@ -104,9 +111,14 @@ def get_log_path():
     return os.path.join(log_dir, "N64_Patcher_Log.txt")
 
 
+# Batch workers append from several threads; without this they interleave
+# mid-line in the log file.
+_LOG_LOCK = threading.Lock()
+
+
 def append_log(lines):
     path = get_log_path()
-    with open(path, "a", encoding="utf-8") as f:
+    with _LOG_LOCK, open(path, "a", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
     return path
 
@@ -176,6 +188,13 @@ def to_big_endian(data, fmt):
             bytes(ba[3::4]), bytes(ba[2::4]), bytes(ba[1::4]), bytes(ba[0::4]))
         return bytes(ba) + data[n:]
     return data
+
+
+def from_big_endian(data, fmt):
+    """Inverse of to_big_endian. Both orderings are byte permutations that
+    are their own inverse, so this delegates - it exists to make the
+    round-trip direction obvious at the call site."""
+    return to_big_endian(data, fmt)
 
 
 def ensure_z64(input_path, out_path):
@@ -250,17 +269,26 @@ def _be_word(data, offset):
     return word
 
 
+def _be_words(data, offset, count):
+    """`count` big-endian words starting at `offset`, zero-padded when the
+    image is short. One struct.unpack beats `count` slice-and-shift calls
+    by a wide margin, and this runs 262k times per ROM."""
+    end = offset + count * 4
+    chunk = bytes(data[offset:end])
+    if len(chunk) < count * 4:
+        chunk += b"\x00" * (count * 4 - len(chunk))
+    return struct.unpack(f">{count}I", chunk)
+
+
 def detect_cic_chip(data):
     """Identify the CIC boot chip from the bootcode region (0x40..0x1000).
     Returns a chip string ('6102', ...) or None if unknown."""
     if len(data) < 0x44:
         return None
-    total = 0
-    aleck_sum = 0
-    for off in range(0x40, 0x1000, 4):
-        if off == 0xC00:
-            aleck_sum = total  # Aleck64 only covers 0x40..0xC00
-        total += _be_word(data, off)
+    words = _be_words(data, 0x40, (0x1000 - 0x40) // 4)
+    aleck_words = (0xC00 - 0x40) // 4
+    aleck_sum = sum(words[:aleck_words])  # Aleck64 only covers 0x40..0xC00
+    total = aleck_sum + sum(words[aleck_words:])
     chip = CIC_SUMS.get(total)
     if chip is not None:
         return chip
@@ -284,35 +312,46 @@ def calculate_n64_crc(data, chip=None):
 
     a3 = t2 = t3 = s0 = a2 = t4 = seed
 
-    for i in range(0, length, 4):
-        d = _be_word(data, CRC_DATA_OFFSET + i)
+    words = _be_words(data, CRC_DATA_OFFSET, length // 4)
+    # CIC-6105 mixes in a rotating window of the bootcode at 0x750..0x850.
+    table = _be_words(data, 0x750, 0x40) if chip == "6105" else None
+    is_8303 = chip == "8303"
+    is_carry_xor = chip in ("8501", "8303")
+    # Local rebind: the loop below runs 262k times and touches this on
+    # nearly every line, so a global lookup each time is not free.
+    mask = _MASK32
 
+    for i, d in enumerate(words):
         carry_sum = a3 + d
-        a1 = carry_sum & _MASK32
-        if carry_sum > _MASK32:
-            if chip in ("8501", "8303"):
+        a1 = carry_sum & mask
+        if carry_sum > mask:
+            if is_carry_xor:
                 t2 ^= t3
             else:
-                t2 = (t2 + 1) & _MASK32
+                t2 = (t2 + 1) & mask
 
         shift = d & 0x1F
-        rot = ((d << shift) | (d >> (32 - shift))) & _MASK32 if shift else d
+        rot = ((d << shift) | (d >> (32 - shift))) & mask if shift else d
 
         a3 = a1
         t3 ^= d
-        s0 = (s0 + rot) & _MASK32
-        if a2 < d:
+        s0 = (s0 + rot) & mask
+        # Reference: `if (t2 > d) t2 ^= r; else t2 ^= t6 ^ d;` - the
+        # comparison is strictly greater, so a2 == d takes the a3 ^ d path.
+        if a2 > d:
+            if is_8303:
+                a2 = (a2 + rot) & mask
+            else:
+                a2 ^= rot
+        else:
             a2 ^= a3 ^ d
-        elif chip == "8303":
-            a2 = (a2 + rot) & _MASK32
-        else:
-            a2 ^= rot
 
-        if chip == "6105":
-            table_word = _be_word(data, 0x750 + (i & 0xFF))
-            t4 = (t4 + (d ^ table_word)) & _MASK32
+        if table is not None:  # noqa: SIM108 - a ternary here buries the comment
+            # The original walked bytes (0x750 + (byte_index & 0xFF)); as a
+            # word index into the 64-word table that is i & 0x3F.
+            t4 = (t4 + (d ^ table[i & 0x3F])) & mask
         else:
-            t4 = (t4 + (d ^ s0)) & _MASK32
+            t4 = (t4 + (d ^ s0)) & mask
 
     if chip == "6103":
         crc1 = ((a3 ^ t2) + t3) & _MASK32
@@ -329,15 +368,39 @@ def calculate_n64_crc(data, chip=None):
     return crc1, crc2
 
 
+def crc_header_is_valid(path):
+    """True when the CRC1/CRC2 stored at 0x10/0x14 match a fresh
+    computation. Used to check an external CRC tool actually did its job,
+    and by verify_output."""
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except OSError:
+        return False
+    fmt, _label = detect_format(data)
+    if fmt is None:
+        return False
+    be = to_big_endian(data, fmt)
+    crc = calculate_n64_crc(be)
+    if crc is None:
+        return False
+    stored = (int.from_bytes(be[0x10:0x14], "big"),
+              int.from_bytes(be[0x14:0x18], "big"))
+    return stored == crc
+
+
 def fix_rom_crc_native(path):
     """Recalculate CRC1/CRC2 in pure Python and stamp them into the file
-    at 0x10/0x14. The file must already be a big-endian .z64.
+    at 0x10/0x14. Byte-swapped .v64/.n64 images are handled by computing
+    on a big-endian view and writing the result back in the file's own
+    byte order, so fixing a checksum never silently changes the format.
     Returns (True, message) or (False, message)."""
     with open(path, "rb") as f:
-        data = bytearray(f.read())
-    fmt, _label = detect_format(data)
-    if fmt != "z64":
-        return False, "Not a big-endian .z64 image"
+        raw = f.read()
+    fmt, label = detect_format(raw)
+    if fmt is None:
+        return False, f"Not a recognizable N64 ROM ({label})"
+    data = bytearray(to_big_endian(raw, fmt))
     chip = detect_cic_chip(data)
     if chip is None:
         return False, "Unknown CIC boot chip - cannot compute CRC"
@@ -348,8 +411,9 @@ def fix_rom_crc_native(path):
     data[0x10:0x14] = struct.pack(">I", crc1)
     data[0x14:0x18] = struct.pack(">I", crc2)
     with open(path, "wb") as f:
-        f.write(data)
-    return True, f"CRC1/CRC2 recalculated natively (CIC-{chip})"
+        f.write(from_big_endian(bytes(data), fmt))
+    order = "" if fmt == "z64" else f", .{fmt} byte order preserved"
+    return True, f"CRC1/CRC2 recalculated natively (CIC-{chip}{order})"
 
 
 # ---------------------------------------------------------------------------
@@ -432,39 +496,87 @@ def apply_smart_hires_patch(z64_path):
 
 # ---------------------------------------------------------------------------
 # Dynamic VI instruction-mask patcher (fallback when u64aap has no DB entry)
+#
+# This is a pattern rewrite, so the search window is what keeps it honest.
+# Three constraints bound it:
+#   * region  - only the game's code segment is considered. Below 0x1000
+#               sits the IPL3 bootcode, which must never be touched (it is
+#               exactly what detect_cic_chip sums to identify the CIC);
+#               past CODE_REGION_END sits compressed asset data, where a
+#               4-byte match is coincidence rather than an instruction.
+#   * align   - MIPS instructions are word-aligned, so a hit at an offset
+#               that is not a multiple of 4 cannot be the instruction.
+#   * density - real libultra code has a handful of these sites. A flood
+#               means the scan is walking data that merely looks like code;
+#               patching then does far more damage than leaving AA on.
 # ---------------------------------------------------------------------------
 
-def apply_dynamic_vi_patch(z64_path, no_aa=True, no_dither=True):
-    """Apply instruction-mask patches. Each option is honored independently.
-    Returns the set of applied labels ('NoAA', 'NoDither')."""
+CODE_REGION_START = 0x1000
+CODE_REGION_END = 8 * 1024 * 1024
+_INSTR_ALIGN = 4
+MAX_DYNAMIC_PATCH_SITES = 64
+
+DITHER_PATTERN = bytes.fromhex("31cf0040")             # andi $t7, $t6, 0x40
+DITHER_REPLACEMENT = bytes.fromhex("31cf0000")         # andi $t7, $t6, 0x00
+DITHER_BRANCH = bytes.fromhex("11e0000d")              # beq  $t7, $zero, +0xd
+DITHER_BRANCH_REPLACEMENT = bytes.fromhex("1000000d")  # b    +0xd
+AA_PATTERN = bytes.fromhex("30423000")                 # andi $v0, $v0, 0x3000
+AA_REPLACEMENT = bytes.fromhex("30422000")             # andi $v0, $v0, 0x2000
+
+
+def find_instruction_sites(data, pattern, start=CODE_REGION_START,
+                           end=CODE_REGION_END):
+    """Word-aligned occurrences of *pattern* within [start, end)."""
+    sites = []
+    pos = max(start, 0)
+    limit = min(end, len(data))
+    while pos < limit:
+        pos = data.find(pattern, pos, limit)
+        if pos == -1:
+            break
+        if pos % _INSTR_ALIGN == 0:
+            sites.append(pos)
+            pos += _INSTR_ALIGN
+        else:
+            pos += 1
+    return sites
+
+
+def apply_dynamic_vi_patch(z64_path, no_aa=True, no_dither=True, log=None):
+    """Apply instruction-mask patches inside the code segment only. Each
+    option is honored independently. Returns the set of applied labels
+    ('NoAA', 'NoDither'); an implausibly dense match set is reported via
+    *log* and left alone rather than rewritten."""
     with open(z64_path, "rb") as f:
         data = bytearray(f.read())
 
     applied = set()
+    if len(data) <= CODE_REGION_START:
+        return applied
+
+    def note(msg):
+        if log:
+            log(msg)
+
+    def sites_for(pattern, label):
+        found = find_instruction_sites(data, pattern)
+        if len(found) > MAX_DYNAMIC_PATCH_SITES:
+            note(f"  Dynamic VI: {len(found)} {label} candidates is "
+                 f"implausible for code - skipping to avoid corrupting data")
+            return []
+        return found
 
     if no_dither:
-        pattern = bytes.fromhex("31cf0040")
-        pos = 0
-        while True:
-            pos = data.find(pattern, pos)
-            if pos == -1:
-                break
-            data[pos:pos + 4] = bytes.fromhex("31cf0000")
-            if data[pos + 4:pos + 8] == bytes.fromhex("11e0000d"):
-                data[pos + 4:pos + 8] = bytes.fromhex("1000000d")
+        for pos in sites_for(DITHER_PATTERN, "dither"):
+            data[pos:pos + 4] = DITHER_REPLACEMENT
+            if data[pos + 4:pos + 8] == DITHER_BRANCH:
+                data[pos + 4:pos + 8] = DITHER_BRANCH_REPLACEMENT
             applied.add("NoDither")
-            pos += 4
 
     if no_aa:
-        pattern = bytes.fromhex("30423000")
-        pos = 0
-        while True:
-            pos = data.find(pattern, pos)
-            if pos == -1:
-                break
-            data[pos:pos + 4] = bytes.fromhex("30422000")
+        for pos in sites_for(AA_PATTERN, "AA"):
+            data[pos:pos + 4] = AA_REPLACEMENT
             applied.add("NoAA")
-            pos += 4
 
     if applied:
         with open(z64_path, "wb") as f:
@@ -476,28 +588,43 @@ def apply_dynamic_vi_patch(z64_path, no_aa=True, no_dither=True):
 # SubDrag verified .xdelta patches (matched by ROM internal title)
 # ---------------------------------------------------------------------------
 
+# title substring -> (patch filename, accepted country codes at header 0x3E).
+# Every one of these deltas is built against a specific NTSC-U dump, so a
+# PAL or JP cartridge can only ever fail the xdelta. Gating on the region
+# byte turns a confusing "patch failed" into a clean skip.
+#
+# Region alone does not pin down the revision (the Banjo-Kazooie delta
+# wants v1.1 specifically); matching CRC1/CRC2 would, and inspect_rom_details
+# already reads them. That needs the checksums of the exact dumps these
+# deltas target, which are not recorded anywhere in this repo - fill in
+# EXPECTED_CRC1 per entry once verified and the region gate can go.
 SUBDRAG_PATCHES = {
-    "SUPER MARIO 64":   "Super Mario 64 (U) [!] 640 x 480i No AA[SubDrag].xdelta",
-    "GOLDENEYE":        "GE640x480iEnhanced[SubDragTrevorZoinkity].xdelta",
-    "BANJO KAZOOIE":    "Banjo-Kazooie (U) (V1.1) 640 x 480i NoAA[SubDrag].xdelta",
-    "F-ZERO X":         "F-ZERO X (U) 640x480i No AA[SubDrag].xdelta",
-    "FORSAKEN 64":      "Forsaken 64 (U) 640x480i NoAA [SubDrag].xdelta",
-    "POKEMON SNAP":     "PokemonSnap640x480iNoAA.xdelta",
-    "QUAKE II":         "Quake II (U) [!] 640 x 480i NoAA[SubDrag].xdelta",
-    "GOLDEN NUGGET 64": "GoldenNugget 640 x 480i CrapsCrashes[SubDrag].xdelta",
+    "SUPER MARIO 64":   ("Super Mario 64 (U) [!] 640 x 480i No AA[SubDrag].xdelta", "E"),
+    "GOLDENEYE":        ("GE640x480iEnhanced[SubDragTrevorZoinkity].xdelta", "E"),
+    "BANJO KAZOOIE":    ("Banjo-Kazooie (U) (V1.1) 640 x 480i NoAA[SubDrag].xdelta", "E"),
+    "F-ZERO X":         ("F-ZERO X (U) 640x480i No AA[SubDrag].xdelta", "E"),
+    "FORSAKEN 64":      ("Forsaken 64 (U) 640x480i NoAA [SubDrag].xdelta", "E"),
+    "POKEMON SNAP":     ("PokemonSnap640x480iNoAA.xdelta", "E"),
+    "QUAKE II":         ("Quake II (U) [!] 640 x 480i NoAA[SubDrag].xdelta", "E"),
+    "GOLDEN NUGGET 64": ("GoldenNugget 640 x 480i CrapsCrashes[SubDrag].xdelta", "E"),
 }
 
 
-def get_subdrag_patch_for_title(title):
-    """Return the path of a usable SubDrag patch for this title, or None."""
+def get_subdrag_patch_for_title(title, country_code=None):
+    """Return the path of a usable SubDrag patch for this title, or None.
+    When *country_code* (header 0x3E) is given, entries built for another
+    region are rejected rather than attempted."""
     if not os.path.isdir(HIRES_PATCHES_DIR):
         return None
     title_upper = (title or "").upper().strip()
-    for key, filename in SUBDRAG_PATCHES.items():
-        if key in title_upper:
-            candidate = os.path.join(HIRES_PATCHES_DIR, filename)
-            if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
-                return candidate
+    for key, (filename, regions) in SUBDRAG_PATCHES.items():
+        if key not in title_upper:
+            continue
+        if country_code and regions and country_code.upper() not in regions:
+            continue
+        candidate = os.path.join(HIRES_PATCHES_DIR, filename)
+        if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
+            return candidate
     return None
 
 
@@ -549,10 +676,9 @@ REGION_MAP = {
     "Y": "Europe (PAL 50Hz, alt)",
 }
 
-# Heuristic AA/dither status patterns only live in executable code, which
-# sits in the first few MB. Capping the scan avoids false positives from
-# compressed asset data later in the ROM.
-AA_SCAN_LIMIT = 8 * 1024 * 1024
+# Detection reads exactly the window apply_dynamic_vi_patch writes to, so
+# "already patched" can never disagree with what the patcher would do.
+AA_SCAN_LIMIT = CODE_REGION_END
 
 
 def _hash_file(path, chunk_size=1024 * 1024):
@@ -577,13 +703,16 @@ def inspect_rom_details(rom_path, with_hashes=False):
         "title": "Unknown",
         "game_id": "Unknown",
         "region": "Unknown",
+        "country_code": "?",
         "crc1": "Unknown",
         "crc2": "Unknown",
         "no_aa": False,
         "no_dither": False,
         "is_60fps_or_mod": False,
         "is_hires_640x480": False,
+        "is_mixed_resolution": False,
         "vi_table_count": 0,
+        "vi_table_640_count": 0,
         "has_subdrag_patch": False,
     }
 
@@ -610,12 +739,14 @@ def inspect_rom_details(rom_path, with_hashes=False):
 
         country_byte = head[62]
         country_code = chr(country_byte) if 32 <= country_byte < 127 else "?"
+        info["country_code"] = country_code
         info["region"] = REGION_MAP.get(country_code, f"Unknown ({country_code})")
 
         with open(rom_path, "rb") as f:
             scan_region = f.read(AA_SCAN_LIMIT)
-        info["no_dither"] = b"\x31\xcf\x00\x00" in scan_region
-        info["no_aa"] = b"\x30\x42\x20\x00" in scan_region or info["no_dither"]
+        info["no_dither"] = bool(find_instruction_sites(scan_region,
+                                                        DITHER_REPLACEMENT))
+        info["no_aa"] = bool(find_instruction_sites(scan_region, AA_REPLACEMENT))
 
         vi_tables_320 = scan_vi_tables_file(rom_path, WIDTH_320_DATA)
         vi_tables_640 = scan_vi_tables_file(rom_path, WIDTH_640_DATA)
@@ -632,19 +763,27 @@ def inspect_rom_details(rom_path, with_hashes=False):
 
         country_byte = full_be[62]
         country_code = chr(country_byte) if 32 <= country_byte < 127 else "?"
+        info["country_code"] = country_code
         info["region"] = REGION_MAP.get(country_code, f"Unknown ({country_code})")
 
         scan_region = full_be[:AA_SCAN_LIMIT]
-        info["no_dither"] = b"\x31\xcf\x00\x00" in scan_region
-        info["no_aa"] = b"\x30\x42\x20\x00" in scan_region or info["no_dither"]
+        info["no_dither"] = bool(find_instruction_sites(scan_region,
+                                                        DITHER_REPLACEMENT))
+        info["no_aa"] = bool(find_instruction_sites(scan_region, AA_REPLACEMENT))
 
         vi_tables_320 = find_vi_tables(full_be, WIDTH_320_DATA)
         vi_tables_640 = find_vi_tables(full_be, WIDTH_640_DATA)
 
     info["vi_table_count"] = len(vi_tables_320)
+    info["vi_table_640_count"] = len(vi_tables_640)
+    # Strict on purpose: this drives the "already hi-res, skip it" decision,
+    # and a ROM with 640 *and* 320 tables still has work left. The mixed
+    # case gets its own flag so reports do not have to call it 320x240.
     info["is_hires_640x480"] = len(vi_tables_640) > 0 and len(vi_tables_320) == 0
+    info["is_mixed_resolution"] = len(vi_tables_640) > 0 and len(vi_tables_320) > 0
 
-    info["has_subdrag_patch"] = get_subdrag_patch_for_title(info["title"]) is not None
+    info["has_subdrag_patch"] = get_subdrag_patch_for_title(
+        info["title"], country_code) is not None
 
     if with_hashes:
         info["md5"], info["sha1"] = _hash_file(rom_path)
@@ -665,10 +804,58 @@ class PatchOptions:
     hires: bool = False
 
 
+MAX_FILENAME_BYTES = 255  # single name component on ext4/NTFS/APFS
+
+
+def _filename_byte_len(name):
+    enc = sys.getfilesystemencoding() or "utf-8"
+    return len(name.encode(enc, "surrogateescape"))
+
+
+def _fit_base_name(base_fn, suffix):
+    """Shorten *base_fn* so `base_fn + suffix` fits one filesystem name
+    component. Plain truncation would map two long titles sharing a prefix
+    onto the same output name, so a digest of the full stem is appended
+    whenever anything is actually cut."""
+    if _filename_byte_len(base_fn + suffix) <= MAX_FILENAME_BYTES:
+        return base_fn
+    digest = "~" + hashlib.sha1(
+        base_fn.encode("utf-8", "surrogateescape")).hexdigest()[:8]
+    budget = MAX_FILENAME_BYTES - _filename_byte_len(suffix + digest)
+    trimmed = base_fn
+    while trimmed and _filename_byte_len(trimmed) > budget:
+        trimmed = trimmed[:-1]
+    return trimmed.rstrip(" _-") + digest
+
+
+def _numbered_variant(path, n):
+    root, ext = os.path.splitext(path)
+    return f"{root} ({n}){ext}"
+
+
+def _free_output_path(path, avoid=None):
+    """First variant of *path* ('x.z64', 'x (2).z64', 'x (3).z64', ...)
+    that neither exists nor equals *avoid*."""
+    avoid_abs = os.path.abspath(avoid) if avoid else None
+
+    def taken(p):
+        if avoid_abs is not None and os.path.abspath(p) == avoid_abs:
+            return True
+        return os.path.exists(p)
+
+    if not taken(path):
+        return path
+    n = 2
+    while taken(_numbered_variant(path, n)):
+        n += 1
+    return _numbered_variant(path, n)
+
+
 def build_output_path(rom_path, applied, output_dir=None):
     """Output path with a descriptive tag, next to the input or in
-    *output_dir* when given. Never equals the input path (originals are
-    preserved)."""
+    *output_dir* when given. Never equals the input path and never an
+    existing file - originals and earlier results are both preserved, with
+    a '(2)', '(3)', ... suffix disambiguating."""
     if "HR" in applied and "NoAA" in applied:
         tag = " [HR+NoAA]"
     elif "HR" in applied:
@@ -689,14 +876,72 @@ def build_output_path(rom_path, applied, output_dir=None):
             base_fn = base_fn[:-len(t)]
             break
 
-    max_base_len = 65 - len(tag)
-    if len(base_fn) > max_base_len:
-        base_fn = base_fn[:max_base_len].rstrip(" _-")
+    suffix = f"{tag}.z64"
+    base_fn = _fit_base_name(base_fn, suffix)
+    return _free_output_path(os.path.join(dir_name, base_fn + suffix),
+                             avoid=rom_path)
 
-    final_path = os.path.join(dir_name, f"{base_fn}{tag}.z64")
-    if os.path.abspath(final_path) == os.path.abspath(rom_path):
-        final_path = os.path.join(dir_name, f"{base_fn}{tag} (2).z64")
-    return final_path
+
+def reserve_output_path(rom_path, applied, output_dir=None):
+    """build_output_path plus an atomic claim on the name: the file is
+    created empty with O_EXCL, so two concurrent batch workers can never
+    settle on the same path between choosing it and writing to it."""
+    while True:
+        candidate = build_output_path(rom_path, applied, output_dir=output_dir)
+        os.makedirs(os.path.dirname(candidate) or ".", exist_ok=True)
+        try:
+            fd = os.open(candidate, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
+        except FileExistsError:
+            continue  # lost the race; re-scan picks the next free name
+        os.close(fd)
+        return candidate
+
+
+def move_onto_reserved(src, dst):
+    """Move *src* over the placeholder created by reserve_output_path.
+    os.replace is atomic but same-filesystem only; shutil.move handles the
+    cross-device case (output_dir on another drive)."""
+    try:
+        os.replace(src, dst)
+    except OSError:
+        shutil.move(src, dst)
+
+
+def _country_code_of(info):
+    """The header 0x3E character from an inspect_rom_details dict. Falls
+    back to the last character of game_id ('media + 2-char id + country')
+    for dicts built before that field existed; game_id is stripped, so a
+    short value means the code is unknown and no region gate applies."""
+    code = info.get("country_code")
+    if code and code != "?":
+        return code
+    game_id = info.get("game_id") or ""
+    return game_id[-1] if len(game_id) >= 4 else None
+
+
+def _files_differ(path_a, path_b, chunk=1024 * 1024):
+    """Chunked content comparison; used to tell a real patch from a tool
+    that exited cleanly without changing anything."""
+    if os.path.getsize(path_a) != os.path.getsize(path_b):
+        return True
+    with open(path_a, "rb") as fa, open(path_b, "rb") as fb:
+        while True:
+            ca, cb = fa.read(chunk), fb.read(chunk)
+            if ca != cb:
+                return True
+            if not ca:
+                return False
+
+
+def _temp_dir_for(rom_path, output_dir=None):
+    """Where working files go. The destination directory is preferred so
+    the final move is a rename rather than a multi-MB copy, but only when
+    it is actually writable - read-only mounts and network shares fall
+    back to system temp instead of failing outright."""
+    for candidate in (output_dir, os.path.dirname(os.path.abspath(rom_path))):
+        if candidate and os.path.isdir(candidate) and os.access(candidate, os.W_OK):
+            return candidate
+    return tempfile.gettempdir()
 
 
 def _run_tool(cmd, timeout=SUBPROCESS_TIMEOUT):
@@ -712,9 +957,9 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
     there instead of next to the input."""
     result = {"status": "error", "message": "", "output": None,
               "applied": set(), "input": rom_path}
-    dir_name = os.path.dirname(os.path.abspath(rom_path)) or "."
 
-    fd, temp_z64 = tempfile.mkstemp(suffix=".temp.z64", dir=dir_name)
+    fd, temp_z64 = tempfile.mkstemp(suffix=".temp.z64",
+                                    dir=_temp_dir_for(rom_path, output_dir))
     os.close(fd)
     patched_z64 = temp_z64[: -len(".temp.z64")] + ".patched.z64"
     tools = check_tools()
@@ -743,7 +988,8 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
 
         # --- Stage 1: SubDrag verified .xdelta on the CLEAN source ---------
         if options.hires:
-            patch = get_subdrag_patch_for_title(info["title"])
+            patch = get_subdrag_patch_for_title(
+                info["title"], _country_code_of(info))
             if patch:
                 if tools["xdelta3"]:
                     ok, msg = try_subdrag_xdelta(patch, temp_z64, patched_z64)
@@ -776,7 +1022,13 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
                     cmd.extend(["-g", "-c"])
                 try:
                     res = _run_tool(cmd)
-                    if os.path.isfile(out_tmp) and "result: file patched!" in res.stdout:
+                    # Success is "exited clean and actually changed the ROM",
+                    # not a phrase in stdout - that string is locale- and
+                    # version-dependent. A no-op output means u64aap had no
+                    # database entry, which is the fall-through case anyway.
+                    if (res.returncode == 0 and os.path.isfile(out_tmp)
+                            and os.path.getsize(out_tmp) > 0
+                            and _files_differ(out_tmp, base)):
                         os.replace(out_tmp, patched_z64)
                         patched_exists = True
                         base = patched_z64
@@ -804,7 +1056,8 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
                     base = patched_z64
                 dyn = apply_dynamic_vi_patch(patched_z64,
                                              no_aa=options.no_aa and not subdrag_used,
-                                             no_dither=options.no_dither)
+                                             no_dither=options.no_dither,
+                                             log=log)
                 if dyn:
                     applied.update(dyn)
                     log(f"  Dynamic VI matcher: SUCCESS ({', '.join(sorted(dyn))})")
@@ -846,9 +1099,16 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
         if tools["rn64crc"]:
             try:
                 crc_res = _run_tool([RN64CRC_PATH, "-u", patched_z64])
-                if crc_res.returncode == 0:
+                # rn64crc exits 0 even when it cannot identify the boot chip
+                # and leaves the header untouched ("Unable to calculate!"), so
+                # the file is the authority here, not the return code. Getting
+                # this wrong ships a ROM that black-screens on hardware.
+                if crc_res.returncode == 0 and crc_header_is_valid(patched_z64):
                     crc_done = True
                     log(f"  CRC Update: {crc_res.stdout.strip() or crc_res.stderr.strip()}")
+                elif crc_res.returncode == 0:
+                    log("  rn64crc exited 0 but left invalid checksums - "
+                        "falling back to native engine")
                 else:
                     log(f"  rn64crc returned {crc_res.returncode}, falling back to native engine")
             except (subprocess.TimeoutExpired, OSError) as e:
@@ -860,9 +1120,16 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
             else:
                 log(f"  WARNING: CRC Update FAILED ({crc_msg}) - boot checksums NOT updated!")
 
-        final_path = build_output_path(rom_path, applied, output_dir=output_dir)
-        os.makedirs(os.path.dirname(final_path) or ".", exist_ok=True)
-        shutil.move(patched_z64, final_path)
+        final_path = reserve_output_path(rom_path, applied, output_dir=output_dir)
+        try:
+            move_onto_reserved(patched_z64, final_path)
+        except Exception:
+            # Don't leave the empty placeholder behind for a failed move.
+            try:
+                os.remove(final_path)
+            except OSError:
+                pass
+            raise
         patched_exists = False
 
         result["status"] = "patched"
@@ -873,6 +1140,12 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
     except Exception as e:
         result["status"] = "error"
         result["message"] = str(e)
+        # The UI shows only the message; the log keeps enough to debug it.
+        result["traceback"] = traceback.format_exc()
+        try:
+            append_log([f"ERROR patching {rom_path}", result["traceback"]])
+        except OSError:
+            pass
         return result
     finally:
         for p in (temp_z64, patched_z64, patched_z64 + ".u64aap_tmp.z64",
@@ -885,15 +1158,118 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
 
 
 # ---------------------------------------------------------------------------
+# Post-patch verification
+#
+# Re-opens a produced file and checks it independently of the code that
+# wrote it. Checks are split in two:
+#
+#   strict   - "will this boot": the image is a recognizable ROM, the CIC
+#              is identifiable, and the stored boot checksums recompute to
+#              the stored values. A strict failure means a black screen on
+#              hardware, so it fails the ROM.
+#   advisory - "did the requested effect land": reported but not fatal,
+#              because an effect applied through u64aap or a SubDrag delta
+#              need not leave the same byte signature the dynamic patcher
+#              does, and a missing signature there is not proof of failure.
+# ---------------------------------------------------------------------------
+
+def verify_output(path, applied=None):
+    """Verify a patched ROM. Returns
+    {"ok": bool, "checks": [{"name", "ok", "strict", "detail"}, ...]}
+    where *ok* reflects the strict checks only."""
+    applied = applied or set()
+    checks = []
+
+    def add(name, ok, strict, detail=""):
+        checks.append({"name": name, "ok": bool(ok), "strict": strict,
+                       "detail": detail})
+
+    def result():
+        return {"ok": all(c["ok"] for c in checks if c["strict"]),
+                "checks": checks}
+
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except OSError as e:
+        add("readable", False, True, str(e))
+        return result()
+
+    fmt, label = detect_format(data)
+    add("format", fmt is not None, True, label)
+    if fmt is None:
+        return result()
+    be = to_big_endian(data, fmt)
+
+    chip = detect_cic_chip(be)
+    add("cic", chip is not None, True,
+        f"CIC-{chip}" if chip else "boot chip not identifiable")
+
+    if chip is not None:
+        crc = calculate_n64_crc(be, chip)
+        if crc is None:
+            add("crc", False, True, f"no CRC algorithm for CIC-{chip}")
+        else:
+            stored = (int.from_bytes(be[0x10:0x14], "big"),
+                      int.from_bytes(be[0x14:0x18], "big"))
+            add("crc", stored == crc, True,
+                f"header {stored[0]:08X}/{stored[1]:08X} vs "
+                f"computed {crc[0]:08X}/{crc[1]:08X}")
+
+    info = inspect_rom_details(path)
+    if "NoAA" in applied:
+        add("no_aa", info["no_aa"], False,
+            "AA mask signature present" if info["no_aa"]
+            else "no AA mask signature (expected when applied via u64aap/xdelta)")
+    if "NoDither" in applied:
+        add("no_dither", info["no_dither"], False,
+            "dither mask signature present" if info["no_dither"]
+            else "no dither mask signature (expected when applied via u64aap)")
+    if "HR" in applied:
+        converted = info["vi_table_count"] == 0 and info["vi_table_640_count"] > 0
+        add("hires", converted, False,
+            f"{info['vi_table_count']} x320 / {info['vi_table_640_count']} x640 "
+            f"VI tables remain")
+
+    return result()
+
+
+def verify_report_rows(results):
+    """Flatten patch results into rows for CSV/JSON export, so a run over a
+    real library produces a publishable compatibility matrix without
+    shipping any ROM data. Hashes identify the dump; no content is copied."""
+    rows = []
+    for res in results:
+        out = res.get("output")
+        if not out:
+            continue
+        verdict = verify_output(out, res.get("applied"))
+        md5, sha1 = _hash_file(res["input"])
+        rows.append({
+            "input": os.path.basename(res["input"]),
+            "input_md5": md5,
+            "input_sha1": sha1,
+            "output": os.path.basename(out),
+            "applied": " ".join(sorted(res.get("applied") or ())),
+            "verified": verdict["ok"],
+            "failed_checks": " ".join(
+                c["name"] for c in verdict["checks"]
+                if c["strict"] and not c["ok"]),
+            "advisories": " ".join(
+                c["name"] for c in verdict["checks"]
+                if not c["strict"] and not c["ok"]),
+        })
+    return rows
+
+
+# ---------------------------------------------------------------------------
 # Report export
 # ---------------------------------------------------------------------------
 
-def export_report(infos, path):
-    """Write inspection results to CSV or JSON (chosen by file extension)."""
-    keys = ["filename", "path", "size_mb", "format", "title", "game_id", "region",
-            "crc1", "crc2", "no_aa", "no_dither", "is_60fps_or_mod",
-            "is_hires_640x480", "vi_table_count", "has_subdrag_patch", "md5", "sha1"]
-    rows = [{k: info.get(k, "") for k in keys} for info in infos]
+def export_rows(rows, path, keys=None):
+    """Write a list of dicts to CSV or JSON, chosen by file extension."""
+    if keys is None:
+        keys = list(rows[0].keys()) if rows else []
     if path.lower().endswith(".json"):
         with open(path, "w", encoding="utf-8") as f:
             json.dump(rows, f, indent=2)
@@ -903,3 +1279,13 @@ def export_report(infos, path):
             writer.writeheader()
             writer.writerows(rows)
     return path
+
+
+def export_report(infos, path):
+    """Write inspection results to CSV or JSON (chosen by file extension)."""
+    keys = ["filename", "path", "size_mb", "format", "title", "game_id", "region",
+            "crc1", "crc2", "no_aa", "no_dither", "is_60fps_or_mod",
+            "is_hires_640x480", "is_mixed_resolution", "vi_table_count",
+            "vi_table_640_count", "has_subdrag_patch", "md5", "sha1"]
+    rows = [{k: info.get(k, "") for k in keys} for info in infos]
+    return export_rows(rows, path, keys)

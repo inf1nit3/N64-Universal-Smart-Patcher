@@ -3,8 +3,8 @@ presets.py
 Presets profiles for the Universal N64 Smart Patcher.
 """
 from dataclasses import dataclass, field
-from typing import Dict, List
-import n64_core as core
+
+from . import n64_core as core
 
 
 @dataclass
@@ -13,10 +13,10 @@ class Preset:
     name: str
     description: str
     options: core.PatchOptions
-    warnings: List[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
-PRESETS: Dict[str, Preset] = {
+PRESETS: dict[str, Preset] = {
     "crt_authentic": Preset(
         key="crt_authentic",
         name="📺 CRT Authentic",
@@ -72,7 +72,7 @@ PRESETS: Dict[str, Preset] = {
 }
 
 
-def list_presets() -> List[Dict[str, str]]:
+def list_presets() -> list[dict[str, str]]:
     """Returns a list of dictionaries with preset keys, names, and descriptions."""
     return [
         {"key": p.key, "name": p.name, "description": p.description}
@@ -98,7 +98,7 @@ def apply_preset(preset_key: str) -> core.PatchOptions:
     return core.PatchOptions()
 
 
-def get_preset_warnings(preset_key: str) -> List[str]:
+def get_preset_warnings(preset_key: str) -> list[str]:
     """Returns warning strings associated with the preset key."""
     if preset_key in PRESETS:
         return PRESETS[preset_key].warnings
