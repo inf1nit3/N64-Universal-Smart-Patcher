@@ -22,6 +22,19 @@ python3 -m PyInstaller --noconfirm N64_Smart_Patcher.spec
 echo "==> Building CLI executable..."
 python3 -m PyInstaller --noconfirm N64_Smart_Patcher_CLI.spec
 
+# The unit suite imports the package; this runs the binary that ships. Two
+# releases went out with a data file that was packed to the wrong path, and
+# only this kind of check catches that.
+echo "==> Smoke testing the built CLI..."
+chmod +x dist/N64_Smart_Patcher_CLI
+python3 scripts/smoke_test.py dist/N64_Smart_Patcher_CLI
+
+if ! command -v xdelta3 >/dev/null 2>&1; then
+    echo "    NOTE: xdelta3 is not on PATH, so the verified 640x480 patches"
+    echo "          cannot be applied on this machine (macOS: brew install xdelta,"
+    echo "          Debian/Ubuntu: sudo apt install xdelta3)."
+fi
+
 echo "==> Building wheel and sdist..."
 python3 -m pip install -q build
 python3 -m build

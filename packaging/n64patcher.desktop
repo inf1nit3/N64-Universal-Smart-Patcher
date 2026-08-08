@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=N64 Smart Patcher
+GenericName=N64 ROM Patcher
+Comment=Inspect Nintendo 64 ROMs and apply VI filter and hi-res patches
+Exec=n64patcher-gui %F
+TryExec=n64patcher-gui
+Icon=n64patcher
+Terminal=false
+Categories=Game;Utility;Emulator;
+Keywords=n64;rom;patch;emulator;flashcart;everdrive;summercart;
+MimeType=application/x-n64-rom;
+StartupNotify=true
+StartupWMClass=N64_Smart_Patcher

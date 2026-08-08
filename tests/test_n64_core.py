@@ -1,6 +1,8 @@
 """Unit tests for n64_core using synthetic ROM images. No real ROMs needed."""
 
 import os
+import shutil
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -562,20 +564,68 @@ class TestHiresSupportGate(unittest.TestCase):
         res = core.patch_rom(src, opts, log=lambda m: None)
         self.assertIn("640x480 not supported", res["message"])
 
-    def test_verified_dump_is_not_blocked(self):
-        """The gate must not break the games that do work."""
+    def _patch_verified_without_xdelta(self, **opt_kw):
+        """Patch a dump that HAS a verified delta, on a machine where xdelta3
+        cannot run - the normal situation on Linux and macOS, where the
+        bundled helper is a Windows binary."""
         src = self._write("game.z64", self._rom(crc=self.SM64))
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
+                                 **opt_kw)
+        logs = []
         with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
              mock.patch.object(core, "SUBDRAG_PATCHES", self.table), \
              mock.patch.object(core, "check_tools", lambda: {
                  "u64aap": False, "rn64crc": False, "xdelta3": False,
                  "hires_patches": True, "crc_native": True}):
-            logs = []
-            core.patch_rom(src, opts, log=logs.append)
-        # xdelta3 unavailable here, so it falls through to the table engine
-        # rather than refusing outright.
+            res = core.patch_rom(src, opts, log=logs.append)
+        return src, res, logs
+
+    def test_verified_dump_without_xdelta_is_not_widened(self):
+        """A dump whose only correct route is its delta must not silently get
+        the generic width flip when that route is closed. This is the same
+        broken transform the hardware bug report was about, so falling back
+        to it ships a ROM that renders doubled and misplaced."""
+        src, res, logs = self._patch_verified_without_xdelta()
+        joined = " ".join(logs)
+
+        self.assertNotIn("HR", res["applied"])
+        self.assertIn("NOT APPLIED", joined)
+        self.assertIn("xdelta3", joined)
+        # The width words in the VI tables are untouched.
+        data = self._read(src)
+        self.assertEqual(data[0x1000:0x1004], core.WIDTH_320_DATA)
+
+    def test_missing_xdelta_names_the_install_command(self):
+        """A user who cannot install what they are missing is stuck."""
+        _src, _res, logs = self._patch_verified_without_xdelta()
+        joined = " ".join(logs)
+        self.assertIn(core.xdelta3_install_hint(), joined)
+
+    def test_force_hires_overrides_the_missing_tool_gate(self):
+        _src, res, logs = self._patch_verified_without_xdelta(force_hires=True)
+        self.assertIn("HR", res["applied"])
+        self.assertIn("EXPERIMENTAL", " ".join(logs))
+
+    def test_verified_dump_is_not_blocked_when_xdelta_works(self):
+        """The gate must not break the games that do work."""
+        src = self._write("game.z64", self._rom(crc=self.SM64))
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        logs = []
+
+        def fake_xdelta(patch_file, source, output):
+            shutil.copyfile(source, output)
+            return True, "SUCCESS"
+
+        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
+             mock.patch.object(core, "SUBDRAG_PATCHES", self.table), \
+             mock.patch.object(core, "check_tools", lambda: {
+                 "u64aap": False, "rn64crc": False, "xdelta3": True,
+                 "hires_patches": True, "crc_native": True}), \
+             mock.patch.object(core, "try_subdrag_xdelta", fake_xdelta):
+            res = core.patch_rom(src, opts, log=logs.append)
+        self.assertIn("HR", res["applied"])
         self.assertNotIn("NOT SUPPORTED", " ".join(logs))
+        self.assertNotIn("NOT APPLIED", " ".join(logs))
 
     def test_export_carries_support_columns(self):
         info = self._inspect()
@@ -585,6 +635,50 @@ class TestHiresSupportGate(unittest.TestCase):
             header = f.readline()
         self.assertIn("hires_support", header)
         self.assertIn("hires_support_reason", header)
+
+
+class TestPlatformPaths(unittest.TestCase):
+    """The tool must write its log where each platform expects, and must
+    never write next to the executable (read-only for installed bundles)."""
+
+    def _log_dir(self, platform, env):
+        with mock.patch.object(sys, "platform", platform), \
+             mock.patch.dict(os.environ, env, clear=False):
+            return core.get_log_dir()
+
+    def test_windows_uses_appdata(self):
+        got = self._log_dir("win32", {"APPDATA": os.path.join("X:", "Roaming")})
+        self.assertTrue(got.endswith("N64SmartPatcher"))
+        self.assertIn("Roaming", got)
+
+    def test_macos_uses_library_logs(self):
+        got = self._log_dir("darwin", {})
+        self.assertIn(os.path.join("Library", "Logs"), got)
+
+    def test_linux_honours_xdg_data_home(self):
+        target = os.path.join(os.sep, "custom", "data")
+        got = self._log_dir("linux", {"XDG_DATA_HOME": target})
+        self.assertEqual(got, os.path.join(target, "n64-smart-patcher"))
+
+    def test_linux_falls_back_when_xdg_is_unset_or_relative(self):
+        """The XDG spec says a non-absolute value must be ignored."""
+        for value in ("", "relative/path"):
+            got = self._log_dir("linux", {"XDG_DATA_HOME": value})
+            self.assertEqual(
+                got,
+                os.path.join(os.path.expanduser("~"), ".local", "share",
+                             "n64-smart-patcher"),
+                f"XDG_DATA_HOME={value!r}")
+
+    def test_install_hint_is_platform_specific(self):
+        hints = {}
+        for plat in ("darwin", "linux", "win32"):
+            with mock.patch.object(sys, "platform", plat):
+                hints[plat] = core.xdelta3_install_hint()
+        self.assertIn("brew", hints["darwin"])
+        self.assertIn("apt", hints["linux"])
+        # All three must differ, or the message is not actually helping.
+        self.assertEqual(len(set(hints.values())), 3)
 
 
 class TestSubdragCrcMatching(unittest.TestCase):

@@ -1,0 +1,150 @@
+name: Build binaries
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  binaries:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: windows-x86_64
+          - os: macos-latest          # Apple Silicon runner
+            label: macos-arm64
+          - os: macos-13              # Intel runner
+            label: macos-x86_64
+          - os: ubuntu-22.04          # oldest glibc still supported by GitHub
+            label: linux-x86_64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # PyQt6 needs these to import on a headless Linux runner; without them
+      # the GUI build produces a binary that cannot start.
+      - name: Install Linux Qt runtime libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 libgl1 libxkbcommon-x11-0 libdbus-1-3 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 \
+            libxcb-shape0 libxcb-xinerama0 xdelta3
+
+      - name: Install xdelta3 (macOS)
+        if: runner.os == 'macOS'
+        run: brew install xdelta
+
+      - name: Install build dependencies
+        # Pillow is what lets PyInstaller turn app_icon.png into a macOS .icns.
+        run: pip install -e ".[all]" pyinstaller pillow
+
+      - name: Build CLI
+        run: python -m PyInstaller --noconfirm N64_Smart_Patcher_CLI.spec
+
+      - name: Build GUI
+        run: python -m PyInstaller --noconfirm N64_Smart_Patcher.spec
+
+      # The reason this workflow exists at all: a bundled data file that did
+      # not get packed passes every unit test and fails on a user's machine.
+      - name: Smoke test the built CLI (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          chmod +x dist/N64_Smart_Patcher_CLI
+          python scripts/smoke_test.py dist/N64_Smart_Patcher_CLI
+
+      - name: Smoke test the built CLI (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/smoke_test.py dist/N64_Smart_Patcher_CLI.exe
+
+      # A PyInstaller GUI build links against system Qt libraries. If one is
+      # absent from the build image it is absent from the user's machine too,
+      # and the binary dies at startup with no message.
+      - name: GUI binary has no unresolved shared libraries (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          chmod +x dist/N64_Smart_Patcher
+          missing=$(ldd dist/N64_Smart_Patcher | grep "not found" || true)
+          if [ -n "$missing" ]; then
+            echo "unresolved libraries:"; echo "$missing"; exit 1
+          fi
+          echo "all shared libraries resolve"
+
+      - name: Package (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          set -eux
+          mkdir -p out
+          cp dist/N64_Smart_Patcher_CLI out/n64patcher-cli
+          chmod +x out/n64patcher-cli
+          if [ -d "dist/N64 Smart Patcher.app" ]; then
+            # A .app is a directory tree. ditto is the only archiver that
+            # keeps the bundle structure, exec bits and resource forks that
+            # macOS needs to launch it.
+            ditto -c -k --sequesterRsrc --keepParent \
+              "dist/N64 Smart Patcher.app" \
+              "out/N64-Smart-Patcher-${{ matrix.label }}.app.zip"
+          else
+            cp dist/N64_Smart_Patcher out/n64patcher-gui
+            chmod +x out/n64patcher-gui
+            cp packaging/n64patcher.desktop out/
+            cp app_icon.png out/n64patcher.png
+            cp packaging/install-linux.sh out/
+            chmod +x out/install-linux.sh
+          fi
+          ls -la out
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          set -eux
+          mkdir -p out
+          cp dist/N64_Smart_Patcher.exe dist/N64_Smart_Patcher_CLI.exe out/
+          ls -la out
+
+      - name: Checksums
+        shell: bash
+        run: |
+          cd out
+          if command -v sha256sum >/dev/null; then
+            sha256sum * > SHA256SUMS.txt
+          else
+            shasum -a 256 * > SHA256SUMS.txt
+          fi
+          cat SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: N64-Smart-Patcher-${{ matrix.label }}
+          path: out/
+          if-no-files-found: error
+
+  wheel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install build
+      - run: python -m build
+      - name: Install the wheel and smoke test it
+        run: |
+          pip install dist/*.whl
+          python scripts/smoke_test.py
+      - uses: actions/upload-artifact@v7
+        with:
+          name: python-package
+          path: dist/

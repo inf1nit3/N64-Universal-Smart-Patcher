@@ -1,4 +1,4 @@
-# 🎮 Universal N64 ROM Inspector & Smart Patcher v3.2
+# 🎮 Universal N64 ROM Inspector & Smart Patcher
 
 ![N64 Smart Patcher Icon](app_icon.png)
 
@@ -119,19 +119,93 @@ tracks run state: grey idle, amber working, green clean, red errors.
 
 ## 🚀 Quick Start
 
-**Portable EXE (Windows)**
+**Windows — portable, no install**
 
-1. Download the latest standalone executable from the **[Releases](../../releases)** tab.
-2. Double-click `N64_Smart_Patcher.exe` (no installation required).
-3. Drag & drop your N64 ROMs (`.z64`, `.n64`, `.v64`, `.zip`, `.7z`) or an entire folder.
-4. Pick a preset profile or set custom options and click **🚀 Start patching**.
+1. Download `N64_Smart_Patcher.exe` from the **[Releases](../../releases)** tab.
+2. Double-click it. SmartScreen will warn on first run (the binaries are not
+   code-signed): *More info → Run anyway*.
+3. Drag & drop your N64 ROMs (`.z64`, `.n64`, `.v64`, `.zip`, `.7z`) or a folder.
+4. Pick a preset or set custom options and click **START**.
 
-**From source (any platform)**
+**macOS**
+
+```bash
+brew install xdelta                                   # needed for verified 640x480 patches
+```
+
+Then either download `N64-Smart-Patcher-macos-arm64.app.zip` (or `-x86_64` for
+Intel) from Releases, or install from PyPI-style source:
+
+```bash
+pip install -e ".[gui]"
+n64patcher-gui
+```
+
+The `.app` is not notarised, so the first launch needs
+**right-click → Open** rather than a double-click, or
+`xattr -dr com.apple.quarantine "N64 Smart Patcher.app"`.
+
+**Linux**
+
+```bash
+sudo apt install xdelta3          # or: dnf install xdelta / pacman -S xdelta3
+```
+
+Then either download `N64-Smart-Patcher-linux-x86_64` from Releases and run
+`./install-linux.sh` (installs into `~/.local`, no root; `--uninstall` removes
+it again), or install from source:
+
+```bash
+pip install -e ".[gui]"
+n64patcher-gui
+```
+
+**From source — any platform**
 
 ```bash
 pip install -e ".[gui]"   # omit [gui] for the CLI only - it needs no dependencies
 n64patcher-gui            # desktop app
 n64patcher --help         # command line
+```
+
+---
+
+## 🖥️ Platform support
+
+The patching engine is pure standard library and behaves identically
+everywhere. What differs is the three bundled helper binaries, which are
+Windows executables: on macOS and Linux the tool detects that they cannot run
+and takes another route.
+
+| Stage | Windows | macOS / Linux |
+|---|---|---|
+| ROM inspection, CIC detection, boot CRC | built-in Python engine | **identical** |
+| CRC repair | `rn64crc.exe`, falling back to the built-in engine | built-in engine only — same results |
+| No-AA / dither / divot / gamma | `u64aap.exe`, falling back to the dynamic patcher | dynamic patcher |
+| **Verified 640x480 patches** | bundled `xdelta3.exe` | **needs a system `xdelta3`** |
+| IPS / BPS apply and create | built-in | **identical** |
+| DAT lookup, manifests, batch, archives | built-in | **identical** |
+
+Only one row actually needs something installed. The verified 640x480 patches
+are xdelta deltas, and there is no correct fallback for them — the generic VI
+widening renders wrong on real hardware, which is why it is gated. If
+`xdelta3` is missing the tool says so and refuses the hi-res stage rather than
+quietly producing a broken ROM:
+
+```
+xdelta3: verified 640x480 patches CANNOT be applied (install it with: brew install xdelta).
+```
+
+Everything else on those ROMs — No-AA, no-dither, CRC repair — still happens.
+
+CI runs the unit suite on Ubuntu, macOS and Windows across Python 3.11/3.12/3.13,
+and additionally runs `scripts/smoke_test.py` — which drives the *installed*
+command line tool as a subprocess against real files — on all three, plus once
+more under the C/POSIX locale.
+
+```bash
+python scripts/smoke_test.py                     # the installed package
+python scripts/smoke_test.py dist/n64patcher     # a frozen binary
 ```
 
 ---
@@ -153,6 +227,10 @@ pip install -e ".[dev]"       # everything + pytest/ruff/mypy/pyinstaller
 
 # Run the unit suite (synthetic ROMs, no game files needed)
 python -m pytest
+
+# Drive the installed CLI end to end as a subprocess. Catches the packaging
+# and path-resolution bugs that every unit test passes through.
+python scripts/smoke_test.py
 
 # Lint and type-check
 python -m ruff check .
@@ -340,6 +418,13 @@ the installed package rather than the working directory):
 
 ## 📜 Version History
 
+- **v3.4.0 (macOS & Linux)**:
+  - **A verified dump could receive the broken generic hi-res transform.** Where the bundled `xdelta3.exe` cannot run — every macOS and Linux machine — a ROM classified `verified` skipped its hand-made delta and fell through to the generic VI widening: the same transform behind the doubled-image hardware bug. The platform without the helper silently got the broken output. Now refused, naming the cause and the install command.
+  - **Emoji output could abort a run off Windows.** The UTF-8 stream reconfiguration was guarded by `sys.platform == "win32"`; a process under the C/POSIX locale gets an ASCII stdout and raised `UnicodeEncodeError` mid-batch. Now applied everywhere, to stdout and stderr.
+  - **Native binaries for macOS (arm64 + x86_64) and Linux x86_64**, built in CI. macOS ships a real `.app` bundle with a document type for `.z64`/`.n64`/`.v64`; Linux ships a tarball with both binaries, a `.desktop` entry and a rootless `install-linux.sh` that can also uninstall itself.
+  - **`scripts/smoke_test.py`**: 26 checks driving the *installed* CLI as a subprocess against real files, runnable against a frozen binary too. CI runs it on all three OSes, under `LC_ALL=C`, and against every binary at build time — the class of check that caught two PyInstaller data-path bugs no unit test could see.
+  - Log files follow each platform's convention (`%APPDATA%`, `~/Library/Logs`, `$XDG_DATA_HOME`); missing-helper warnings name the install command for the platform in use.
+  - `tests/test_cross_platform.py` guards what only breaks elsewhere: patch filenames must resolve case-exactly (a mismatch is invisible on NTFS and disables every verified dump on Linux), assets must be legal Windows filenames, and the bundled `.exe` helpers must not carry an executable bit.
 - **v3.3.1 (Console Theme)**:
   - Console-era interface: faceplate strip over a four-segment accent rule, cartridge-label panels with coloured spines, bevelled controls with real press travel, bitmap-era typography (Fixedsys/Terminal where present).
   - The run control is a round red START key in a recessed collar. It stays an ordinary button underneath, with an accessible name, so keyboard and screen-reader use is unaffected.

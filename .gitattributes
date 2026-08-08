@@ -1,0 +1,29 @@
+# Line endings are a cross-platform correctness issue here, not a style one:
+# a shell script checked out with CRLF fails on Linux and macOS with
+# "bad interpreter: /bin/sh^M", and this repo is developed on Windows where
+# that conversion is the default. Pinning it in-tree means it does not depend
+# on each contributor's core.autocrlf.
+
+* text=auto
+
+# Must be LF wherever they are checked out - these run on Linux and macOS.
+*.sh          text eol=lf
+*.desktop     text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+
+# Windows-only, and PowerShell is happier with CRLF.
+*.ps1         text eol=crlf
+
+# Binary: never convert, never diff as text. The .xdelta deltas and the
+# bundled helper executables are byte-exact by definition - a single
+# translated byte silently breaks a patch that then fails its checksum.
+*.xdelta      binary
+*.exe         binary
+*.ico         binary
+*.png         binary
+*.z64         binary
+*.n64         binary
+*.v64         binary
+*.bps         binary
+*.ips         binary

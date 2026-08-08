@@ -20,16 +20,6 @@ import tempfile
 import threading
 from datetime import datetime
 
-if sys.platform == "win32":
-    # Emoji in the log output need a UTF-8 console; older Windows terminals
-    # default to cp1252 and would raise on the first emoji.
-    reconfigure = getattr(sys.stdout, "reconfigure", None)
-    if reconfigure is not None:
-        try:
-            reconfigure(encoding="utf-8", errors="replace")
-        except (OSError, ValueError):
-            pass
-
 from . import datdb, patchdb
 from . import manifest as manifest_mod
 from . import n64_core as core
@@ -48,6 +38,30 @@ from .zip_handler import (
     extract_roms_from_archive,
     is_archive,
 )
+
+
+def _force_utf8_streams():
+    """Make stdout/stderr able to carry the emoji this tool prints.
+
+    Not a Windows-only concern: older Windows terminals default to cp1252,
+    and a Linux or macOS process started under the C/POSIX locale gets an
+    ASCII stdout (PEP 538 coercion only helps where C.UTF-8 exists). Either
+    way the first emoji raises UnicodeEncodeError and aborts a working batch
+    run. errors="replace" makes an undisplayable glyph cost a character
+    rather than the run.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (OSError, ValueError):
+            pass
+
+
+# At import time, before anything can print.
+_force_utf8_streams()
 
 
 class RunLogger:
@@ -368,8 +382,17 @@ def main(argv=None):
     missing = [name for name in ("u64aap", "rn64crc", "xdelta3") if not tools.get(name)]
     if missing:
         log(f"⚠️  WARNING: tools not runnable: {', '.join(missing)}")
-        log("   (affected stages fall back: No-AA via the dynamic patcher, "
-            "CRC via the pure-Python engine)\n")
+        if "u64aap" in missing:
+            log("   u64aap: No-AA falls back to the built-in dynamic patcher.")
+        if "rn64crc" in missing:
+            log("   rn64crc: CRC fixing uses the built-in pure-Python engine.")
+        # This one does NOT degrade gracefully, so it is not lumped in with
+        # the others: without xdelta3 the verified hi-res patches - the only
+        # ones that render correctly on hardware - cannot be applied at all.
+        if "xdelta3" in missing:
+            log("   xdelta3: verified 640x480 patches CANNOT be applied "
+                f"({core.xdelta3_install_hint()}).")
+        log("")
 
     # One index per run: re-parsing a few thousand DAT entries for every
     # ROM would dominate a large batch.

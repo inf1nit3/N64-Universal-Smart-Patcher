@@ -96,6 +96,21 @@ XDELTA3_PATH = _resolve_tool(
 HIRES_PATCHES_DIR = get_asset_path("N64noAAPatcher", "hires_patches")
 
 CREATE_NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
+
+
+def xdelta3_install_hint():
+    """How to get xdelta3 on this platform.
+
+    The bundled helper is a Windows PE binary, so on macOS and Linux the
+    verified SubDrag patches need a system xdelta3. Naming the exact command
+    is the difference between a user fixing this in ten seconds and giving up.
+    """
+    if sys.platform == "darwin":
+        return "install it with: brew install xdelta"
+    if sys.platform == "win32":
+        return "the bundled xdelta3.exe is missing or blocked"
+    return ("install it with: sudo apt install xdelta3  "
+            "(or dnf/pacman install xdelta3)")
 SUBPROCESS_TIMEOUT = 120  # seconds; u64aap/xdelta/rn64crc are all fast
 
 ROM_EXTENSIONS = (".z64", ".n64", ".v64")
@@ -105,13 +120,29 @@ TEMP_SUFFIXES = (".temp.z64", ".patched.z64", ".xdelta_out.z64",
                  ".stripped.z64")
 
 
-def get_log_path():
-    """Per-user log location (EXE_DIR is read-only for installed bundles)."""
+def get_log_dir():
+    """Per-user log directory, following each platform's own convention.
+
+    EXE_DIR is read-only for installed bundles, so nothing may be written
+    next to the executable.
+    """
+    home = os.path.expanduser("~")
     if sys.platform == "win32":
-        base = os.environ.get("APPDATA") or os.path.expanduser("~")
-        log_dir = os.path.join(base, "N64SmartPatcher")
-    else:
-        log_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "n64-smart-patcher")
+        base = os.environ.get("APPDATA") or home
+        return os.path.join(base, "N64SmartPatcher")
+    if sys.platform == "darwin":
+        return os.path.join(home, "Library", "Logs", "N64SmartPatcher")
+    # Linux and the other Unixes: XDG Base Directory, with the spec's own
+    # default when the variable is unset or not absolute.
+    xdg = os.environ.get("XDG_DATA_HOME")
+    if not xdg or not os.path.isabs(xdg):
+        xdg = os.path.join(home, ".local", "share")
+    return os.path.join(xdg, "n64-smart-patcher")
+
+
+def get_log_path():
+    """Per-user log file. Creates the directory on first use."""
+    log_dir = get_log_dir()
     os.makedirs(log_dir, exist_ok=True)
     return os.path.join(log_dir, "N64_Patcher_Log.txt")
 
@@ -1067,6 +1098,9 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
         base = temp_z64            # current working file
         patched_exists = False     # True once `patched_z64` holds working data
         subdrag_used = False
+        # Set when the only correct hi-res route for this dump could not be
+        # taken. Stage 3's generic widening is NOT a substitute (see below).
+        hires_blocked = ""
 
         # --- Stage 1: SubDrag verified .xdelta on the CLEAN source ---------
         if options.hires:
@@ -1083,8 +1117,13 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
                         applied.add("HR")
                         if patch_includes_noaa(patch):
                             applied.add("NoAA")
+                    else:
+                        hires_blocked = "the verified patch for this dump did not apply"
                 else:
-                    log("  SubDrag patch available but no runnable xdelta3 found - using Smart VI engine")
+                    hires_blocked = (
+                        "this dump needs its verified .xdelta patch and no "
+                        f"runnable xdelta3 was found ({xdelta3_install_hint()})")
+                    log(f"  SubDrag .xdelta: SKIPPED - {hires_blocked}")
 
         if cancelled():
             return result
@@ -1156,6 +1195,15 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
             support = info.get("hires_support", HIRES_UNSUPPORTED)
             if support == HIRES_NATIVE:
                 log("  Hi-Res Engine: SKIPPED - ROM already renders at 640x480")
+            elif hires_blocked and not options.force_hires:
+                # A dump classified `verified` has exactly one correct route:
+                # its hand-made delta. If that route is closed, falling back to
+                # the generic width flip is worse than doing nothing - it is
+                # the same transform that rendered doubled and misplaced on
+                # hardware. Refuse rather than silently ship a broken ROM.
+                log(f"  Hi-Res Engine: NOT APPLIED - {hires_blocked}")
+                log("    The generic VI widening is not a substitute for a "
+                    "verified patch and would render incorrectly on hardware.")
             elif support == HIRES_UNSUPPORTED and not options.force_hires:
                 # Refusing here is the fix for the hardware bug: the generic
                 # width flip produced doubled/misplaced output on every ROM.
@@ -1170,11 +1218,15 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
                 if hires_ok:
                     applied.add("HR")
                     stage_log.append("smart-vi-table")
-                    label = ("EXPERIMENTAL" if support == HIRES_UNSUPPORTED
-                             else "Smart VI Table")
+                    # Anything reaching the generic engine is unverified: a
+                    # dump with no delta, or one whose delta could not be
+                    # applied. Both render the same wrong way on hardware, so
+                    # both carry the same label.
+                    forced = support == HIRES_UNSUPPORTED or bool(hires_blocked)
+                    label = "EXPERIMENTAL" if forced else "Smart VI Table"
                     log(f"  Hi-Res Engine: SUCCESS ({label}) - {hires_msg}")
-                    if support == HIRES_UNSUPPORTED:
-                        log("    WARNING: forced on an unverified dump - "
+                    if forced:
+                        log("    WARNING: forced without a verified patch - "
                             "rendering is expected to be wrong on hardware.")
                 else:
                     log(f"  Hi-Res Engine: SKIPPED - {hires_msg}")
