@@ -84,28 +84,39 @@ jobs:
           fi
           echo "all shared libraries resolve"
 
+      # Everything below goes into a tar.gz built HERE, on the runner. The
+      # artifact upload re-zips whatever it is given and drops the Unix
+      # permission bits on the way, so a loose binary arrives without its
+      # executable bit and a user's first action is a "permission denied".
+      # A tarball carries its own modes through untouched.
       - name: Package (Unix)
         if: runner.os != 'Windows'
         run: |
           set -eux
-          mkdir -p out
-          cp dist/N64_Smart_Patcher_CLI out/n64patcher-cli
-          chmod +x out/n64patcher-cli
+          mkdir -p stage out
+          cp dist/N64_Smart_Patcher_CLI stage/n64patcher-cli
+          chmod +x stage/n64patcher-cli
           if [ -d "dist/N64 Smart Patcher.app" ]; then
             # A .app is a directory tree. ditto is the only archiver that
             # keeps the bundle structure, exec bits and resource forks that
-            # macOS needs to launch it.
+            # macOS needs to launch it. Its zip goes in the tarball as-is.
             ditto -c -k --sequesterRsrc --keepParent \
               "dist/N64 Smart Patcher.app" \
-              "out/N64-Smart-Patcher-${{ matrix.label }}.app.zip"
+              "stage/N64-Smart-Patcher-${{ matrix.label }}.app.zip"
           else
-            cp dist/N64_Smart_Patcher out/n64patcher-gui
-            chmod +x out/n64patcher-gui
-            cp packaging/n64patcher.desktop out/
-            cp app_icon.png out/n64patcher.png
-            cp packaging/install-linux.sh out/
-            chmod +x out/install-linux.sh
+            cp dist/N64_Smart_Patcher stage/n64patcher-gui
+            chmod +x stage/n64patcher-gui
+            cp packaging/n64patcher.desktop stage/
+            cp app_icon.png stage/n64patcher.png
+            cp packaging/install-linux.sh stage/
+            chmod +x stage/install-linux.sh
           fi
+          tar czf "out/N64-Smart-Patcher-${{ matrix.label }}.tar.gz" \
+            -C stage .
+          # Prove the modes survived the round trip rather than assuming it.
+          tar tzvf "out/N64-Smart-Patcher-${{ matrix.label }}.tar.gz"
+          tar tzvf "out/N64-Smart-Patcher-${{ matrix.label }}.tar.gz" \
+            | grep -E "^-rwxr-xr-x.*n64patcher-cli$"
           ls -la out
 
       - name: Package (Windows)

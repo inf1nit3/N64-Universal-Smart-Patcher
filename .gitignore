@@ -41,3 +41,4 @@ Thumbs.db
 .venv/
 _n64_temp_extract/
 *.stripped.z64
+rel/
