@@ -656,7 +656,11 @@ class TestPlatformPaths(unittest.TestCase):
         self.assertIn(os.path.join("Library", "Logs"), got)
 
     def test_linux_honours_xdg_data_home(self):
-        target = os.path.join(os.sep, "custom", "data")
+        # abspath, not a hand-built "\custom\data": ntpath.isabs stopped
+        # treating a drive-less rooted path as absolute in Python 3.13, so a
+        # literal would only fail on the Windows runner for that one version.
+        target = os.path.abspath(os.path.join(os.sep, "custom", "data"))
+        self.assertTrue(os.path.isabs(target), target)
         got = self._log_dir("linux", {"XDG_DATA_HOME": target})
         self.assertEqual(got, os.path.join(target, "n64-smart-patcher"))
 
