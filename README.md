@@ -133,8 +133,8 @@ tracks run state: grey idle, amber working, green clean, red errors.
 brew install xdelta                                   # needed for verified 640x480 patches
 ```
 
-Then either download `N64-Smart-Patcher-macos-arm64.app.zip` (or `-x86_64` for
-Intel) from Releases, or install from PyPI-style source:
+Then either download `N64-Smart-Patcher-macos-arm64.app.zip` from Releases, or
+install from source:
 
 ```bash
 pip install -e ".[gui]"
@@ -144,6 +144,11 @@ n64patcher-gui
 The `.app` is not notarised, so the first launch needs
 **right-click → Open** rather than a double-click, or
 `xattr -dr com.apple.quarantine "N64 Smart Patcher.app"`.
+
+**Intel Macs**: GitHub is retiring its Intel macOS runners, so an
+`macos-x86_64` binary is built only when one is available and a release may
+not carry it. `pip install` works on Intel exactly the same — the engine is
+pure Python and needs no platform binary.
 
 **Linux**
 
