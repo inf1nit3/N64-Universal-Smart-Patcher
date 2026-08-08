@@ -16,22 +16,16 @@ jobs:
         include:
           - os: windows-latest
             label: windows-x86_64
-            optional: false
           - os: macos-latest          # Apple Silicon runner
             label: macos-arm64
-            optional: false
-          # Intel Mac. GitHub is retiring these runners, so the queue can be
-          # long or the image can vanish entirely. Best-effort: if it does
-          # not run, the release still ships and Intel users install the
-          # wheel with pip, which needs no platform binary.
-          - os: macos-13
-            label: macos-x86_64
-            optional: true
           - os: ubuntu-22.04          # oldest glibc still supported by GitHub
             label: linux-x86_64
-            optional: false
+    # No Intel Mac (macos-13) target. GitHub is retiring those runners and
+    # the job sat queued past 25 minutes on two consecutive runs while every
+    # other target had finished. continue-on-error does not help: it stops
+    # the run failing, not the run waiting. Intel users install the wheel,
+    # which needs no platform binary - see the README.
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.optional }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
