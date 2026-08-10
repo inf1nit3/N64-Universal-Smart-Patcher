@@ -289,6 +289,9 @@ def detect_order(data: bytes) -> OrderGuess:
 # quietly corrupts saves.
 # ---------------------------------------------------------------------------
 
+ALL_KINDS = tuple(k.key for k in SAVE_KINDS)
+
+
 @dataclass(frozen=True)
 class SaveSource:
     key: str
@@ -297,6 +300,11 @@ class SaveSource:
     #: How the order was established. Empty means unverified, and such an
     #: entry must not ship.
     evidence: str
+    #: Chip types the evidence actually covers. A measurement on one chip
+    #: does not carry to the others: the byte order differences reported
+    #: in the wild are mostly about SRAM and FlashRAM, so an EEPROM file
+    #: proving one tool's convention proves it for EEPROM and no more.
+    verified_kinds: tuple[str, ...]
 
 
 SOURCES: tuple[SaveSource, ...] = (
@@ -304,29 +312,48 @@ SOURCES: tuple[SaveSource, ...] = (
         "sc64", "SummerCart64 / N64FlashcartMenu", ORDER_RAW,
         "Measured on a 132-save card: the Ocarina of Time save carries its "
         "'ZELDAZ' marker unscrambled at 0x3c, with the backup copy at "
-        "0x3d2c, so the file is in chip order"),
+        "0x3d2c, so the file is in chip order. Saves of all five chip types "
+        "were present and none showed a differing arrangement",
+        ALL_KINDS),
+    SaveSource(
+        "mupen64plus", "mupen64plus", ORDER_RAW,
+        "Measured on its Super Mario 64 EEPROM save: the game's own "
+        "checksum passes on all 10 written blocks as stored, and fails on "
+        "all 10 under either swap. EEPROM only - no SRAM or FlashRAM file "
+        "from this emulator has been examined",
+        (EEPROM_4K, EEPROM_16K)),
     SaveSource(
         "hardware", "Real cartridge / chip dump", ORDER_RAW,
-        "Chip order by definition - this is what the save chip holds"),
+        "Chip order by definition - this is what the save chip holds",
+        ALL_KINDS),
 )
 
 SOURCES_BY_KEY = {s.key: s for s in SOURCES}
 
 
-def order_for_source(key: str) -> str:
-    """The byte order a named tool writes.
+def order_for_source(key: str, kind: SaveKind | None = None) -> str:
+    """The byte order a named tool writes for a given chip type.
 
-    Raises for anything not measured. An unknown source is a reason to ask
-    the user, not to assume chip order and hope.
+    Raises for anything not measured, both for an unknown tool and for a
+    chip type that tool's entry does not cover. An unknown case is a
+    reason to ask the user, not to assume chip order and hope.
     """
     try:
-        return SOURCES_BY_KEY[key].order
+        source = SOURCES_BY_KEY[key]
     except KeyError:
         known = ", ".join(sorted(SOURCES_BY_KEY))
         raise SaveError(
             f"no measured byte order for source {key!r}. Known: {known}. "
             f"Add an entry only once it has been verified against a real "
             f"file from that tool") from None
+
+    if kind is not None and kind.key not in source.verified_kinds:
+        covered = ", ".join(source.verified_kinds)
+        raise SaveError(
+            f"{source.label} has only been verified for: {covered}. Its "
+            f"byte order for {kind.label} is unmeasured, and guessing it "
+            f"would risk scrambling the save")
+    return source.order
 
 
 # ---------------------------------------------------------------------------

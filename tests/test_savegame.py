@@ -227,12 +227,30 @@ class TestSources(unittest.TestCase):
     def test_the_flashcart_writes_chip_order(self):
         self.assertEqual(sg.order_for_source("sc64"), sg.ORDER_RAW)
 
+    def test_mupen64plus_writes_chip_order_for_eeprom(self):
+        """Measured through the game's own checksum, which passes as stored
+        and fails under either swap."""
+        eeprom = sg.SAVE_KINDS_BY_KEY[sg.EEPROM_4K]
+        self.assertEqual(sg.order_for_source("mupen64plus", eeprom), sg.ORDER_RAW)
+
+    def test_a_measurement_does_not_carry_to_other_chip_types(self):
+        """One EEPROM file says nothing about that emulator's SRAM or
+        FlashRAM layout, and those are where the reported differences
+        actually live."""
+        flash = sg.SAVE_KINDS_BY_KEY[sg.FLASHRAM_1M]
+        with self.assertRaises(sg.SaveError) as ctx:
+            sg.order_for_source("mupen64plus", flash)
+        self.assertIn("unmeasured", str(ctx.exception))
+
     def test_every_shipped_source_carries_its_evidence(self):
         """An entry without a measurement behind it is a guess, and a guess
         here corrupts saves silently."""
         for source in sg.SOURCES:
             self.assertTrue(source.evidence.strip(), source.key)
             self.assertIn(source.order, sg.ORDERS, source.key)
+            self.assertTrue(source.verified_kinds, source.key)
+            for key in source.verified_kinds:
+                self.assertIn(key, sg.SAVE_KINDS_BY_KEY, source.key)
 
     def test_an_unmeasured_source_is_refused_not_assumed(self):
         with self.assertRaises(sg.SaveError) as ctx:
