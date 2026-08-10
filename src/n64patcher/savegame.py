@@ -296,42 +296,48 @@ ALL_KINDS = tuple(k.key for k in SAVE_KINDS)
 class SaveSource:
     key: str
     label: str
-    order: str
-    #: How the order was established. Empty means unverified, and such an
-    #: entry must not ship.
+    #: Chip type -> byte order, one entry per type actually measured.
+    #:
+    #: A mapping rather than a single value because a tool is free to be
+    #: inconsistent with itself, and one of them is: mupen64plus writes
+    #: EEPROM in chip order and SRAM word-swapped. A single "this is what
+    #: the emulator does" field would have carried the EEPROM result over
+    #: to SRAM and scrambled every 32 KiB save it touched.
+    orders: dict[str, str]
+    #: How those orders were established. Empty means unverified, and such
+    #: an entry must not ship.
     evidence: str
-    #: Chip types the evidence actually covers. A measurement on one chip
-    #: does not carry to the others: the byte order differences reported
-    #: in the wild are mostly about SRAM and FlashRAM, so an EEPROM file
-    #: proving one tool's convention proves it for EEPROM and no more.
-    verified_kinds: tuple[str, ...]
 
 
 SOURCES: tuple[SaveSource, ...] = (
     SaveSource(
-        "sc64", "SummerCart64 / N64FlashcartMenu", ORDER_RAW,
+        "sc64", "SummerCart64 / N64FlashcartMenu",
+        dict.fromkeys(ALL_KINDS, ORDER_RAW),
         "Measured on a 132-save card: the Ocarina of Time save carries its "
         "'ZELDAZ' marker unscrambled at 0x3c, with the backup copy at "
         "0x3d2c, so the file is in chip order. Saves of all five chip types "
-        "were present and none showed a differing arrangement",
-        ALL_KINDS),
+        "were present and none showed a differing arrangement"),
     SaveSource(
-        "mupen64plus", "mupen64plus", ORDER_RAW,
-        "Measured on its Super Mario 64 EEPROM save: the game's own "
-        "checksum passes on all 10 written blocks as stored, and fails on "
-        "all 10 under either swap. EEPROM only - no SRAM or FlashRAM file "
-        "from this emulator has been examined",
-        (EEPROM_4K, EEPROM_16K)),
+        "mupen64plus", "mupen64plus",
+        {EEPROM_4K: ORDER_RAW, EEPROM_16K: ORDER_RAW, SRAM_256K: ORDER_WORD},
+        "Two measurements, and they disagree with each other. Its Super "
+        "Mario 64 EEPROM save passes the game's own checksum exactly as "
+        "stored and fails under either swap, so EEPROM is chip order. Its "
+        "Ocarina of Time SRAM save holds no readable 'ZELDAZ' at all until "
+        "the 32-bit words are reversed, whereupon the marker and its backup "
+        "copy land at 0x3c and 0x3d2c - the same offsets the flashcart's "
+        "save has them at unswapped. SRAM is therefore word-swapped. "
+        "FlashRAM and 768 Kbit SRAM remain unmeasured"),
     SaveSource(
-        "hardware", "Real cartridge / chip dump", ORDER_RAW,
-        "Chip order by definition - this is what the save chip holds",
-        ALL_KINDS),
+        "hardware", "Real cartridge / chip dump",
+        dict.fromkeys(ALL_KINDS, ORDER_RAW),
+        "Chip order by definition - this is what the save chip holds"),
 )
 
 SOURCES_BY_KEY = {s.key: s for s in SOURCES}
 
 
-def order_for_source(key: str, kind: SaveKind | None = None) -> str:
+def order_for_source(key: str, kind: SaveKind) -> str:
     """The byte order a named tool writes for a given chip type.
 
     Raises for anything not measured, both for an unknown tool and for a
@@ -347,13 +353,15 @@ def order_for_source(key: str, kind: SaveKind | None = None) -> str:
             f"Add an entry only once it has been verified against a real "
             f"file from that tool") from None
 
-    if kind is not None and kind.key not in source.verified_kinds:
-        covered = ", ".join(source.verified_kinds)
+    try:
+        return source.orders[kind.key]
+    except KeyError:
+        covered = ", ".join(sorted(source.orders)) or "nothing"
         raise SaveError(
-            f"{source.label} has only been verified for: {covered}. Its "
-            f"byte order for {kind.label} is unmeasured, and guessing it "
-            f"would risk scrambling the save")
-    return source.order
+            f"{source.label} has only been measured for: {covered}. Its "
+            f"byte order for {kind.label} is unknown, and guessing it would "
+            f"risk scrambling the save - this tool writes EEPROM and SRAM "
+            f"differently, so the other types cannot be inferred") from None
 
 
 # ---------------------------------------------------------------------------
@@ -392,10 +400,17 @@ def normalize_size(data: bytes, kind: SaveKind) -> bytes:
 
 @dataclass(frozen=True)
 class SaveCheck:
-    """Result of validating a save against the game's own checksum."""
+    """Result of validating a save against what the game itself wrote.
+
+    `basis` names what was actually verified, because the two are not
+    equally strong and reporting a marker check as a checksum would
+    overstate it. A checksum covers the contents; a marker only proves
+    the save is laid out the way the game writes it.
+    """
     valid: int
     invalid: int
     unused: int
+    basis: str = "checksum"
 
     @property
     def ok(self) -> bool:
@@ -405,10 +420,9 @@ class SaveCheck:
         if self.valid == 0 and self.invalid == 0:
             return "empty save - nothing has been written to this chip yet"
         if self.ok:
-            return (f"all {self.valid} written blocks pass the game's own "
-                    f"checksum")
-        return (f"{self.invalid} of {self.valid + self.invalid} written "
-                f"blocks fail the game's own checksum")
+            return f"all {self.valid} checked places match the game's {self.basis}"
+        return (f"{self.invalid} of {self.valid + self.invalid} checked "
+                f"places do not match the game's {self.basis}")
 
 
 #: Super Mario 64, EEPROM 4 Kbit. Four save slots held twice at 56 bytes
@@ -450,8 +464,117 @@ def check_sm64(data: bytes) -> SaveCheck:
     return SaveCheck(valid, invalid, unused)
 
 
+#: Ocarina of Time stamps its save with this marker, once for the live
+#: file and once for the backup copy the game keeps beside it. Verified at
+#: these offsets in two independently produced saves - one written by a
+#: SummerCart64, one by mupen64plus - which is also how the emulator's
+#: word swap was found: the marker is absent until the words are reversed.
+OOT_MARKER = b"ZELDAZ"
+OOT_MARKER_OFFSETS = (0x3C, 0x3D2C)
+
+
+def check_oot(data: bytes) -> SaveCheck:
+    """Validate an Ocarina of Time SRAM save by its marker.
+
+    This checks placement, not integrity: it proves the save is laid out
+    the way the game writes it - and therefore that the byte order is
+    right - but it does not verify the contents the way a checksum would.
+    The game's own checksum has not been derived yet, so the weaker claim
+    is the only honest one.
+    """
+    if len(data) != 32 * 1024:
+        raise SaveError(
+            f"an Ocarina of Time save is 32768 bytes, this one is {len(data)}")
+    if len(set(data)) <= 1:
+        return SaveCheck(0, 0, len(OOT_MARKER_OFFSETS), basis="marker")
+
+    valid = invalid = 0
+    for off in OOT_MARKER_OFFSETS:
+        if data[off:off + len(OOT_MARKER)] == OOT_MARKER:
+            valid += 1
+        else:
+            invalid += 1
+    return SaveCheck(valid, invalid, 0, basis="marker")
+
+
 #: Games whose save can be validated. Keyed by the name used in reports.
-CHECKERS = {"Super Mario 64": check_sm64}
+CHECKERS = {
+    "Super Mario 64": check_sm64,
+    "The Legend of Zelda: Ocarina of Time": check_oot,
+}
+
+
+# ---------------------------------------------------------------------------
+# The conversion itself
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class Conversion:
+    """What a conversion did, in terms a user can check."""
+    data: bytes
+    kind: SaveKind
+    source_order: str
+    target_order: str
+    resized_from: int | None
+    check: SaveCheck | None
+
+    @property
+    def changed(self) -> bool:
+        return self.source_order != self.target_order or self.resized_from is not None
+
+    def describe(self) -> str:
+        lines = [f"{self.kind.label}, "
+                 f"{ORDER_LABELS[self.source_order]} -> "
+                 f"{ORDER_LABELS[self.target_order]}"]
+        if self.source_order == self.target_order:
+            lines.append("  byte order identical - no bytes changed")
+        if self.resized_from is not None:
+            lines.append(f"  resized from {self.resized_from} to {self.kind.size} bytes")
+        if self.check is not None:
+            lines.append(f"  {self.check.describe()}")
+        return "\n".join(lines)
+
+
+def convert_save(data: bytes, kind: SaveKind, source: str, target: str,
+                 game: str | None = None) -> Conversion:
+    """Rewrite a save from one tool's conventions into another's.
+
+    Both ends are named, never inferred: the byte order belongs to the
+    tool that wrote the file, and detection is wrong often enough that
+    letting it drive this would corrupt saves (see detect_order).
+
+    When the game is one we can validate, the result is checked before it
+    is handed back, and a result that fails its own checksum is an error
+    rather than a file the caller might write over a good save.
+    """
+    source_order = order_for_source(source, kind)
+    target_order = order_for_source(target, kind)
+
+    original_size = len(data)
+    out = convert_order(data, source_order, target_order)
+    out = normalize_size(out, kind)
+
+    check = None
+    if game is not None:
+        checker = CHECKERS.get(game)
+        if checker is not None:
+            check = checker(out)
+            if check.invalid:
+                raise SaveError(
+                    f"the converted save does not match {game}'s own "
+                    f"{check.basis} ({check.describe()}). Refusing to hand "
+                    f"back a file "
+                    f"that the game would reject - check that the source "
+                    f"and target really are what they were named as")
+
+    return Conversion(
+        data=out,
+        kind=kind,
+        source_order=source_order,
+        target_order=target_order,
+        resized_from=None if len(out) == original_size else original_size,
+        check=check,
+    )
 
 
 # ---------------------------------------------------------------------------

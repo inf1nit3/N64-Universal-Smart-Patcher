@@ -224,38 +224,120 @@ class TestNormalizeSize(unittest.TestCase):
 
 class TestSources(unittest.TestCase):
 
-    def test_the_flashcart_writes_chip_order(self):
-        self.assertEqual(sg.order_for_source("sc64"), sg.ORDER_RAW)
+    def test_the_flashcart_writes_chip_order_for_every_chip(self):
+        for kind in sg.SAVE_KINDS:
+            self.assertEqual(sg.order_for_source("sc64", kind), sg.ORDER_RAW,
+                             kind.key)
 
-    def test_mupen64plus_writes_chip_order_for_eeprom(self):
-        """Measured through the game's own checksum, which passes as stored
-        and fails under either swap."""
+    def test_one_tool_can_disagree_with_itself(self):
+        """The measurement that shaped this whole model: mupen64plus writes
+        EEPROM in chip order and SRAM with its 32-bit words reversed. A
+        single order per tool would have carried the EEPROM result over to
+        SRAM and scrambled every 32 KiB save."""
         eeprom = sg.SAVE_KINDS_BY_KEY[sg.EEPROM_4K]
+        sram = sg.SAVE_KINDS_BY_KEY[sg.SRAM_256K]
         self.assertEqual(sg.order_for_source("mupen64plus", eeprom), sg.ORDER_RAW)
+        self.assertEqual(sg.order_for_source("mupen64plus", sram), sg.ORDER_WORD)
 
-    def test_a_measurement_does_not_carry_to_other_chip_types(self):
-        """One EEPROM file says nothing about that emulator's SRAM or
-        FlashRAM layout, and those are where the reported differences
-        actually live."""
+    def test_an_unmeasured_chip_type_is_refused_not_inferred(self):
         flash = sg.SAVE_KINDS_BY_KEY[sg.FLASHRAM_1M]
         with self.assertRaises(sg.SaveError) as ctx:
             sg.order_for_source("mupen64plus", flash)
-        self.assertIn("unmeasured", str(ctx.exception))
+        self.assertIn("unknown", str(ctx.exception))
 
     def test_every_shipped_source_carries_its_evidence(self):
         """An entry without a measurement behind it is a guess, and a guess
         here corrupts saves silently."""
         for source in sg.SOURCES:
             self.assertTrue(source.evidence.strip(), source.key)
-            self.assertIn(source.order, sg.ORDERS, source.key)
-            self.assertTrue(source.verified_kinds, source.key)
-            for key in source.verified_kinds:
-                self.assertIn(key, sg.SAVE_KINDS_BY_KEY, source.key)
+            self.assertTrue(source.orders, source.key)
+            for kind_key, order in source.orders.items():
+                self.assertIn(kind_key, sg.SAVE_KINDS_BY_KEY, source.key)
+                self.assertIn(order, sg.ORDERS, source.key)
 
     def test_an_unmeasured_source_is_refused_not_assumed(self):
         with self.assertRaises(sg.SaveError) as ctx:
-            sg.order_for_source("some-emulator")
+            sg.order_for_source("some-emulator", sg.SAVE_KINDS_BY_KEY[sg.EEPROM_4K])
         self.assertIn("no measured byte order", str(ctx.exception))
+
+
+class TestOcarinaOfTimeCheck(unittest.TestCase):
+
+    def _save(self):
+        blob = bytearray(b"\xFF" * (32 * 1024))
+        for off in sg.OOT_MARKER_OFFSETS:
+            blob[off:off + len(sg.OOT_MARKER)] = sg.OOT_MARKER
+        return bytes(blob)
+
+    def test_the_marker_and_its_backup_are_both_checked(self):
+        result = sg.check_oot(self._save())
+        self.assertTrue(result.ok)
+        self.assertEqual(result.valid, 2)
+
+    def test_the_result_says_marker_not_checksum(self):
+        """A placement check is weaker than a checksum and must not be
+        reported as one."""
+        self.assertEqual(sg.check_oot(self._save()).basis, "marker")
+        self.assertIn("marker", sg.check_oot(self._save()).describe())
+
+    def test_a_swapped_save_is_rejected(self):
+        self.assertFalse(sg.check_oot(sg.swap_words(self._save())).ok)
+
+    def test_an_untouched_chip_is_empty_not_broken(self):
+        result = sg.check_oot(b"\xFF" * (32 * 1024))
+        self.assertEqual((result.valid, result.invalid), (0, 0))
+
+
+class TestConvertSave(unittest.TestCase):
+    """End to end, on the pairing that actually needs converting."""
+
+    SRAM = property(lambda self: sg.SAVE_KINDS_BY_KEY[sg.SRAM_256K])
+    OOT = "The Legend of Zelda: Ocarina of Time"
+
+    def _chip_order_save(self):
+        blob = bytearray(b"\xFF" * (32 * 1024))
+        for off in sg.OOT_MARKER_OFFSETS:
+            blob[off:off + len(sg.OOT_MARKER)] = sg.OOT_MARKER
+        return bytes(blob)
+
+    def test_emulator_sram_to_flashcart_swaps_the_words(self):
+        emulator_file = sg.swap_words(self._chip_order_save())
+        result = sg.convert_save(emulator_file, self.SRAM, "mupen64plus",
+                                 "sc64", game=self.OOT)
+        self.assertTrue(result.changed)
+        self.assertEqual(result.data, self._chip_order_save())
+        self.assertTrue(result.check.ok)
+
+    def test_the_conversion_is_reversible(self):
+        emulator_file = sg.swap_words(self._chip_order_save())
+        to_cart = sg.convert_save(emulator_file, self.SRAM, "mupen64plus", "sc64")
+        back = sg.convert_save(to_cart.data, self.SRAM, "sc64", "mupen64plus")
+        self.assertEqual(back.data, emulator_file)
+
+    def test_a_pairing_that_needs_nothing_says_so(self):
+        eeprom = sg.SAVE_KINDS_BY_KEY[sg.EEPROM_4K]
+        data = bytes(range(256)) * 2
+        result = sg.convert_save(data, eeprom, "mupen64plus", "sc64")
+        self.assertFalse(result.changed)
+        self.assertEqual(result.data, data)
+        self.assertIn("no bytes changed", result.describe())
+
+    def test_a_mislabelled_source_is_caught_by_the_game_itself(self):
+        """Claiming an emulator file is already in chip order leaves the
+        words reversed. Without the game's own check nothing would notice
+        until the save failed on the console."""
+        emulator_file = sg.swap_words(self._chip_order_save())
+        with self.assertRaises(sg.SaveError) as ctx:
+            sg.convert_save(emulator_file, self.SRAM, "sc64", "sc64",
+                            game=self.OOT)
+        self.assertIn("Refusing to hand back", str(ctx.exception))
+
+    def test_an_unknown_game_converts_without_a_verdict(self):
+        emulator_file = sg.swap_words(self._chip_order_save())
+        result = sg.convert_save(emulator_file, self.SRAM, "mupen64plus", "sc64",
+                                 game="Some Game With No Profile")
+        self.assertIsNone(result.check)
+        self.assertTrue(result.changed)
 
 
 class TestSuperMario64Check(unittest.TestCase):
