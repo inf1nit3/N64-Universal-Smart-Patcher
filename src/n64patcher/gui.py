@@ -42,7 +42,7 @@ from PyQt6.QtWidgets import (
 )
 
 from . import n64_core as core
-from . import theme
+from . import savegame, theme
 from .header_utils import detect_and_strip_scene_header, fix_rom_crc
 from .presets import apply_preset, get_preset_warnings, list_presets
 from .zip_handler import (
@@ -187,6 +187,7 @@ class N64PatcherGUI(QMainWindow):
 
         self.settings = QSettings("inf1nit3", "N64SmartPatcher")
         self.rom_list = []
+        self.save_list = []
         self.temp_dirs = []
         self.worker = None
         self.inspect_worker = None
@@ -392,7 +393,10 @@ class N64PatcherGUI(QMainWindow):
         self.tree.setSortingEnabled(True)
         inspect_layout.addWidget(self.tree)
 
-        # Tab 3: Log
+        # Tab 3: Saves
+        tabs.addTab(self._build_save_tab(), "💾 Saves")
+
+        # Tab 4: Log
         log_tab = QWidget()
         log_layout = QVBoxLayout(log_tab)
         tabs.addTab(log_tab, "📜 Log")
@@ -497,6 +501,7 @@ class N64PatcherGUI(QMainWindow):
     # ------------------------------------------------- ROM-Verwaltung
 
     def add_paths(self, paths):
+        saves = 0
         for path in paths:
             try:
                 if os.path.isdir(path):
@@ -505,8 +510,15 @@ class N64PatcherGUI(QMainWindow):
                     self._add_archive(path)
                 elif core.is_rom_file(path) and not core.is_tool_output(path):
                     self._add_rom(path)
+                elif savegame.is_save_file(path):
+                    # Dropping a save on the window is unambiguous - no ROM
+                    # carries these extensions - so it goes to the Saves tab
+                    # rather than being silently ignored.
+                    saves += self.add_saves([path])
             except Exception as e:
                 self.log(f"⚠️ Error adding {path}: {e}")
+        if saves:
+            self.log(f"💾 {saves} save file(s) added to the Saves tab")
         self.update_status_bar()
         self.update_hires_availability()
 
@@ -623,6 +635,163 @@ class N64PatcherGUI(QMainWindow):
                 "Quake II, Golden Nugget 64).")
             self.cb_hires.setText(
                 "High-Res 640x480 — not available for these ROMs")
+
+    # ---------------------------------------------------- Saves tab
+
+    def _build_save_tab(self):
+        """Moving a save between an emulator and a flashcart.
+
+        Both ends are chosen by the user rather than detected, for the
+        same reason the engine refuses to detect them: measured against a
+        132-save card, automatic detection was wrong on one save in five,
+        and a wrong answer scrambles every byte of somebody's progress.
+        """
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+
+        layout.addWidget(QLabel(
+            "Emulators and flashcarts disagree about how to lay a save chip "
+            "out in a file. Name where the file came from and where it is "
+            "going; the byte order is looked up, never guessed."))
+
+        picker = QHBoxLayout()
+        picker.addWidget(QLabel("From:"))
+        self.save_from = QComboBox()
+        picker.addWidget(self.save_from)
+        picker.addWidget(QLabel("To:"))
+        self.save_to = QComboBox()
+        picker.addWidget(self.save_to)
+        for combo in (self.save_from, self.save_to):
+            for src in savegame.SOURCES:
+                combo.addItem(src.label, src.key)
+                combo.setItemData(combo.count() - 1, src.evidence,
+                                  Qt.ItemDataRole.ToolTipRole)
+        # A conversion between two different tools is the normal case.
+        self.save_to.setCurrentIndex(min(1, self.save_to.count() - 1))
+        picker.addStretch(1)
+        layout.addLayout(picker)
+
+        self.save_list_widget = QListWidget()
+        self.save_list_widget.setToolTip(
+            "Save files to convert. Drag them in, or use Add.")
+        layout.addWidget(self.save_list_widget)
+
+        buttons = QHBoxLayout()
+        btn_add = QPushButton("➕ Add saves")
+        btn_add.clicked.connect(self.add_save_files)
+        btn_clear = QPushButton("🗑️ Clear")
+        btn_clear.clicked.connect(self.clear_saves)
+        self.btn_save_info = QPushButton("🔍 Inspect")
+        self.btn_save_info.clicked.connect(self.inspect_saves)
+        self.btn_save_convert = QPushButton("💾 Convert")
+        self.btn_save_convert.clicked.connect(self.convert_saves)
+        buttons.addWidget(btn_add)
+        buttons.addWidget(btn_clear)
+        buttons.addStretch(1)
+        buttons.addWidget(self.btn_save_info)
+        buttons.addWidget(self.btn_save_convert)
+        layout.addLayout(buttons)
+
+        self.save_output = QPlainTextEdit()
+        self.save_output.setReadOnly(True)
+        self.save_output.setFont(QFont("Menlo", 9))
+        layout.addWidget(self.save_output)
+
+        return tab
+
+    def _save_log(self, message=""):
+        self.save_output.appendPlainText(str(message))
+
+    def add_save_files(self):
+        files, _ = QFileDialog.getOpenFileNames(
+            self, "Select save files", "",
+            "N64 saves (*.sav *.eep *.sra *.srm *.fla *.mpk);;All files (*)")
+        self.add_saves(files)
+
+    def add_saves(self, paths):
+        added = 0
+        for path in savegame.collect_saves(list(paths)):
+            if path not in self.save_list:
+                self.save_list.append(path)
+                self.save_list_widget.addItem(os.path.basename(path))
+                added += 1
+        return added
+
+    def clear_saves(self):
+        self.save_list = []
+        self.save_list_widget.clear()
+        self.save_output.clear()
+
+    def inspect_saves(self):
+        if not self._require_saves():
+            return
+        self.save_output.clear()
+        for path in self.save_list:
+            try:
+                with open(path, "rb") as f:
+                    data = f.read()
+                self._save_log(savegame.describe_file(path, data))
+            except OSError as exc:
+                self._save_log(f"{os.path.basename(path)}: {exc}")
+            self._save_log("")
+
+    def convert_saves(self):
+        if not self._require_saves():
+            return
+        source = self.save_from.currentData()
+        target = self.save_to.currentData()
+        out_dir = QFileDialog.getExistingDirectory(
+            self, "Where should the converted saves go?")
+        if not out_dir:
+            return
+
+        self.save_output.clear()
+        converted = skipped = failed = 0
+        for path in self.save_list:
+            res = savegame.convert_file(path, source, target, out_dir=out_dir)
+            name = os.path.basename(path)
+            if res["status"] == "converted":
+                converted += 1
+                note = "" if res["changed"] else "  (identical - only renamed)"
+                self._save_log(f"✅ {name}{note}")
+                self._save_log(f"   -> {res['output']}")
+            elif res["status"] == "exists":
+                # Never silently replace somebody's progress; ask per file.
+                if self._confirm_replace(str(res["output"])):
+                    again = savegame.convert_file(path, source, target,
+                                                  out_dir=out_dir, force=True)
+                    if again["status"] == "converted":
+                        converted += 1
+                        self._save_log(f"✅ {name}  (replaced)")
+                        continue
+                    failed += 1
+                    self._save_log(f"❌ {name}: {again['message']}")
+                else:
+                    skipped += 1
+                    self._save_log(f"⏭️  {name}: kept the existing file")
+            else:
+                failed += 1
+                self._save_log(f"❌ {name}: {res['message']}")
+
+        self._save_log(f"\n{converted} converted, {skipped} skipped, "
+                       f"{failed} failed")
+        self.log(f"Saves: {converted} converted, {skipped} skipped, "
+                 f"{failed} failed")
+
+    def _confirm_replace(self, path):
+        answer = QMessageBox.question(
+            self, "Replace this save?",
+            f"{os.path.basename(path)} already exists.\n\n"
+            f"A save cannot be recovered once it is overwritten. Replace it?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No)
+        return answer == QMessageBox.StandardButton.Yes
+
+    def _require_saves(self):
+        if self.save_list:
+            return True
+        QMessageBox.warning(self, "No saves", "Add some save files first.")
+        return False
 
     def log(self, message):
         self.log_widget.appendPlainText(str(message))

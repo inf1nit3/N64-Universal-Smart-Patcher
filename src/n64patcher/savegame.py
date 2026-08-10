@@ -835,6 +835,91 @@ def describe_file(path: str, data: bytes, requested: str | None = None) -> str:
     return "\n".join(lines)
 
 
+def convert_file(path: str, source: str, target: str, *,
+                 out_path: str | None = None, out_dir: str | None = None,
+                 requested_kind: str | None = None,
+                 force: bool = False) -> dict[str, object]:
+    """Convert one save file on disk. Returns a result dict.
+
+    The single place where the file-level rules live, so the CLI and the
+    GUI cannot drift apart on them: an existing target is never replaced
+    without *force*, the input is never the target, and a result that
+    fails the game's own check is not written at all.
+    """
+    result: dict[str, object] = {
+        "status": "error", "input": path, "output": None, "message": "",
+        "game": None, "changed": False,
+    }
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+        kind = kind_for_file(path, data, requested_kind)
+        game = identify_game(path, kind, data)
+        result["game"] = game
+        conversion = convert_save(data, kind, source, target, game=game)
+    except (OSError, SaveError) as exc:
+        result["message"] = str(exc)
+        return result
+
+    result["changed"] = conversion.changed
+    result["detail"] = conversion.describe()
+
+    if out_path is None:
+        base = os.path.splitext(os.path.basename(path))[0]
+        directory = out_dir or os.path.dirname(os.path.abspath(path))
+        out_path = os.path.join(directory,
+                                f"{base} [{target}]{extension_for(target, kind)}")
+
+    if os.path.abspath(out_path) == os.path.abspath(path):
+        result["message"] = "that would overwrite the input file"
+        return result
+    if os.path.exists(out_path) and not force:
+        result["status"] = "exists"
+        result["output"] = out_path
+        result["message"] = (
+            f"{os.path.basename(out_path)} already exists. A save cannot be "
+            f"recovered once it is overwritten")
+        return result
+
+    try:
+        os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
+        with open(out_path, "wb") as f:
+            f.write(conversion.data)
+    except OSError as exc:
+        result["message"] = str(exc)
+        return result
+
+    result["status"] = "converted"
+    result["output"] = out_path
+    result["message"] = os.path.basename(out_path)
+    return result
+
+
+#: What a save file can be called. The flashcart uses .sav for every chip,
+#: emulators use the chip's own extension, and some tools use .srm.
+SAVE_EXTENSIONS = (".sav", ".eep", ".sra", ".srm", ".fla", ".flash", ".mpk",
+                   ".pak")
+
+
+def is_save_file(path: str) -> bool:
+    return os.path.splitext(path)[1].lower() in SAVE_EXTENSIONS
+
+
+def collect_saves(paths: list[str], recursive: bool = False) -> list[str]:
+    """Every save file among *paths*, folders included."""
+    found: list[str] = []
+    for entry in paths:
+        if os.path.isdir(entry):
+            walker = (os.walk(entry) if recursive
+                      else [(entry, [], os.listdir(entry))])
+            for root, _dirs, files in walker:
+                found.extend(os.path.join(root, f) for f in sorted(files)
+                             if is_save_file(os.path.join(root, f)))
+        elif is_save_file(entry):
+            found.append(entry)
+    return found
+
+
 # ---------------------------------------------------------------------------
 # Region
 # ---------------------------------------------------------------------------

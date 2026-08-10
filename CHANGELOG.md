@@ -11,7 +11,9 @@
 - Every byte order in that table was measured against real files, per tool **and per chip type**, because one tool disagrees with itself: mupen64plus writes EEPROM in chip order and reverses the 32-bit words of SRAM and FlashRAM. A single order per tool would have carried the EEPROM result across and scrambled every 32 KiB and 128 KiB save it touched.
 - Saves are identified by their contents, in every byte arrangement, so a renamed or copied file is still recognised - and a game's own checksum or marker verifies the result, turning a conversion into something provable rather than hopeful. Four titles carry profiles: Super Mario 64 (checksum), Ocarina of Time, Majora's Mask and Paper Mario (markers).
 - An existing save is never overwritten without `--save-force`, an unmeasured tool or chip type is refused rather than guessed at, and a size change that would discard real bytes is an error.
-- Tests: 402 with every optional dependency installed, up from 281; smoke test 32 checks.
+- The GUI gains a **Saves tab**: drop save files in, pick the tool at each end, inspect or convert. A save that would be replaced raises a per-file question, so nobody's progress goes without being asked about. Dropping a save anywhere on the window routes it there rather than being ignored.
+- `--save-convert` also takes a folder (with `-r`), writing to `--output-dir`; in a batch an existing target is a skip rather than a failure.
+- Tests: 410 with every optional dependency installed, up from 281; smoke test 32 checks.
 
 ## v3.4.0 - macOS and Linux
 

@@ -241,6 +241,24 @@ def _save_info(args, log) -> int:
     return 0
 
 
+def _report_save_result(res: dict, log) -> None:
+    log(f"💾 {os.path.basename(str(res['input']))}")
+    if res.get("game"):
+        log(f"   game: {res['game']}")
+    for line in str(res.get("detail", "")).splitlines():
+        if line:
+            log(f"   {line}")
+    if res["status"] == "converted":
+        if not res["changed"]:
+            log("   these two tools agree for this chip - the bytes are "
+                "unchanged and only the name differs")
+        log(f"   ✅ {res['output']}")
+    elif res["status"] == "exists":
+        log(f"   ⏭️  {res['message']} - pass --save-force to replace it")
+    else:
+        log(f"   ❌ {res['message']}")
+
+
 def _save_convert(args, log) -> int:
     if not args.save_from or not args.save_to:
         log("❌ --save-convert needs --save-from and --save-to. The byte "
@@ -248,52 +266,40 @@ def _save_convert(args, log) -> int:
             "detected: see --list-save-sources.")
         return 1
 
-    try:
-        data = _read_save(args.save_convert)
-        kind = savegame.kind_for_file(args.save_convert, data, args.save_type)
-        game = savegame.identify_game(args.save_convert, kind, data)
-        result = savegame.convert_save(data, kind, args.save_from,
-                                       args.save_to, game=game)
-    except (OSError, savegame.SaveError) as e:
-        log(f"❌ {e}")
+    targets = savegame.collect_saves([args.save_convert], args.recursive)
+    if os.path.isdir(args.save_convert) and not targets:
+        log(f"❌ no save files found in {args.save_convert}")
+        return 1
+    if not targets:
+        # A single file that does not carry a save extension is still
+        # converted when named directly; only folder scanning filters.
+        targets = [args.save_convert]
+
+    if len(targets) > 1 and args.save_out:
+        log("❌ --save-out names one file; with a folder use --output-dir")
         return 1
 
-    out = args.save_out
-    if not out:
-        base, _ext = os.path.splitext(args.save_convert)
-        out = base + " [" + args.save_to + "]" + savegame.extension_for(
-            args.save_to, kind)
-    if os.path.abspath(out) == os.path.abspath(args.save_convert):
-        log("❌ that would overwrite the input; pass --save-out")
-        return 1
+    converted = skipped = failed = 0
+    for path in targets:
+        res = savegame.convert_file(
+            path, args.save_from, args.save_to,
+            out_path=args.save_out, out_dir=args.output_dir,
+            requested_kind=args.save_type, force=args.save_force)
+        _report_save_result(res, log)
+        if res["status"] == "converted":
+            converted += 1
+        elif res["status"] == "exists":
+            skipped += 1
+        else:
+            failed += 1
 
-    # A save is the only copy of somebody's progress and there is no
-    # undoing an overwrite, so an existing file is never written over
-    # without being asked for by name.
-    if os.path.exists(out) and not args.save_force:
-        log(f"❌ {out} already exists. A save cannot be recovered once it is "
-            f"overwritten - move it aside, choose another --save-out, or pass "
-            f"--save-force if you really mean to replace it.")
-        return 1
-
-    log(f"💾 {os.path.basename(args.save_convert)}")
-    if game:
-        log(f"   game: {game}")
-    for line in result.describe().splitlines():
-        log(f"   {line}")
-    if not result.changed:
-        log("   nothing to convert - these two tools agree for this chip. "
-            "The file is copied unchanged; only the name differs.")
-
-    try:
-        os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
-        with open(out, "wb") as f:
-            f.write(result.data)
-    except OSError as e:
-        log(f"❌ {e}")
-        return 1
-    log(f"\n✅ written: {out}")
-    return 0
+    if len(targets) > 1:
+        log(f"\n{converted} converted, {skipped} skipped, {failed} failed")
+        # In a batch, an existing target is a skip: the rest still ran.
+        return 1 if failed else 0
+    # Asked to convert one file and it was not written - that is a failure
+    # for anything scripting this, whatever the reason.
+    return 0 if converted else 1
 
 
 def main(argv=None):

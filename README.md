@@ -97,9 +97,17 @@ n64patcher --save-info "THE LEGEND OF ZELDA-9EB1E8AC.sra"
 n64patcher --save-convert "THE LEGEND OF ZELDA-9EB1E8AC.sra" \
            --save-from mupen64plus --save-to sc64
 
+# A whole folder of them at once
+n64patcher --save-convert "/Volumes/NO NAME/saves" -r \\
+           --save-from sc64 --save-to mupen64plus -o ~/emulator-saves
+
 # Which tools have been measured, and on what evidence
 n64patcher --list-save-sources
 ```
+
+The GUI has the same thing under **💾 Saves**: drop the files in, pick the
+tool at each end, Inspect or Convert. Anything that would replace an
+existing save asks first, per file.
 
 Both ends are named rather than detected. That is deliberate: automatic
 detection was measured against a 132-save SummerCart64 card where the true
