@@ -194,14 +194,22 @@ class TestNormalizeSize(unittest.TestCase):
         self.assertEqual(out[:2], b"\x01\x02")
         self.assertEqual(set(out[2:]), {0xFF})
 
-    def test_eeprom_pads_with_zero_not_ff(self):
+    def test_every_chip_type_erases_to_ff(self):
+        """Measured on a real card: all 40 never-written saves across all
+        five chip types read as 0xFF, EEPROM included - where 0x00 would
+        have been the natural guess. Padding with zeroes would write a
+        block the game cannot tell from real data."""
+        for kind in sg.SAVE_KINDS:
+            self.assertEqual(kind.erased, 0xFF, kind.key)
+
+    def test_eeprom_pads_with_ff(self):
         kind = sg.SAVE_KINDS_BY_KEY[sg.EEPROM_4K]
         out = sg.normalize_size(b"\x01", kind)
-        self.assertEqual(set(out[1:]), {0x00})
+        self.assertEqual(set(out[1:]), {0xFF})
 
     def test_trailing_erased_padding_is_trimmed(self):
         kind = sg.SAVE_KINDS_BY_KEY[sg.EEPROM_4K]
-        data = b"\x01" * kind.size + b"\x00" * 64
+        data = b"\x01" * kind.size + b"\xFF" * 64
         self.assertEqual(sg.normalize_size(data, kind), b"\x01" * kind.size)
 
     def test_trimming_real_data_is_refused(self):
@@ -212,6 +220,80 @@ class TestNormalizeSize(unittest.TestCase):
         with self.assertRaises(sg.SaveError) as ctx:
             sg.normalize_size(data, kind)
         self.assertIn("refusing to discard", str(ctx.exception))
+
+
+class TestSources(unittest.TestCase):
+
+    def test_the_flashcart_writes_chip_order(self):
+        self.assertEqual(sg.order_for_source("sc64"), sg.ORDER_RAW)
+
+    def test_every_shipped_source_carries_its_evidence(self):
+        """An entry without a measurement behind it is a guess, and a guess
+        here corrupts saves silently."""
+        for source in sg.SOURCES:
+            self.assertTrue(source.evidence.strip(), source.key)
+            self.assertIn(source.order, sg.ORDERS, source.key)
+
+    def test_an_unmeasured_source_is_refused_not_assumed(self):
+        with self.assertRaises(sg.SaveError) as ctx:
+            sg.order_for_source("some-emulator")
+        self.assertIn("no measured byte order", str(ctx.exception))
+
+
+class TestSuperMario64Check(unittest.TestCase):
+    """The checksum rule was brute-forced from a real save and confirmed on
+    six of them, European and American, 10 blocks of 10 each."""
+
+    def _block(self, size, payload):
+        body = bytearray(payload[:size - 2].ljust(size - 2, b"\x00"))
+        body += (sum(body) & 0xFFFF).to_bytes(2, "big")
+        return bytes(body)
+
+    def _save(self, written_slots=4):
+        out = bytearray()
+        for i in range(8):
+            if i < written_slots:
+                out += self._block(sg.SM64_SLOT_SIZE, b"\x00\x00\x3c\x01" + bytes([i]))
+            else:
+                out += b"\xFF" * sg.SM64_SLOT_SIZE
+        for _ in range(2):
+            out += self._block(sg.SM64_MENU_SIZE, b"\x44\x41")
+        return bytes(out)
+
+    def test_a_well_formed_save_passes(self):
+        result = sg.check_sm64(self._save())
+        self.assertTrue(result.ok)
+        self.assertEqual(result.valid, 6)   # 4 slots + 2 menu blocks
+        self.assertEqual(result.invalid, 0)
+
+    def test_the_layout_fills_the_chip_exactly(self):
+        self.assertEqual(len(self._save()), 512)
+        self.assertEqual(
+            len(sg.SM64_SLOT_BLOCKS) * sg.SM64_SLOT_SIZE
+            + len(sg.SM64_MENU_BLOCKS) * sg.SM64_MENU_SIZE, 512)
+
+    def test_a_flipped_byte_is_caught(self):
+        data = bytearray(self._save())
+        data[4] ^= 0xFF
+        self.assertFalse(sg.check_sm64(bytes(data)).ok)
+
+    def test_an_erased_chip_reports_empty_rather_than_broken(self):
+        result = sg.check_sm64(b"\xFF" * 512)
+        self.assertEqual((result.valid, result.invalid), (0, 0))
+        self.assertIn("empty save", result.describe())
+
+    def test_a_wrongly_swapped_save_fails_its_own_checksum(self):
+        """This is what makes a conversion provable instead of hopeful: the
+        game's checksum only holds in the correct byte order."""
+        good = self._save()
+        self.assertTrue(sg.check_sm64(good).ok)
+        swapped = sg.reorder(good, sg.ORDER_WORD)
+        self.assertFalse(sg.check_sm64(swapped).ok)
+        self.assertTrue(sg.check_sm64(sg.reorder(swapped, sg.ORDER_WORD)).ok)
+
+    def test_a_wrong_size_is_rejected(self):
+        with self.assertRaises(sg.SaveError):
+            sg.check_sm64(b"\xFF" * 2048)
 
 
 class TestRegion(unittest.TestCase):
