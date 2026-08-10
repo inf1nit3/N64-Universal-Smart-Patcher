@@ -241,18 +241,24 @@ class TestSources(unittest.TestCase):
 
     def test_one_tool_can_disagree_with_itself(self):
         """The measurement that shaped this whole model: mupen64plus writes
-        EEPROM in chip order and SRAM with its 32-bit words reversed. A
-        single order per tool would have carried the EEPROM result over to
-        SRAM and scrambled every 32 KiB save."""
-        eeprom = sg.SAVE_KINDS_BY_KEY[sg.EEPROM_4K]
-        sram = sg.SAVE_KINDS_BY_KEY[sg.SRAM_256K]
-        self.assertEqual(sg.order_for_source("mupen64plus", eeprom), sg.ORDER_RAW)
-        self.assertEqual(sg.order_for_source("mupen64plus", sram), sg.ORDER_WORD)
+        EEPROM in chip order but reverses the 32-bit words of everything on
+        the cartridge bus. A single order per tool would have carried the
+        EEPROM result over and scrambled every SRAM and FlashRAM save."""
+        expected = {
+            sg.EEPROM_4K: sg.ORDER_RAW,
+            sg.EEPROM_16K: sg.ORDER_RAW,
+            sg.SRAM_256K: sg.ORDER_WORD,
+            sg.FLASHRAM_1M: sg.ORDER_WORD,
+        }
+        for kind_key, order in expected.items():
+            kind = sg.SAVE_KINDS_BY_KEY[kind_key]
+            self.assertEqual(sg.order_for_source("mupen64plus", kind), order,
+                             kind_key)
 
     def test_an_unmeasured_chip_type_is_refused_not_inferred(self):
-        flash = sg.SAVE_KINDS_BY_KEY[sg.FLASHRAM_1M]
+        pak = sg.SAVE_KINDS_BY_KEY[sg.CONTROLLER_PAK]
         with self.assertRaises(sg.SaveError) as ctx:
-            sg.order_for_source("mupen64plus", flash)
+            sg.order_for_source("mupen64plus", pak)
         self.assertIn("unknown", str(ctx.exception))
 
     def test_every_shipped_source_carries_its_evidence(self):
@@ -305,6 +311,60 @@ class TestOcarinaOfTimeCheck(unittest.TestCase):
     def test_an_untouched_chip_is_empty_not_broken(self):
         result = sg.check_oot(b"\xFF" * (32 * 1024))
         self.assertEqual((result.valid, result.invalid), (0, 0))
+
+
+class TestFlashRamGames(unittest.TestCase):
+    """The two FlashRAM titles that settled that chip's byte order."""
+
+    def _mm(self, copies=2):
+        blob = bytearray(b"\xFF" * (128 * 1024))
+        for off in sg.MM_MARKER_OFFSETS[:copies]:
+            blob[off:off + len(sg.MM_MARKER)] = sg.MM_MARKER
+        return bytes(blob)
+
+    def _pm(self):
+        blob = bytearray(b"\xFF" * (128 * 1024))
+        blob[:len(sg.PM_MARKER)] = sg.PM_MARKER
+        return bytes(blob)
+
+    def test_majoras_mask_marker_and_its_copy(self):
+        result = sg.check_mm(self._mm())
+        self.assertTrue(result.ok)
+        self.assertEqual(result.valid, 2)
+
+    def test_one_copy_is_enough_to_prove_the_layout(self):
+        """The second copy is not always populated; a missing one is unused,
+        not wrong."""
+        result = sg.check_mm(self._mm(copies=1))
+        self.assertTrue(result.ok)
+        self.assertEqual(result.unused, 1)
+
+    def test_paper_mario_marker(self):
+        self.assertTrue(sg.check_paper_mario(self._pm()).ok)
+
+    def test_both_reject_a_word_swapped_file(self):
+        """Which is exactly how the emulator's files were caught."""
+        self.assertFalse(sg.check_mm(sg.swap_words(self._mm())).ok)
+        self.assertFalse(sg.check_paper_mario(sg.swap_words(self._pm())).ok)
+
+    def test_both_reject_the_wrong_size(self):
+        for checker in (sg.check_mm, sg.check_paper_mario):
+            with self.assertRaises(sg.SaveError):
+                checker(b"\xFF" * (32 * 1024))
+
+    def test_an_untouched_chip_is_empty_not_broken(self):
+        for checker in (sg.check_mm, sg.check_paper_mario):
+            result = checker(b"\xFF" * (128 * 1024))
+            self.assertEqual((result.valid, result.invalid), (0, 0))
+
+    def test_flashram_conversion_is_verified_end_to_end(self):
+        kind = sg.SAVE_KINDS_BY_KEY[sg.FLASHRAM_1M]
+        emulator_file = sg.swap_words(self._mm())
+        result = sg.convert_save(emulator_file, kind, "mupen64plus", "sc64",
+                                 game="The Legend of Zelda: Majora's Mask")
+        self.assertTrue(result.changed)
+        self.assertEqual(result.data, self._mm())
+        self.assertTrue(result.check.ok)
 
 
 class TestIdentifyGame(unittest.TestCase):

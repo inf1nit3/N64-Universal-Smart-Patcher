@@ -319,15 +319,23 @@ SOURCES: tuple[SaveSource, ...] = (
         "were present and none showed a differing arrangement"),
     SaveSource(
         "mupen64plus", "mupen64plus",
-        {EEPROM_4K: ORDER_RAW, EEPROM_16K: ORDER_RAW, SRAM_256K: ORDER_WORD},
+        {EEPROM_4K: ORDER_RAW, EEPROM_16K: ORDER_RAW,
+         SRAM_256K: ORDER_WORD, FLASHRAM_1M: ORDER_WORD},
         "Two measurements, and they disagree with each other. Its Super "
         "Mario 64 EEPROM save passes the game's own checksum exactly as "
         "stored and fails under either swap, so EEPROM is chip order. Its "
         "Ocarina of Time SRAM save holds no readable 'ZELDAZ' at all until "
         "the 32-bit words are reversed, whereupon the marker and its backup "
         "copy land at 0x3c and 0x3d2c - the same offsets the flashcart's "
-        "save has them at unswapped. SRAM is therefore word-swapped. "
-        "FlashRAM and 768 Kbit SRAM remain unmeasured"),
+        "save has them at unswapped. SRAM is therefore word-swapped, and "
+        "FlashRAM behaves the same way, shown twice over: Majora's Mask "
+        "puts 'ZELDA3' at 0x24 and Paper Mario 'Mario Story 006' at 0x0 "
+        "only once the words are reversed, both matching the flashcart's "
+        "own saves byte for byte. EEPROM being the exception fits how the "
+        "hardware is reached - it hangs off the serial controller port "
+        "while SRAM and FlashRAM sit on the 32-bit cartridge bus - though "
+        "that is an explanation for the pattern, not something measured. "
+        "Controller Pak and 768 Kbit SRAM remain unmeasured"),
     SaveSource(
         "hardware", "Real cartridge / chip dump",
         dict.fromkeys(ALL_KINDS, ORDER_RAW),
@@ -513,11 +521,63 @@ class GameProfile:
     hints: tuple[str, ...]
 
 
+#: Majora's Mask stamps "ZELDA3" at 0x24 and keeps a second copy at
+#: 0x2024. Verified in five saves - four written by a SummerCart64, one by
+#: mupen64plus - all of which carry it after merely reaching the title
+#: screen, with under 200 of the 131072 bytes written.
+MM_MARKER = b"ZELDA3"
+MM_MARKER_OFFSETS = (0x24, 0x2024)
+
+#: Paper Mario opens its FlashRAM with its Japanese working title.
+#: Verified in two saves, one from each side.
+PM_MARKER = b"Mario Story 006"
+PM_MARKER_OFFSETS = (0x00,)
+
+
+def _marker_check(data: bytes, size: int, label: str, marker: bytes,
+                  offsets: tuple[int, ...]) -> SaveCheck:
+    """Validate a save by markers the game writes at fixed offsets.
+
+    Placement, not integrity: a match proves the layout - and so the byte
+    order - is right, and says nothing about whether the contents are
+    self-consistent. Where a game's checksum has not been derived, this is
+    the strongest honest claim.
+    """
+    if len(data) != size:
+        raise SaveError(f"a {label} save is {size} bytes, this one is {len(data)}")
+    if len(set(data)) <= 1:
+        return SaveCheck(0, 0, len(offsets), basis="marker")
+
+    valid = sum(1 for off in offsets
+                if data[off:off + len(marker)] == marker)
+    # Any match proves the layout; the copies a game keeps are not all
+    # populated at every moment, so a missing one is unused, not wrong.
+    if valid:
+        return SaveCheck(valid, 0, len(offsets) - valid, basis="marker")
+    return SaveCheck(0, 1, 0, basis="marker")
+
+
+def check_mm(data: bytes) -> SaveCheck:
+    """Validate a Majora's Mask FlashRAM save."""
+    return _marker_check(data, 128 * 1024, "Majora's Mask",
+                         MM_MARKER, MM_MARKER_OFFSETS)
+
+
+def check_paper_mario(data: bytes) -> SaveCheck:
+    """Validate a Paper Mario FlashRAM save."""
+    return _marker_check(data, 128 * 1024, "Paper Mario",
+                         PM_MARKER, PM_MARKER_OFFSETS)
+
+
 GAMES: tuple[GameProfile, ...] = (
     GameProfile("Super Mario 64", EEPROM_4K, check_sm64,
                 ("super mario 64",)),
     GameProfile("The Legend of Zelda: Ocarina of Time", SRAM_256K, check_oot,
                 ("legend of zelda", "ocarina of time")),
+    GameProfile("The Legend of Zelda: Majora's Mask", FLASHRAM_1M, check_mm,
+                ("majora", "mujura")),
+    GameProfile("Paper Mario", FLASHRAM_1M, check_paper_mario,
+                ("paper mario", "mario story")),
 )
 
 #: Games whose save can be validated. Keyed by the name used in reports.
