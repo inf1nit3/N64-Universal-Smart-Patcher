@@ -20,7 +20,7 @@ import tempfile
 import threading
 from datetime import datetime
 
-from . import datdb, patchdb
+from . import datdb, patchdb, savegame
 from . import manifest as manifest_mod
 from . import n64_core as core
 from .batch_runner import batch_patch_roms
@@ -206,6 +206,85 @@ def make_crcfix_copy(rom_path: str, output_dir=None, strip_header: bool = False,
         shutil.rmtree(workdir, ignore_errors=True)
 
 
+# ---------------------------------------------------------------------------
+# Save files
+# ---------------------------------------------------------------------------
+
+def _list_save_sources(log) -> int:
+    log("Tools whose save byte order has been measured:\n")
+    for source in savegame.SOURCES:
+        log(f"  {source.key}  -  {source.label}")
+        for kind_key, order in sorted(source.orders.items()):
+            kind = savegame.SAVE_KINDS_BY_KEY[kind_key]
+            log(f"      {kind.label:<18} {savegame.ORDER_LABELS[order]}")
+        missing = [k.label for k in savegame.SAVE_KINDS
+                   if k.key not in source.orders]
+        if missing:
+            log(f"      not measured: {', '.join(missing)}")
+        log(f"      evidence: {source.evidence}")
+        log("")
+    return 0
+
+
+def _read_save(path: str):
+    with open(path, "rb") as f:
+        return f.read()
+
+
+def _save_info(args, log) -> int:
+    try:
+        data = _read_save(args.save_info)
+        log(savegame.describe_file(args.save_info, data, args.save_type))
+    except OSError as e:
+        log(f"❌ {e}")
+        return 1
+    return 0
+
+
+def _save_convert(args, log) -> int:
+    if not args.save_from or not args.save_to:
+        log("❌ --save-convert needs --save-from and --save-to. The byte "
+            "order belongs to the tool that wrote the file and is not "
+            "detected: see --list-save-sources.")
+        return 1
+
+    try:
+        data = _read_save(args.save_convert)
+        kind = savegame.kind_for_file(args.save_convert, data, args.save_type)
+        game = savegame.identify_game(args.save_convert, kind, data)
+        result = savegame.convert_save(data, kind, args.save_from,
+                                       args.save_to, game=game)
+    except (OSError, savegame.SaveError) as e:
+        log(f"❌ {e}")
+        return 1
+
+    out = args.save_out
+    if not out:
+        base, ext = os.path.splitext(args.save_convert)
+        out = f"{base} [{args.save_to}]{ext}"
+    if os.path.abspath(out) == os.path.abspath(args.save_convert):
+        log("❌ that would overwrite the input; pass --save-out")
+        return 1
+
+    log(f"💾 {os.path.basename(args.save_convert)}")
+    if game:
+        log(f"   game: {game}")
+    for line in result.describe().splitlines():
+        log(f"   {line}")
+    if not result.changed:
+        log("   nothing to convert - these two tools agree for this chip. "
+            "Copy the file and name it the way the target expects.")
+
+    try:
+        with open(out, "wb") as f:
+            f.write(result.data)
+    except OSError as e:
+        log(f"❌ {e}")
+        return 1
+    log(f"\n✅ written: {out}")
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="n64patcher",
@@ -285,12 +364,46 @@ def main(argv=None):
                              "(hashes + result, no ROM data)")
     parser.add_argument("--version", action="store_true", help="Show the version")
 
+    # Save files
+    saves = parser.add_argument_group(
+        "save files",
+        "Move a save between an emulator and a flashcart. The byte order "
+        "belongs to the tool that wrote the file, so both ends are named "
+        "rather than detected - guessing it is wrong often enough to "
+        "corrupt saves.")
+    saves.add_argument("--save-info", metavar="FILE",
+                       help="Report what a save file is and whether it is valid")
+    saves.add_argument("--save-convert", metavar="FILE",
+                       help="Convert a save file (needs --save-from/--save-to)")
+    saves.add_argument("--save-from", metavar="TOOL",
+                       help="Tool that wrote the file: "
+                            + ", ".join(sorted(savegame.SOURCES_BY_KEY)))
+    saves.add_argument("--save-to", metavar="TOOL",
+                       help="Tool the result is for")
+    saves.add_argument("--save-type", metavar="CHIP",
+                       help="Chip type when size and name do not settle it: "
+                            + ", ".join(savegame.SAVE_KINDS_BY_KEY))
+    saves.add_argument("--save-out", metavar="FILE",
+                       help="Where to write the converted save "
+                            "(default: alongside, with the target's name)")
+    saves.add_argument("--list-save-sources", action="store_true",
+                       help="List the tools whose byte order has been measured")
+
     args = parser.parse_args(argv)
     log = RunLogger()
 
     if args.version:
         log(f"n64patcher v{core.VERSION}")
         return 0
+
+    if args.list_save_sources:
+        return _list_save_sources(log)
+
+    if args.save_info:
+        return _save_info(args, log)
+
+    if args.save_convert:
+        return _save_convert(args, log)
 
     if args.create_patch:
         source, target, out = args.create_patch

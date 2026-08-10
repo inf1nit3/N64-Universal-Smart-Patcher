@@ -464,44 +464,117 @@ def check_sm64(data: bytes) -> SaveCheck:
     return SaveCheck(valid, invalid, unused)
 
 
-#: Ocarina of Time stamps its save with this marker, once for the live
-#: file and once for the backup copy the game keeps beside it. Verified at
-#: these offsets in two independently produced saves - one written by a
-#: SummerCart64, one by mupen64plus - which is also how the emulator's
-#: word swap was found: the marker is absent until the words are reversed.
+#: Ocarina of Time opens its SRAM with a fixed 12-byte header, ending in
+#: "ZELDA". Present in all six saves examined - five written by a
+#: SummerCart64 and one by mupen64plus - whether or not the player has
+#: created a file yet, which is what makes it the identifying mark.
+OOT_HEADER = bytes.fromhex("00000098091021") + b"ZELDA"
+
+#: Each save slot the player has created is stamped "ZELDAZ": the live
+#: file and the backup the game keeps beside it. Absent on a fresh chip
+#: the game has merely initialised, so a save without them is empty, not
+#: broken - two of the six were exactly that, and reading them as damaged
+#: was this checker's first mistake.
 OOT_MARKER = b"ZELDAZ"
 OOT_MARKER_OFFSETS = (0x3C, 0x3D2C)
 
 
 def check_oot(data: bytes) -> SaveCheck:
-    """Validate an Ocarina of Time SRAM save by its marker.
+    """Validate an Ocarina of Time SRAM save by its header and slots.
 
-    This checks placement, not integrity: it proves the save is laid out
-    the way the game writes it - and therefore that the byte order is
-    right - but it does not verify the contents the way a checksum would.
-    The game's own checksum has not been derived yet, so the weaker claim
-    is the only honest one.
+    This checks placement, not integrity: a matching header proves the
+    save is laid out the way the game writes it - and therefore that the
+    byte order is right - but says nothing about whether the contents are
+    self-consistent. The game's own checksum has not been derived yet, so
+    the weaker claim is the only honest one.
     """
     if len(data) != 32 * 1024:
         raise SaveError(
             f"an Ocarina of Time save is 32768 bytes, this one is {len(data)}")
     if len(set(data)) <= 1:
-        return SaveCheck(0, 0, len(OOT_MARKER_OFFSETS), basis="marker")
+        return SaveCheck(0, 0, 1 + len(OOT_MARKER_OFFSETS), basis="marker")
 
-    valid = invalid = 0
-    for off in OOT_MARKER_OFFSETS:
-        if data[off:off + len(OOT_MARKER)] == OOT_MARKER:
-            valid += 1
-        else:
-            invalid += 1
-    return SaveCheck(valid, invalid, 0, basis="marker")
+    if data[:len(OOT_HEADER)] != OOT_HEADER:
+        return SaveCheck(0, 1, 0, basis="marker")
 
+    used = sum(1 for off in OOT_MARKER_OFFSETS
+               if data[off:off + len(OOT_MARKER)] == OOT_MARKER)
+    return SaveCheck(1 + used, 0, len(OOT_MARKER_OFFSETS) - used, basis="marker")
+
+
+@dataclass(frozen=True)
+class GameProfile:
+    """What is known about one game's save."""
+    name: str
+    kind: str
+    check: object
+    #: Substrings of a file name that suggest this game. A fallback only -
+    #: identification goes by contents first.
+    hints: tuple[str, ...]
+
+
+GAMES: tuple[GameProfile, ...] = (
+    GameProfile("Super Mario 64", EEPROM_4K, check_sm64,
+                ("super mario 64",)),
+    GameProfile("The Legend of Zelda: Ocarina of Time", SRAM_256K, check_oot,
+                ("legend of zelda", "ocarina of time")),
+)
 
 #: Games whose save can be validated. Keyed by the name used in reports.
-CHECKERS = {
-    "Super Mario 64": check_sm64,
-    "The Legend of Zelda: Ocarina of Time": check_oot,
-}
+CHECKERS = {g.name: g.check for g in GAMES}
+
+
+# ---------------------------------------------------------------------------
+# Recognising which game a save belongs to
+#
+# Both tools name a save after the ROM, which is what makes a name-based
+# guess possible at all: mupen64plus uses the ROM's internal title ("SUPER
+# MARIO 64-66CF018F.eep"), and the SummerCart64 menu uses the ROM's file
+# name ("saves/<rom>.sav" - the rule 88 of the 132 saves on a real card
+# follow). But a name survives only until someone copies the file, so it
+# is the fallback and the contents come first.
+# ---------------------------------------------------------------------------
+
+def identify_game(path: str, kind: SaveKind, data: bytes | None = None) -> str | None:
+    """Which game a save belongs to, or None when it cannot be told.
+
+    Contents first, name only as a fallback. Names are the obvious hook
+    and they are not good enough: copy a save to "oot-backup.sra" and a
+    name-matching check quietly finds nothing, taking the validation with
+    it - the safety net disappears exactly when someone has been moving
+    files around, which is when it is needed.
+
+    A game's own marker or checksum, by contrast, is in the file. It is
+    looked for in every byte arrangement, because at the point of asking
+    the file may still be in the source tool's order.
+    """
+    candidates = [g for g in GAMES if g.kind == kind.key]
+
+    refuted = set()
+    if data is not None:
+        for game in candidates:
+            matched = False
+            for order in ORDERS:
+                try:
+                    if game.check(reorder(data, order)).ok:
+                        return game.name
+                    matched = True  # the checker ran and said no
+                except SaveError:
+                    break  # wrong size for this game; try the next one
+            if matched and len(set(data)) > 1:
+                refuted.add(game.name)
+
+    # The name is a weaker witness and must not outvote the contents: a
+    # file that carries data and matches no arrangement of a game's own
+    # marks is not that game, however it happens to be called. Only an
+    # empty or unreadable file falls through to the name.
+    name = os.path.basename(path).lower()
+    for game in candidates:
+        if game.name in refuted:
+            continue
+        if any(needle in name for needle in game.hints):
+            return game.name
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -575,6 +648,92 @@ def convert_save(data: bytes, kind: SaveKind, source: str, target: str,
         resized_from=None if len(out) == original_size else original_size,
         check=check,
     )
+
+
+# ---------------------------------------------------------------------------
+# Working with files
+# ---------------------------------------------------------------------------
+
+def kind_for_file(path: str, data: bytes, requested: str | None = None) -> SaveKind:
+    """Decide which chip a save file holds.
+
+    Size narrows it, the extension usually settles the rest, and where it
+    does not the caller has to say. 32 KiB is genuinely ambiguous - SRAM
+    and a Controller Pak are the same size - and picking one silently
+    would mean converting a save under the wrong assumptions.
+    """
+    if requested is not None:
+        try:
+            return SAVE_KINDS_BY_KEY[requested]
+        except KeyError:
+            known = ", ".join(SAVE_KINDS_BY_KEY)
+            raise SaveError(f"unknown chip type {requested!r}. Known: {known}") from None
+
+    by_size = kinds_for_size(len(data))
+    if not by_size:
+        sizes = ", ".join(f"{k.size} ({k.label})" for k in SAVE_KINDS)
+        raise SaveError(
+            f"{len(data)} bytes matches no N64 save chip. Expected one of: "
+            f"{sizes}")
+    if len(by_size) == 1:
+        return by_size[0]
+
+    by_ext = [k for k in kinds_for_extension(path) if k in by_size]
+    if len(by_ext) == 1:
+        return by_ext[0]
+
+    # The flashcart calls every save ".sav" whatever the chip, so the
+    # extension settles nothing for the commonest files on a real card.
+    # The name still can: a save named after a game we know is that game's
+    # chip type. Only accepted when exactly one candidate matches.
+    named = [k for k in by_size if identify_game(path, k, data) is not None]
+    if len(named) == 1:
+        return named[0]
+
+    options = ", ".join(f"{k.key} ({k.label})" for k in by_size)
+    raise SaveError(
+        f"{len(data)} bytes fits more than one chip and neither the name nor "
+        f"the extension settles it. Say which with --save-type: {options}")
+
+
+def describe_file(path: str, data: bytes, requested: str | None = None) -> str:
+    """A report on a save file: what it is, what is in it, what we can say
+    about its byte order - clearly separating the measured from the
+    guessed."""
+    lines = [f"{os.path.basename(path)}  ({len(data)} bytes)"]
+    try:
+        kind = kind_for_file(path, data, requested)
+    except SaveError as exc:
+        lines.append(f"  chip type : UNCLEAR - {exc}")
+        return "\n".join(lines)
+
+    lines.append(f"  chip type : {kind.label}")
+
+    if not data or len(set(data)) <= 1:
+        lines.append("  contents  : empty - nothing written to this chip yet")
+        return "\n".join(lines)
+
+    game = identify_game(path, kind, data)
+    if game:
+        check = CHECKERS[game](data)
+        lines.append(f"  game      : {game}")
+        lines.append(f"  as stored : {check.describe()}")
+        if not check.ok:
+            for order in ORDERS:
+                if order == ORDER_RAW:
+                    continue
+                if CHECKERS[game](reorder(data, order)).ok:
+                    lines.append(f"  but valid as {ORDER_LABELS[order]} - the file "
+                                 f"is in that arrangement")
+                    break
+    else:
+        lines.append("  game      : not recognised - no validation available")
+
+    guess = detect_order(data)
+    verdict = (ORDER_LABELS[guess.order] if guess.decided else "undecided")
+    lines.append(f"  hint      : looks like {verdict} (unreliable - one save in "
+                 f"five is called wrongly; go by the source instead)")
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------

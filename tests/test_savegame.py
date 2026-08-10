@@ -12,6 +12,16 @@ import unittest
 from n64patcher import savegame as sg
 
 
+def oot_save(slots=2):
+    """A synthetic Ocarina of Time SRAM save: the fixed header the game
+    always writes, plus a marker for each save slot the player created."""
+    blob = bytearray(b"\xFF" * (32 * 1024))
+    blob[:len(sg.OOT_HEADER)] = sg.OOT_HEADER
+    for off in sg.OOT_MARKER_OFFSETS[:slots]:
+        blob[off:off + len(sg.OOT_MARKER)] = sg.OOT_MARKER
+    return bytes(blob)
+
+
 class TestSaveKinds(unittest.TestCase):
 
     def test_sizes_are_the_hardware_sizes(self):
@@ -263,16 +273,25 @@ class TestSources(unittest.TestCase):
 
 class TestOcarinaOfTimeCheck(unittest.TestCase):
 
-    def _save(self):
-        blob = bytearray(b"\xFF" * (32 * 1024))
-        for off in sg.OOT_MARKER_OFFSETS:
-            blob[off:off + len(sg.OOT_MARKER)] = sg.OOT_MARKER
-        return bytes(blob)
+    def _save(self, slots=2):
+        return oot_save(slots)
 
-    def test_the_marker_and_its_backup_are_both_checked(self):
+    def test_the_header_and_both_slots_are_checked(self):
         result = sg.check_oot(self._save())
         self.assertTrue(result.ok)
-        self.assertEqual(result.valid, 2)
+        self.assertEqual(result.valid, 3)   # header + two slots
+
+    def test_a_save_with_no_slots_yet_is_valid_not_broken(self):
+        """Two of the six real saves examined were exactly this: the game
+        had initialised the chip but the player had created no file.
+        Reading them as damaged was this checker's first mistake."""
+        result = sg.check_oot(self._save(slots=0))
+        self.assertTrue(result.ok)
+        self.assertEqual(result.valid, 1)   # the header alone
+        self.assertEqual(result.unused, 2)
+
+    def test_a_foreign_file_of_the_right_size_is_rejected(self):
+        self.assertFalse(sg.check_oot(bytes(range(256)) * 128).ok)
 
     def test_the_result_says_marker_not_checksum(self):
         """A placement check is weaker than a checksum and must not be
@@ -288,6 +307,77 @@ class TestOcarinaOfTimeCheck(unittest.TestCase):
         self.assertEqual((result.valid, result.invalid), (0, 0))
 
 
+class TestIdentifyGame(unittest.TestCase):
+
+    def _oot(self, order=sg.ORDER_RAW):
+        return sg.reorder(oot_save(), order)
+
+    SRAM = property(lambda self: sg.SAVE_KINDS_BY_KEY[sg.SRAM_256K])
+
+    def test_contents_beat_the_file_name(self):
+        """A renamed save must still be recognised. Name matching alone
+        loses the validation exactly when files are being moved around,
+        which is when it is needed."""
+        self.assertEqual(sg.identify_game("/x/backup-01.bin", self.SRAM, self._oot()),
+                         "The Legend of Zelda: Ocarina of Time")
+
+    def test_recognised_even_while_still_in_the_source_order(self):
+        """Identification happens before conversion, so the file is still
+        arranged the way the emulator wrote it."""
+        self.assertEqual(
+            sg.identify_game("/x/anything.sra", self.SRAM, self._oot(sg.ORDER_WORD)),
+            "The Legend of Zelda: Ocarina of Time")
+
+    def test_the_name_still_helps_when_contents_do_not(self):
+        empty = b"\xFF" * (32 * 1024)
+        self.assertEqual(
+            sg.identify_game("/x/Ocarina of Time.sav", self.SRAM, empty),
+            "The Legend of Zelda: Ocarina of Time")
+
+    def test_a_game_is_only_considered_for_its_own_chip(self):
+        """Otherwise a 32 KiB file would match both SRAM and Controller Pak
+        candidates and the size ambiguity could never be resolved."""
+        pak = sg.SAVE_KINDS_BY_KEY[sg.CONTROLLER_PAK]
+        self.assertIsNone(sg.identify_game("/x/zelda.mpk", pak, self._oot()))
+
+    def test_unknown_data_yields_nothing(self):
+        self.assertIsNone(sg.identify_game("/x/mystery.sra", self.SRAM,
+                                           bytes(range(256)) * 128))
+
+
+class TestKindForFile(unittest.TestCase):
+
+    def test_a_unique_size_is_enough(self):
+        self.assertEqual(sg.kind_for_file("/x/a.bin", b"\x00" * 512).key,
+                         sg.EEPROM_4K)
+
+    def test_the_extension_settles_an_ambiguous_size(self):
+        self.assertEqual(sg.kind_for_file("/x/a.sra", b"\x00" * 32768).key,
+                         sg.SRAM_256K)
+
+    def test_contents_settle_what_the_flashcart_naming_cannot(self):
+        """Every save on the card is called .sav whatever the chip, so the
+        commonest real file has no extension to go on."""
+        self.assertEqual(sg.kind_for_file("/x/game.sav", oot_save()).key,
+                         sg.SRAM_256K)
+
+    def test_a_genuinely_ambiguous_file_is_refused(self):
+        with self.assertRaises(sg.SaveError) as ctx:
+            sg.kind_for_file("/x/game.sav", bytes(range(256)) * 128)
+        self.assertIn("--save-type", str(ctx.exception))
+
+    def test_an_explicit_type_wins(self):
+        self.assertEqual(
+            sg.kind_for_file("/x/game.sav", b"\x00" * 32768,
+                             requested=sg.CONTROLLER_PAK).key,
+            sg.CONTROLLER_PAK)
+
+    def test_a_size_no_chip_has_is_refused(self):
+        with self.assertRaises(sg.SaveError) as ctx:
+            sg.kind_for_file("/x/game.sav", b"\x00" * 1234)
+        self.assertIn("matches no N64 save chip", str(ctx.exception))
+
+
 class TestConvertSave(unittest.TestCase):
     """End to end, on the pairing that actually needs converting."""
 
@@ -295,10 +385,7 @@ class TestConvertSave(unittest.TestCase):
     OOT = "The Legend of Zelda: Ocarina of Time"
 
     def _chip_order_save(self):
-        blob = bytearray(b"\xFF" * (32 * 1024))
-        for off in sg.OOT_MARKER_OFFSETS:
-            blob[off:off + len(sg.OOT_MARKER)] = sg.OOT_MARKER
-        return bytes(blob)
+        return oot_save()
 
     def test_emulator_sram_to_flashcart_swaps_the_words(self):
         emulator_file = sg.swap_words(self._chip_order_save())
