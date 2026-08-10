@@ -7,7 +7,11 @@
 - A CRC1 that does not parse now matches **no** fix rather than the first file in the folder. An IPS carries no source checksum, so a fix handed to the wrong dump would apply cleanly and corrupt it in silence.
 - **Fixed: `--strip-header` produced output named after the intermediate.** The stripped ROM is handed to the pipeline as `Game.z64.stripped.z64`, and the tag was appended to that whole name - `Game.z64.stripped [NoAA].z64`. Affected the CLI flag and the GUI checkbox alike.
 - New test for the cross-device output move: `move_onto_reserved`'s `shutil.move` fallback had no coverage, so an `os.replace`-only regression would have gone unnoticed until someone pointed `--output-dir` at an SD card.
-- Tests: 307, up from 281.
+- **New: save file tools.** `--save-info` reports what a save file is - chip type, the game it belongs to, and whether it is valid - and `--save-convert` moves one between an emulator and a flashcart. Both ends of a conversion are named rather than detected, because detection is not good enough to be trusted with the job: scored against a 132-save SummerCart64 card where the true answer was known, the heuristic was right 32 % of the time, **wrong 20 %**, and undecided for the rest. It is shown as a hint and drives nothing. `--list-save-sources` prints each measured tool with the evidence behind it.
+- Every byte order in that table was measured against real files, per tool **and per chip type**, because one tool disagrees with itself: mupen64plus writes EEPROM in chip order and reverses the 32-bit words of SRAM and FlashRAM. A single order per tool would have carried the EEPROM result across and scrambled every 32 KiB and 128 KiB save it touched.
+- Saves are identified by their contents, in every byte arrangement, so a renamed or copied file is still recognised - and a game's own checksum or marker verifies the result, turning a conversion into something provable rather than hopeful. Four titles carry profiles: Super Mario 64 (checksum), Ocarina of Time, Majora's Mask and Paper Mario (markers).
+- An existing save is never overwritten without `--save-force`, an unmeasured tool or chip type is refused rather than guessed at, and a size change that would discard real bytes is an error.
+- Tests: 402 with every optional dependency installed, up from 281; smoke test 32 checks.
 
 ## v3.4.0 - macOS and Linux
 

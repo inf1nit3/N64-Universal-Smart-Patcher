@@ -84,6 +84,41 @@ n64patcher "D:\N64 ROMs" --patch-file sm64_widescreen.ips
 n64patcher "D:\N64 ROMs" --inspect-only --export report.csv
 ```
 
+### 💾 Save files
+
+Moving a save between an emulator and a flashcart usually fails for one
+reason: the two disagree about how to lay the save chip out in a file.
+
+```bash
+# What is this file, and is it valid?
+n64patcher --save-info "THE LEGEND OF ZELDA-9EB1E8AC.sra"
+
+# Move it to the flashcart
+n64patcher --save-convert "THE LEGEND OF ZELDA-9EB1E8AC.sra" \
+           --save-from mupen64plus --save-to sc64
+
+# Which tools have been measured, and on what evidence
+n64patcher --list-save-sources
+```
+
+Both ends are named rather than detected. That is deliberate: automatic
+detection was measured against a 132-save SummerCart64 card where the true
+answer was known, and it was right 32 % of the time, **wrong 20 %**, and
+undecided for the rest — the failures being the games whose saves are full
+of floating-point data, where a big-endian float's trailing zero bytes look
+exactly like a reversed integer. It is reported as a hint and drives
+nothing.
+
+Every entry in the table is a measurement against real files, kept **per
+chip type**, because a tool can disagree with itself — mupen64plus writes
+EEPROM in chip order and reverses the 32-bit words of SRAM and FlashRAM.
+An unmeasured tool or chip type is refused, not guessed at.
+
+Saves are recognised by their contents rather than their name, so a copied
+or renamed file still gets checked, and where the game's own checksum or
+marker is known the result is verified before it is handed back. An
+existing save is never overwritten without `--save-force`.
+
 Individual flags (`--keep-aa`, `--no-dither`, `--no-divot`, `--no-gamma`,
 `--hires`) override the selected preset. `--fix-crc` also creates `[CRCFIX]`
 copies of ROMs the engine skips (flashcart repair mode). `--verify` exits
