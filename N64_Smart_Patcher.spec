@@ -16,6 +16,7 @@ MACOS = sys.platform == "darwin"
 # run against the built binary in CI.
 DATAS = [
     ('src/n64patcher/patches', 'patches'),
+    ('src/n64patcher/game_fixes', 'game_fixes'),
     ('src/n64patcher/N64noAAPatcher/additionals', 'N64noAAPatcher/additionals'),
     ('src/n64patcher/N64noAAPatcher/hires_patches', 'N64noAAPatcher/hires_patches'),
     ('app_icon.ico', '.'),

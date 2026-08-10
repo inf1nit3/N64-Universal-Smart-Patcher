@@ -630,9 +630,13 @@ class N64PatcherGUI(QMainWindow):
     def update_status_bar(self):
         tools = core.check_tools()
         parts = []
-        for name, label in (("u64aap", "u64aap"), ("rn64crc", "rn64crc"),
-                            ("xdelta3", "xdelta3")):
+        for name, label in (("u64aap", "u64aap"), ("rn64crc", "rn64crc")):
             parts.append(f"{label}: {'✓' if tools.get(name) else '✗ (Fallback)'}")
+        # xdelta3 is no longer a capability question - the built-in VCDIFF
+        # engine covers the same deltas - so the label names the engine in
+        # use rather than flagging a missing tool.
+        parts.append("xdelta: " + ("xdelta3 ✓" if tools.get("xdelta3")
+                                   else "Pure-Python ✓"))
         parts.append("CRC-Engine: Pure-Python ✓")
         self.status_tool_label.setText("  |  ".join(parts))
         self.status_count_label.setText(f"{len(self.rom_list)} ROM(s) loaded")

@@ -5,10 +5,13 @@ the GUI, the CLI, and the unit tests.
 
 Patch pipeline overview (see patch_rom):
   1. Convert input to native big-endian .z64 (rejects unknown formats)
-  2. If hi-res requested and a verified SubDrag .xdelta exists for the
-     title, apply it to the CLEAN source first (xdelta patches are built
-     against pristine dumps - applying them after other modifications
-     fails)
+  2. If hi-res requested and a verified SubDrag .xdelta exists for this
+     exact dump, apply it to the CLEAN source first (xdelta patches are
+     built against pristine dumps - applying them after other
+     modifications fails). External xdelta3 when runnable, otherwise the
+     built-in VCDIFF engine
+  2b. Optional per-game menu/HUD fix (IPS/BPS keyed on CRC1) on top of a
+     delta that applied
   3. Apply VI filter options (No-AA via u64aap when enabled, dynamic
      instruction-mask fallback, dither/divot/gamma flags)
   4. Hi-res fallback: Smart VI Mode Table engine (width 320 -> 640 on
@@ -32,7 +35,7 @@ import threading
 import traceback
 from dataclasses import dataclass
 
-from . import datdb, patchdb
+from . import datdb, patchdb, xdelta_patch
 from . import manifest as manifest_mod
 from ._version import __version__
 
@@ -95,15 +98,24 @@ XDELTA3_PATH = _resolve_tool(
     "xdelta3", "xdelta")
 HIRES_PATCHES_DIR = get_asset_path("N64noAAPatcher", "hires_patches")
 
+# Per-game menu/HUD fixes, searched lowest precedence first - same shape as
+# patchdb.patch_dirs(), so a user-built fix survives a reinstall and can
+# override a shipped one.
+GAME_FIXES_DIR = get_asset_path("game_fixes")
+USER_GAME_FIXES_DIR = os.path.join(os.path.expanduser("~"), ".n64patcher",
+                                   "game_fixes")
+
 CREATE_NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
 
 
 def xdelta3_install_hint():
-    """How to get xdelta3 on this platform.
+    """How to get the external xdelta3 on this platform.
 
-    The bundled helper is a Windows PE binary, so on macOS and Linux the
-    verified SubDrag patches need a system xdelta3. Naming the exact command
-    is the difference between a user fixing this in ten seconds and giving up.
+    Only relevant as an aside now: the built-in VCDIFF engine
+    (xdelta_patch) applies every bundled delta without any helper, so a
+    missing xdelta3 no longer costs a dump its verified patch. The binary
+    is still preferred when present because it is the reference
+    implementation.
     """
     if sys.platform == "darwin":
         return "install it with: brew install xdelta"
@@ -167,7 +179,9 @@ def check_tools():
         "u64aap": _is_runnable(U64AAP_PATH),
         "rn64crc": _is_runnable(RN64CRC_PATH),
         "xdelta3": _is_runnable(XDELTA3_PATH),
+        "xdelta_native": True,
         "hires_patches": os.path.isdir(HIRES_PATCHES_DIR),
+        "game_fixes": any(os.path.isdir(d) for d in game_fix_dirs()),
         "crc_native": True,
     }
 
@@ -737,20 +751,124 @@ def patch_includes_noaa(patch_path):
 
 def try_subdrag_xdelta(patch_file, source_z64, output_z64):
     """Apply a SubDrag .xdelta patch. The source MUST be the pristine ROM -
-    xdelta deltas are built against clean dumps and fail on modified data."""
-    if not _is_runnable(XDELTA3_PATH):
-        return False, "xdelta3 not found (bundled exe not runnable here; install xdelta3 for SubDrag support)"
-    cmd = [XDELTA3_PATH, "-d", "-s", source_z64, patch_file, output_z64]
+    xdelta deltas are built against clean dumps and fail on modified data.
+
+    The external xdelta3 is used when it can run, because it is the
+    reference implementation. Where it cannot - which is every machine
+    without a system install, the bundled helper being a Windows PE -
+    the built-in VCDIFF engine takes over. That matters more than it
+    sounds: a verified dump whose delta cannot be applied has no correct
+    hi-res route at all, and the generic widening is not a substitute
+    (it is the transform behind the doubled-image hardware bug)."""
+    if _is_runnable(XDELTA3_PATH):
+        cmd = [XDELTA3_PATH, "-d", "-s", source_z64, patch_file, output_z64]
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, errors="replace",
+                                 creationflags=CREATE_NO_WINDOW, timeout=SUBPROCESS_TIMEOUT)
+            if res.returncode == 0 and os.path.isfile(output_z64) and os.path.getsize(output_z64) > 0:
+                return True, f"SubDrag verified patch applied ({os.path.basename(patch_file)})"
+            return False, f"xdelta3 failed (ROM version mismatch?): {res.stderr.strip()}"
+        except subprocess.TimeoutExpired:
+            return False, "xdelta3 timed out"
+        except OSError as e:
+            return False, f"xdelta3 error: {e}"
+
+    result = xdelta_patch.apply_xdelta_patch(source_z64, patch_file, output_z64)
+    if result["status"] == "patched":
+        return True, (f"SubDrag verified patch applied via the built-in VCDIFF "
+                      f"engine ({os.path.basename(patch_file)})")
+    return False, (f"built-in VCDIFF engine failed (ROM version mismatch?): "
+                   f"{result['message']}")
+
+
+# ---------------------------------------------------------------------------
+# Per-game menu/HUD fixes (IPS/BPS, matched by ROM CRC1)
+#
+# A verified hi-res delta moves the framebuffer, viewport and scissor to
+# 640x480, but games draw their 2D layer with absolute 320x240 pixel
+# coordinates - SM64 emits gSPTextureRectangle / gDPFillRectangle from
+# print.c, hud.c and ingame_menu.c. Those elements stay in the top-left
+# corner at half size. Correcting them means finding every 2D constant in
+# the game code and in the compressed segments, which is per-title reverse
+# engineering, not something an engine can derive. This stage is the way
+# to ship such a fix once someone has built it.
+# ---------------------------------------------------------------------------
+
+GAME_FIX_EXTENSIONS = (".ips", ".bps")
+
+
+def game_fix_dirs():
+    """Directories searched for game fixes, lowest precedence first."""
+    return [GAME_FIXES_DIR, USER_GAME_FIXES_DIR]
+
+
+def crc1_prefix(crc1):
+    """The '635A2BFF_' filename prefix for a CRC1, or None when the value
+    does not name one.
+
+    Both spellings have to key the same lookup: inspect_rom_details
+    reports crc1 as a hex string, while callers that read the header
+    themselves have an int. Anything else - None, "Unknown", a truncated
+    or garbled value - yields None, and the caller then matches nothing.
+    Applying a fix built for a different dump is worse than applying
+    none: an IPS carries no source checksum, so it would be written into
+    the wrong ROM without a word of complaint.
+    """
+    if isinstance(crc1, int) and not isinstance(crc1, bool):
+        return f"{crc1 & 0xFFFFFFFF:08X}_"
+    if isinstance(crc1, str):
+        text = crc1.strip().upper()
+        if text.startswith("0X"):
+            text = text[2:]
+        if len(text) == 8 and all(c in "0123456789ABCDEF" for c in text):
+            return f"{text}_"
+    return None
+
+
+def get_game_fix_for_rom(crc1):
+    """Return the path of a game-fix patch for the given CRC1, or None.
+
+    Lookup convention: <CRC1>_<description>.ips|.bps with CRC1 as 8
+    uppercase hex digits (e.g. 635A2BFF_sm64_menu_hud.ips). A fix exists
+    only for the exact dumps where someone has done the work."""
+    prefix = crc1_prefix(crc1)
+    if prefix is None:
+        return None
+    found = None
+    for directory in game_fix_dirs():
+        if not os.path.isdir(directory):
+            continue
+        for name in sorted(os.listdir(directory)):
+            if not name.lower().endswith(GAME_FIX_EXTENSIONS):
+                continue
+            if not name.upper().startswith(prefix):
+                continue
+            candidate = os.path.join(directory, name)
+            if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
+                found = candidate  # later directory wins
+                break
+    return found
+
+
+def apply_game_fix(rom_path, crc1, output_path):
+    """Apply the per-game menu/HUD fix for CRC1 on top of an already
+    hi-res-patched image. Returns (ok, message)."""
+    fix = get_game_fix_for_rom(crc1)
+    if fix is None:
+        return False, "no game fix available"
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, errors="replace",
-                             creationflags=CREATE_NO_WINDOW, timeout=SUBPROCESS_TIMEOUT)
-        if res.returncode == 0 and os.path.isfile(output_z64) and os.path.getsize(output_z64) > 0:
-            return True, f"SubDrag verified patch applied ({os.path.basename(patch_file)})"
-        return False, f"xdelta3 failed (ROM version mismatch?): {res.stderr.strip()}"
-    except subprocess.TimeoutExpired:
-        return False, "xdelta3 timed out"
-    except OSError as e:
-        return False, f"xdelta3 error: {e}"
+        # Imported here, not at module scope: ips_bps_patcher imports this
+        # module, so a top-level import would be circular.
+        from . import ips_bps_patcher
+        if fix.lower().endswith(".ips"):
+            res = ips_bps_patcher.apply_ips_patch(rom_path, fix, output_path)
+        else:
+            res = ips_bps_patcher.apply_bps_patch(rom_path, fix, output_path)
+    except Exception as e:  # defensive: never let a fix break a batch
+        return False, f"game fix error: {e}"
+    if res.get("status") == "patched":
+        return True, f"applied {os.path.basename(fix)}"
+    return False, f"game fix failed: {res.get('message', 'unknown error')}"
 
 
 # ---------------------------------------------------------------------------
@@ -993,6 +1111,16 @@ def build_output_path(rom_path, applied, output_dir=None):
     dir_name, full_fn = os.path.split(rom_path)
     if output_dir:
         dir_name = output_dir
+
+    # The input may be one of our own intermediates: --strip-header and the
+    # GUI's scene-header checkbox hand the pipeline "Game.z64.stripped.z64".
+    # Without this the tag lands behind that whole name and the result is
+    # called "Game.z64.stripped [NoAA].z64".
+    for s in TEMP_SUFFIXES:
+        if full_fn.endswith(s):
+            full_fn = full_fn[: -len(s)]
+            break
+
     base_fn, _ = os.path.splitext(full_fn)
     for t in OUTPUT_TAGS:
         if base_fn.endswith(t):
@@ -1103,27 +1231,42 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
         hires_blocked = ""
 
         # --- Stage 1: SubDrag verified .xdelta on the CLEAN source ---------
+        # No tool gate here: try_subdrag_xdelta falls back to the built-in
+        # VCDIFF engine, so a verified dump gets its correct patch on every
+        # platform, with or without an xdelta3 binary.
         if options.hires:
             patch = get_subdrag_patch(info["crc1"], info["crc2"])
             if patch:
-                if tools["xdelta3"]:
-                    ok, msg = try_subdrag_xdelta(patch, temp_z64, patched_z64)
-                    log(f"  SubDrag .xdelta: {msg}")
-                    if ok:
-                        subdrag_used = True
-                        stage_log.append(f"subdrag-xdelta:{os.path.basename(patch)}")
-                        patched_exists = True
-                        base = patched_z64
-                        applied.add("HR")
-                        if patch_includes_noaa(patch):
-                            applied.add("NoAA")
-                    else:
-                        hires_blocked = "the verified patch for this dump did not apply"
+                ok, msg = try_subdrag_xdelta(patch, temp_z64, patched_z64)
+                log(f"  SubDrag .xdelta: {msg}")
+                if ok:
+                    subdrag_used = True
+                    stage_log.append(f"subdrag-xdelta:{os.path.basename(patch)}")
+                    patched_exists = True
+                    base = patched_z64
+                    applied.add("HR")
+                    if patch_includes_noaa(patch):
+                        applied.add("NoAA")
                 else:
-                    hires_blocked = (
-                        "this dump needs its verified .xdelta patch and no "
-                        f"runnable xdelta3 was found ({xdelta3_install_hint()})")
-                    log(f"  SubDrag .xdelta: SKIPPED - {hires_blocked}")
+                    hires_blocked = "the verified patch for this dump did not apply"
+
+            # --- Stage 1b: per-game menu/HUD fix (keyed by CRC1) -----------
+            # Only on top of a delta that actually applied: the fix is built
+            # against the hi-res image, so on anything else its offsets point
+            # at the wrong bytes.
+            if subdrag_used:
+                fix_out = patched_z64 + ".gamefix.z64"
+                ok_fix, msg_fix = apply_game_fix(patched_z64, info["crc1"], fix_out)
+                if ok_fix and os.path.isfile(fix_out) and os.path.getsize(fix_out) > 0:
+                    os.replace(fix_out, patched_z64)
+                    applied.add("GAMEFIX")
+                    stage_log.append(f"game-fix:{msg_fix.removeprefix('applied ')}")
+                    log(f"  Game fix: {msg_fix}")
+                else:
+                    if os.path.isfile(fix_out):
+                        os.remove(fix_out)
+                    if msg_fix != "no game fix available":
+                        log(f"  Game fix: SKIPPED ({msg_fix})")
 
         if cancelled():
             return result
@@ -1317,7 +1460,7 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False,
         return result
     finally:
         for p in (temp_z64, patched_z64, patched_z64 + ".u64aap_tmp.z64",
-                  patched_z64 + ".xdelta_out.z64"):
+                  patched_z64 + ".xdelta_out.z64", patched_z64 + ".gamefix.z64"):
             try:
                 if os.path.exists(p):
                     os.remove(p)

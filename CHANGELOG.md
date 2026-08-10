@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **Built-in VCDIFF engine: the verified 640x480 deltas now apply without any helper.** `xdelta_patch.py` is a pure-Python RFC 3284 / xdelta3 decoder covering the subset the encoder emits (multi-window, `VCD_SOURCE`, default code table, Adler-32 verification of every window), validated byte-for-byte against the reference binary including on a real 8 MB Super Mario 64 dump. v3.4.0 could only *refuse* a verified dump where no `xdelta3` was runnable - which is every machine without a system install - because the generic widening is not a substitute. That gap is closed: the external tool is still preferred as the reference implementation, and the fallback produces the same bytes. The gate against generic widening stays exactly as it was; it now only fires when a delta genuinely fails.
+- **New per-game menu/HUD fix stage (Stage 1b).** A hi-res delta moves the framebuffer and viewport to 640x480, but games draw their 2D layer with absolute 320x240 coordinates, so menus and HUD stay half-size in the corner - the visible half of the hardware bug that hi-res gating addressed structurally. An optional IPS/BPS fix per dump is now applied on top of a delta that actually applied, matched on the CRC1 of the clean ROM, searched in the shipped `game_fixes/` and in `~/.n64patcher/game_fixes/`. No fix ships yet; `docs/sm64_hires_patch_analysis.md` documents what building the SM64 one involves.
+- A CRC1 that does not parse now matches **no** fix rather than the first file in the folder. An IPS carries no source checksum, so a fix handed to the wrong dump would apply cleanly and corrupt it in silence.
+- **Fixed: `--strip-header` produced output named after the intermediate.** The stripped ROM is handed to the pipeline as `Game.z64.stripped.z64`, and the tag was appended to that whole name - `Game.z64.stripped [NoAA].z64`. Affected the CLI flag and the GUI checkbox alike.
+- New test for the cross-device output move: `move_onto_reserved`'s `shutil.move` fallback had no coverage, so an `os.replace`-only regression would have gone unnoticed until someone pointed `--output-dir` at an SD card.
+- Tests: 307, up from 281.
+
 ## v3.4.0 - macOS and Linux
 
 - **Fixed: a verified dump could receive the broken generic hi-res transform.** Where the bundled `xdelta3.exe` cannot run - which is every macOS and Linux machine - a ROM classified `verified` skipped its hand-made delta and fell straight through to the generic VI widening. That is the same transform behind the doubled-image hardware bug, so the platform without the helper got the broken output while the platform with it got the correct one. The generic engine is now refused for these dumps, naming the cause and the install command; `--force-hires` still overrides and now correctly labels the result EXPERIMENTAL in this case too.

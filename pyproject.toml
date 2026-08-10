@@ -58,6 +58,7 @@ n64patcher = [
     "N64noAAPatcher/additionals/*",
     "N64noAAPatcher/hires_patches/*",
     "patches/*.json",
+    "game_fixes/*",
     "app_icon.ico",
 ]
 

@@ -4,7 +4,7 @@
 
 A modern, high-performance GUI + CLI ROM patcher and inspection utility for Nintendo 64 games. Features the **Smart VI Mode Table Engine v2.0** for structurally-verified 640x480 high-resolution patching, anti-aliasing (No-AA) removal, dither/divot/gamma filter toggles, SubDrag `.xdelta` integration, preset profiles, archive extraction, and Flashcart CRC/Header tools.
 
-**Cross-platform**: the bundled Windows helpers (`u64aap.exe`, `rn64crc.exe`, `xdelta3.exe`) are used when runnable, with graceful fallbacks everywhere else — a **built-in pure-Python CRC1/CRC2 engine** (works on macOS/Linux), the dynamic VI instruction patcher for No-AA, and an optional system `xdelta3` from PATH.
+**Cross-platform**: the bundled Windows helpers (`u64aap.exe`, `rn64crc.exe`, `xdelta3.exe`) are used when runnable, with graceful fallbacks everywhere else — a **built-in pure-Python CRC1/CRC2 engine**, a **built-in pure-Python VCDIFF/xdelta decoder** that applies the verified hi-res deltas without any helper, and the dynamic VI instruction patcher for No-AA.
 
 Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M64), flashcarts (SummerCart 64, EverDrive 64), and N64 emulators (Simple64, Ares, RMG).
 
@@ -130,7 +130,8 @@ tracks run state: grey idle, amber working, green clean, red errors.
 **macOS**
 
 ```bash
-brew install xdelta                                   # needed for verified 640x480 patches
+brew install xdelta   # optional: the reference xdelta3, used in preference
+                      # to the built-in VCDIFF engine when present
 ```
 
 Then either download `N64-Smart-Patcher-macos-arm64.app.zip` from Releases, or
@@ -153,7 +154,8 @@ pure Python and needs no platform binary.
 **Linux**
 
 ```bash
-sudo apt install xdelta3          # or: dnf install xdelta / pacman -S xdelta3
+sudo apt install xdelta3   # optional, as on macOS - the built-in VCDIFF
+                           # engine applies the same deltas without it
 ```
 
 Then either download `N64-Smart-Patcher-linux-x86_64` from Releases and run
@@ -187,21 +189,22 @@ and takes another route.
 | ROM inspection, CIC detection, boot CRC | built-in Python engine | **identical** |
 | CRC repair | `rn64crc.exe`, falling back to the built-in engine | built-in engine only — same results |
 | No-AA / dither / divot / gamma | `u64aap.exe`, falling back to the dynamic patcher | dynamic patcher |
-| **Verified 640x480 patches** | bundled `xdelta3.exe` | **needs a system `xdelta3`** |
+| **Verified 640x480 patches** | bundled `xdelta3.exe` | **built-in VCDIFF engine** — same result |
 | IPS / BPS apply and create | built-in | **identical** |
 | DAT lookup, manifests, batch, archives | built-in | **identical** |
 
-Only one row actually needs something installed. The verified 640x480 patches
-are xdelta deltas, and there is no correct fallback for them — the generic VI
-widening renders wrong on real hardware, which is why it is gated. If
-`xdelta3` is missing the tool says so and refuses the hi-res stage rather than
-quietly producing a broken ROM:
+No row needs anything installed. The verified 640x480 patches are xdelta
+deltas, and they are applied by a built-in pure-Python VCDIFF decoder
+(`xdelta_patch.py`, RFC 3284) wherever no `xdelta3` binary can run. The
+external tool is still preferred when present, being the reference
+implementation:
 
 ```
-xdelta3: verified 640x480 patches CANNOT be applied (install it with: brew install xdelta).
+xdelta3: verified 640x480 patches use the built-in VCDIFF engine instead.
 ```
 
-Everything else on those ROMs — No-AA, no-dither, CRC repair — still happens.
+The generic VI widening remains gated regardless — it renders wrong on real
+hardware and is never a substitute for a verified delta.
 
 CI runs the unit suite on Ubuntu, macOS and Windows across Python 3.11/3.12/3.13,
 and additionally runs `scripts/smoke_test.py` — which drives the *installed*

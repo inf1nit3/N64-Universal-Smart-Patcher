@@ -373,6 +373,14 @@ class TestHelpers(unittest.TestCase):
         self.assertNotEqual(os.path.abspath(p), os.path.abspath("/roms/game [NoAA].z64"))
         self.assertIn("(2)", p)
 
+    def test_build_output_path_drops_our_own_temp_suffix(self):
+        """--strip-header hands the pipeline "game.z64.stripped.z64"; the
+        result must be named after the game, not after the intermediate."""
+        for suffix in core.TEMP_SUFFIXES:
+            p = core.build_output_path(f"/roms/game.z64{suffix}", {"NoAA"})
+            self.assertEqual(os.path.basename(p), "game [NoAA].z64",
+                             f"{suffix} leaked into the output name")
+
     def test_build_output_path_keeps_moderately_long_names_intact(self):
         """Names that fit the filesystem limit are never shortened - the old
         65-char cap silently merged distinct ROMs onto one output name."""
@@ -451,6 +459,23 @@ class TestOutputCollisions(unittest.TestCase):
         payload = self._touch("payload.bin", b"patched bytes")
         dst = core.reserve_output_path(src, {"NoAA"})
         core.move_onto_reserved(payload, dst)
+        with open(dst, "rb") as f:
+            self.assertEqual(f.read(), b"patched bytes")
+        self.assertFalse(os.path.exists(payload))
+
+    def test_move_onto_reserved_survives_a_cross_device_output(self):
+        """os.replace raises EXDEV when --output-dir is on another
+        filesystem - a flashcart SD card being the normal case."""
+        src = self._touch("game.z64")
+        payload = self._touch("payload.bin", b"patched bytes")
+        dst = core.reserve_output_path(src, {"NoAA"})
+
+        def exdev(_a, _b):
+            raise OSError(18, "Invalid cross-device link")
+
+        with mock.patch("os.replace", side_effect=exdev):
+            core.move_onto_reserved(payload, dst)
+
         with open(dst, "rb") as f:
             self.assertEqual(f.read(), b"patched bytes")
         self.assertFalse(os.path.exists(payload))
@@ -565,43 +590,79 @@ class TestHiresSupportGate(unittest.TestCase):
         self.assertIn("640x480 not supported", res["message"])
 
     def _patch_verified_without_xdelta(self, **opt_kw):
-        """Patch a dump that HAS a verified delta, on a machine where xdelta3
-        cannot run - the normal situation on Linux and macOS, where the
-        bundled helper is a Windows binary."""
+        """Patch a dump that HAS a verified delta on a machine with no
+        runnable xdelta3 - the normal situation on Linux and macOS, where
+        the bundled helper is a Windows binary.
+
+        XDELTA3_PATH itself is redirected, not just the check_tools report:
+        try_subdrag_xdelta asks _is_runnable directly, so a machine with a
+        system xdelta3 would otherwise quietly run the real binary and the
+        test would prove nothing about the fallback path."""
         src = self._write("game.z64", self._rom(crc=self.SM64))
         opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
                                  **opt_kw)
         logs = []
         with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
              mock.patch.object(core, "SUBDRAG_PATCHES", self.table), \
+             mock.patch.object(core, "XDELTA3_PATH", "/nonexistent/xdelta3"), \
              mock.patch.object(core, "check_tools", lambda: {
                  "u64aap": False, "rn64crc": False, "xdelta3": False,
-                 "hires_patches": True, "crc_native": True}):
+                 "xdelta_native": True, "hires_patches": True,
+                 "crc_native": True}):
             res = core.patch_rom(src, opts, log=logs.append)
         return src, res, logs
 
-    def test_verified_dump_without_xdelta_is_not_widened(self):
+    def test_verified_dump_is_not_widened_when_its_delta_fails(self):
         """A dump whose only correct route is its delta must not silently get
         the generic width flip when that route is closed. This is the same
         broken transform the hardware bug report was about, so falling back
-        to it ships a ROM that renders doubled and misplaced."""
+        to it ships a ROM that renders doubled and misplaced.
+
+        setUp's delta is a bare VCDIFF magic with no windows, so both
+        engines refuse it - which is the failure this asserts about."""
         src, res, logs = self._patch_verified_without_xdelta()
         joined = " ".join(logs)
 
         self.assertNotIn("HR", res["applied"])
         self.assertIn("NOT APPLIED", joined)
-        self.assertIn("xdelta3", joined)
         # The width words in the VI tables are untouched.
         data = self._read(src)
         self.assertEqual(data[0x1000:0x1004], core.WIDTH_320_DATA)
 
-    def test_missing_xdelta_names_the_install_command(self):
-        """A user who cannot install what they are missing is stuck."""
-        _src, _res, logs = self._patch_verified_without_xdelta()
-        joined = " ".join(logs)
-        self.assertIn(core.xdelta3_install_hint(), joined)
+    def test_verified_dump_is_patched_without_any_xdelta_binary(self):
+        """The built-in VCDIFF engine closes the gap that the gate was
+        built around: with a real delta and no xdelta3 anywhere, the dump
+        still takes its verified route instead of being refused."""
+        from tests.test_xdelta_patch import build_addcopy_delta
 
-    def test_force_hires_overrides_the_missing_tool_gate(self):
+        clean = self._rom(crc=self.SM64)
+        src = self._write("game.z64", clean)
+        delta, _target = build_addcopy_delta(clean, [(0x1000, core.WIDTH_640_DATA)])
+        with open(os.path.join(self.patch_dir, "sm64.xdelta"), "wb") as f:
+            f.write(delta)
+
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        logs = []
+        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
+             mock.patch.object(core, "SUBDRAG_PATCHES", self.table), \
+             mock.patch.object(core, "XDELTA3_PATH", "/nonexistent/xdelta3"), \
+             mock.patch.object(core, "check_tools", lambda: {
+                 "u64aap": False, "rn64crc": False, "xdelta3": False,
+                 "xdelta_native": True, "hires_patches": True,
+                 "crc_native": True}):
+            res = core.patch_rom(src, opts, log=logs.append)
+
+        self.assertEqual(res["status"], "patched")
+        self.assertIn("HR", res["applied"])
+        self.assertIn("built-in VCDIFF", " ".join(logs))
+        self.assertNotIn("NOT APPLIED", " ".join(logs))
+        with open(res["output"], "rb") as f:
+            out = f.read()
+        self.assertEqual(out[0x1000:0x1004], core.WIDTH_640_DATA)
+        # The original is never touched.
+        self.assertEqual(self._read(src)[0x1000:0x1004], core.WIDTH_320_DATA)
+
+    def test_force_hires_overrides_the_failed_delta_gate(self):
         _src, res, logs = self._patch_verified_without_xdelta(force_hires=True)
         self.assertIn("HR", res["applied"])
         self.assertIn("EXPERIMENTAL", " ".join(logs))
@@ -635,6 +696,121 @@ class TestHiresSupportGate(unittest.TestCase):
             header = f.readline()
         self.assertIn("hires_support", header)
         self.assertIn("hires_support_reason", header)
+
+
+class TestGameFixStage(unittest.TestCase):
+    """Stage 1b: an IPS/BPS menu-HUD fix applied on top of a verified
+    hi-res delta, keyed on the CRC1 of the clean dump."""
+
+    SM64 = (0x635A2BFF, 0x8B022326)
+
+    def setUp(self):
+        from tests.test_xdelta_patch import build_addcopy_delta
+
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+        self.rom = bytearray(make_synthetic_rom(vi_tables=0, size=0x4000))
+        self.rom[0x10:0x14] = self.SM64[0].to_bytes(4, "big")
+        self.rom[0x14:0x18] = self.SM64[1].to_bytes(4, "big")
+        self.rom[0x1000:0x1004] = core.WIDTH_320_DATA
+        self.rom[0x1004:0x1008] = core.NTSC_BURST
+        self.rom = bytes(self.rom)
+
+        self.patch_dir = os.path.join(self.tmp.name, "hires")
+        os.makedirs(self.patch_dir)
+        delta, _ = build_addcopy_delta(self.rom, [(0x1000, core.WIDTH_640_DATA)])
+        with open(os.path.join(self.patch_dir, "sm64.xdelta"), "wb") as f:
+            f.write(delta)
+        self.table = {self.SM64: ("sm64.xdelta", "Super Mario 64 (USA)")}
+
+        self.fixes = os.path.join(self.tmp.name, "fixes")
+        self.user_fixes = os.path.join(self.tmp.name, "user_fixes")
+        os.makedirs(self.fixes)
+        os.makedirs(self.user_fixes)
+
+    @staticmethod
+    def _ips(offset, payload):
+        return (b"PATCH" + offset.to_bytes(3, "big")
+                + len(payload).to_bytes(2, "big") + payload + b"EOF")
+
+    def _write_fix(self, name, offset=0x1500, payload=b"\xAA\xBB", user=False):
+        path = os.path.join(self.user_fixes if user else self.fixes, name)
+        with open(path, "wb") as f:
+            f.write(self._ips(offset, payload))
+        return path
+
+    def _run(self):
+        src = os.path.join(self.tmp.name, "game.z64")
+        with open(src, "wb") as f:
+            f.write(self.rom)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
+        logs = []
+        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
+             mock.patch.object(core, "SUBDRAG_PATCHES", self.table), \
+             mock.patch.object(core, "GAME_FIXES_DIR", self.fixes), \
+             mock.patch.object(core, "USER_GAME_FIXES_DIR", self.user_fixes), \
+             mock.patch.object(core, "XDELTA3_PATH", "/nonexistent/xdelta3"):
+            res = core.patch_rom(src, opts, log=logs.append)
+        return res, logs
+
+    def test_fix_for_this_crc1_is_applied_on_top_of_the_delta(self):
+        self._write_fix("635A2BFF_menu.ips")
+        res, logs = self._run()
+
+        self.assertEqual(res["status"], "patched")
+        self.assertIn("GAMEFIX", res["applied"])
+        self.assertTrue(any("Game fix: applied" in line for line in logs), logs)
+        with open(res["output"], "rb") as f:
+            out = f.read()
+        self.assertEqual(out[0x1000:0x1004], core.WIDTH_640_DATA)  # delta
+        self.assertEqual(out[0x1500:0x1502], b"\xAA\xBB")          # fix
+
+    def test_fix_for_another_dump_is_never_applied(self):
+        """The decoy is a perfectly good IPS on purpose. If the CRC1 filter
+        failed it would apply cleanly and rewrite bytes in the wrong game -
+        IPS carries no source checksum, so nothing else would catch it. The
+        byte assertion is what proves the guard, not the missing log line."""
+        self._write_fix("12345678_menu.ips")
+        res, logs = self._run()
+
+        self.assertEqual(res["status"], "patched")
+        self.assertNotIn("GAMEFIX", res["applied"])
+        self.assertFalse(any("Game fix: applied" in line for line in logs))
+        with open(res["output"], "rb") as f:
+            out = f.read()
+        self.assertEqual(out[0x1500:0x1502], self.rom[0x1500:0x1502],
+                         "a fix built for another dump was applied")
+
+    def test_no_fix_present_is_silent(self):
+        res, logs = self._run()
+        self.assertEqual(res["status"], "patched")
+        self.assertNotIn("GAMEFIX", res["applied"])
+        self.assertFalse(any("Game fix" in line for line in logs),
+                         "the stage announces itself when it has nothing to do")
+
+    def test_user_directory_overrides_the_bundled_fix(self):
+        self._write_fix("635A2BFF_menu.ips", payload=b"\x11\x22")
+        self._write_fix("635A2BFF_menu.ips", payload=b"\x33\x44", user=True)
+        res, _logs = self._run()
+        with open(res["output"], "rb") as f:
+            out = f.read()
+        self.assertEqual(out[0x1500:0x1502], b"\x33\x44")
+
+    def test_lookup_accepts_every_spelling_of_a_crc1(self):
+        """patch_rom passes inspect_rom_details' crc1, which is a hex
+        string; callers reading the header have an int. Both must key the
+        same file, and neither may degrade into 'match anything'."""
+        target = self._write_fix("635A2BFF_menu.ips")
+        with mock.patch.object(core, "GAME_FIXES_DIR", self.fixes), \
+             mock.patch.object(core, "USER_GAME_FIXES_DIR", self.user_fixes):
+            for spelling in (0x635A2BFF, "635A2BFF", "635a2bff", "0x635A2BFF",
+                             " 635A2BFF "):
+                self.assertEqual(core.get_game_fix_for_rom(spelling), target,
+                                 f"CRC1 spelling {spelling!r} missed the fix")
+            for junk in (None, "Unknown", "", "635A2BF", "ZZZZZZZZ", 1.0, True):
+                self.assertIsNone(core.get_game_fix_for_rom(junk),
+                                  f"CRC1 value {junk!r} matched a foreign fix")
 
 
 class TestPlatformPaths(unittest.TestCase):

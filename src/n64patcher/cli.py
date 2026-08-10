@@ -386,12 +386,9 @@ def main(argv=None):
             log("   u64aap: No-AA falls back to the built-in dynamic patcher.")
         if "rn64crc" in missing:
             log("   rn64crc: CRC fixing uses the built-in pure-Python engine.")
-        # This one does NOT degrade gracefully, so it is not lumped in with
-        # the others: without xdelta3 the verified hi-res patches - the only
-        # ones that render correctly on hardware - cannot be applied at all.
         if "xdelta3" in missing:
-            log("   xdelta3: verified 640x480 patches CANNOT be applied "
-                f"({core.xdelta3_install_hint()}).")
+            log("   xdelta3: verified 640x480 patches use the built-in "
+                "VCDIFF engine instead.")
         log("")
 
     # One index per run: re-parsing a few thousand DAT entries for every
