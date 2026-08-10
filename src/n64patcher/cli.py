@@ -260,10 +260,20 @@ def _save_convert(args, log) -> int:
 
     out = args.save_out
     if not out:
-        base, ext = os.path.splitext(args.save_convert)
-        out = f"{base} [{args.save_to}]{ext}"
+        base, _ext = os.path.splitext(args.save_convert)
+        out = base + " [" + args.save_to + "]" + savegame.extension_for(
+            args.save_to, kind)
     if os.path.abspath(out) == os.path.abspath(args.save_convert):
         log("❌ that would overwrite the input; pass --save-out")
+        return 1
+
+    # A save is the only copy of somebody's progress and there is no
+    # undoing an overwrite, so an existing file is never written over
+    # without being asked for by name.
+    if os.path.exists(out) and not args.save_force:
+        log(f"❌ {out} already exists. A save cannot be recovered once it is "
+            f"overwritten - move it aside, choose another --save-out, or pass "
+            f"--save-force if you really mean to replace it.")
         return 1
 
     log(f"💾 {os.path.basename(args.save_convert)}")
@@ -273,9 +283,10 @@ def _save_convert(args, log) -> int:
         log(f"   {line}")
     if not result.changed:
         log("   nothing to convert - these two tools agree for this chip. "
-            "Copy the file and name it the way the target expects.")
+            "The file is copied unchanged; only the name differs.")
 
     try:
+        os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
         with open(out, "wb") as f:
             f.write(result.data)
     except OSError as e:
@@ -386,6 +397,9 @@ def main(argv=None):
     saves.add_argument("--save-out", metavar="FILE",
                        help="Where to write the converted save "
                             "(default: alongside, with the target's name)")
+    saves.add_argument("--save-force", action="store_true",
+                       help="Allow an existing save file to be replaced "
+                            "(refused by default - a save cannot be recovered)")
     saves.add_argument("--list-save-sources", action="store_true",
                        help="List the tools whose byte order has been measured")
 

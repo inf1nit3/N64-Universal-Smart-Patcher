@@ -347,6 +347,32 @@ SOURCES: tuple[SaveSource, ...] = (
 SOURCES_BY_KEY = {s.key: s for s in SOURCES}
 
 
+#: How each tool names a save of a given chip type. Measured from real
+#: files, like everything else here: the SummerCart64 menu writes
+#: "saves/<rom name>.sav" whatever the chip - the rule 88 of the 132 saves
+#: on a card follow - while mupen64plus uses the chip's own extension,
+#: seen as .eep, .sra and .fla across the three saves it produced.
+SOURCE_EXTENSIONS: dict[str, dict[str, str] | str] = {
+    "sc64": ".sav",
+    "hardware": ".sav",
+    "mupen64plus": {
+        EEPROM_4K: ".eep", EEPROM_16K: ".eep",
+        SRAM_256K: ".sra", SRAM_768K: ".sra",
+        FLASHRAM_1M: ".fla", CONTROLLER_PAK: ".mpk",
+    },
+}
+
+
+def extension_for(source_key: str, kind: SaveKind, default: str = ".sav") -> str:
+    """The file extension a tool gives this kind of save."""
+    rule = SOURCE_EXTENSIONS.get(source_key)
+    if isinstance(rule, str):
+        return rule
+    if isinstance(rule, dict):
+        return rule.get(kind.key, default)
+    return default
+
+
 def order_for_source(key: str, kind: SaveKind) -> str:
     """The byte order a named tool writes for a given chip type.
 
@@ -726,10 +752,21 @@ def kind_for_file(path: str, data: bytes, requested: str | None = None) -> SaveK
     """
     if requested is not None:
         try:
-            return SAVE_KINDS_BY_KEY[requested]
+            kind = SAVE_KINDS_BY_KEY[requested]
         except KeyError:
             known = ", ".join(SAVE_KINDS_BY_KEY)
             raise SaveError(f"unknown chip type {requested!r}. Known: {known}") from None
+        # An explicit choice still has to be possible. Taking it on trust
+        # would have a report state a chip the file cannot be, and every
+        # later step reason from that.
+        if len(data) != kind.size:
+            fits = kinds_for_size(len(data))
+            suggestion = (f" - {len(data)} bytes is "
+                          + " or ".join(k.label for k in fits)) if fits else ""
+            raise SaveError(
+                f"{kind.label} holds {kind.size} bytes, but this file is "
+                f"{len(data)}{suggestion}")
+        return kind
 
     by_size = kinds_for_size(len(data))
     if not by_size:

@@ -268,6 +268,48 @@ def main() -> int:
         check(len(done) == 3, f"all three ROMs produced output (got {len(done)})")
         check(len(set(done)) == 3, "output names did not collide")
 
+        section("save file conversion")
+        # An Ocarina of Time SRAM save as the flashcart stores it, then the
+        # same bytes as mupen64plus writes them - 32-bit words reversed.
+        chip_order = bytearray(b"\xFF" * (32 * 1024))
+        chip_order[:12] = bytes.fromhex("00000098091021") + b"ZELDA"
+        for off in (0x3C, 0x3D2C):
+            chip_order[off:off + 6] = b"ZELDAZ"
+        chip_order = bytes(chip_order)
+        swapped = bytearray(chip_order)
+        swapped[0::4], swapped[1::4], swapped[2::4], swapped[3::4] = (
+            bytes(swapped[3::4]), bytes(swapped[2::4]),
+            bytes(swapped[1::4]), bytes(swapped[0::4]))
+
+        save_in = os.path.join(tmp, "THE LEGEND OF ZELDA-9EB1E8AC.sra")
+        with open(save_in, "wb") as f:
+            f.write(bytes(swapped))
+
+        proc = run("--save-info", save_in)
+        check("SRAM 256 Kbit" in proc.stdout, "the chip type is reported")
+        check("Ocarina of Time" in proc.stdout,
+              "the game is recognised from the contents, not the name")
+
+        save_out = os.path.join(tmp, "converted.sav")
+        run("--save-convert", save_in, "--save-from", "mupen64plus",
+            "--save-to", "sc64", "--save-out", save_out)
+        with open(save_out, "rb") as f:
+            converted = f.read()
+        check(converted == chip_order,
+              "the converted save matches what the flashcart expects")
+
+        # The refusal that matters: a save is somebody's only copy.
+        before = converted
+        proc = run("--save-convert", save_in, "--save-from", "mupen64plus",
+                   "--save-to", "sc64", "--save-out", save_out, expect_ok=False)
+        check(proc.returncode != 0, "an existing save is not overwritten")
+        with open(save_out, "rb") as f:
+            check(f.read() == before, "and it is still intact afterwards")
+
+        proc = run("--save-convert", save_in, "--save-from", "some-emulator",
+                   "--save-to", "sc64", expect_ok=False)
+        check(proc.returncode != 0, "an unmeasured tool is refused")
+
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
