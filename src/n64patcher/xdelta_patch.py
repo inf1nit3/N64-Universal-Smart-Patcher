@@ -26,7 +26,8 @@ so frozen builds and CI runners work everywhere without extra deps.
 
 import os
 import zlib
-from typing import Any, Dict, Iterator, List, Tuple
+from collections.abc import Iterator
+from typing import Any
 
 VCDIFF_MAGIC = b"\xd6\xc3\xc4\x00"
 
@@ -72,7 +73,7 @@ class XdeltaPatchError(ValueError):
 # VCDIFF integer encoding (base-128, big-endian groups, MSB = continue)
 # ---------------------------------------------------------------------------
 
-def _read_int(data: bytes, pos: int) -> Tuple[int, int]:
+def _read_int(data: bytes, pos: int) -> tuple[int, int]:
     """Read one VCDIFF varint. Returns (value, new_pos)."""
     value = 0
     n = len(data)
@@ -95,7 +96,7 @@ def encode_size(value: int) -> bytes:
         raise ValueError("VCDIFF integers are unsigned")
     if value == 0:
         return b"\x00"
-    groups: List[int] = []
+    groups: list[int] = []
     while value:
         groups.append(value & 0x7F)
         value >>= 7
@@ -107,14 +108,14 @@ def encode_size(value: int) -> bytes:
 # Default RFC 3284 code table
 # ---------------------------------------------------------------------------
 
-def _build_default_code_table() -> List[Tuple[int, int, int, int]]:
+def _build_default_code_table() -> list[tuple[int, int, int, int]]:
     """Build the 256-entry RFC 3284 default code table exactly like
     xdelta3's xd3_build_code_table(). Each entry is
     (type1, size1, type2, size2); a type of XD3_NOOP means "no second
     instruction". Copy types are XD3_CPY + mode with modes
     0 = VCD_SELF, 1 = VCD_HERE, 2..5 = NEAR, 6..8 = SAME."""
     cpy_modes = 2 + NEAR_MODES + SAME_MODES
-    table: List[Tuple[int, int, int, int]] = []
+    table: list[tuple[int, int, int, int]] = []
 
     table.append((XD3_RUN, 0, XD3_NOOP, 0))
     table.append((XD3_ADD, 0, XD3_NOOP, 0))
@@ -152,7 +153,7 @@ CODE_TABLE = _build_default_code_table()
 # Structural parsing (also used for inspection without a source ROM)
 # ---------------------------------------------------------------------------
 
-def iter_windows(patch_data: bytes) -> Iterator[Dict[str, Any]]:
+def iter_windows(patch_data: bytes) -> Iterator[dict[str, Any]]:
     """Yield one dict per window with all header fields plus the three
     section payloads (data/inst/addr). Validates the structure and raises
     XdeltaPatchError on malformed or unsupported input."""
@@ -242,7 +243,7 @@ def iter_windows(patch_data: bytes) -> Iterator[Dict[str, Any]]:
 # Window replay
 # ---------------------------------------------------------------------------
 
-def _replay_window(win: Dict[str, Any], source: bytes) -> bytes:
+def _replay_window(win: dict[str, Any], source: bytes) -> bytes:
     """Replay one window's instruction stream against the source file and
     return the decoded target window bytes."""
     cpy_len = win["cpy_len"]
@@ -356,7 +357,7 @@ def decode_xdelta(patch_data: bytes, source_data: bytes,
 
 
 def apply_xdelta_patch(rom_path: str, patch_path: str,
-                       output_path: str) -> Dict[str, Any]:
+                       output_path: str) -> dict[str, Any]:
     """File-level API in the same result-dict style as ips_bps_patcher:
     {'status': 'patched'|'error', 'message': ..., 'output': ...}."""
     if not os.path.isfile(rom_path) or not os.path.isfile(patch_path):

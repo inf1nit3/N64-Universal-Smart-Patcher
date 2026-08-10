@@ -27,7 +27,9 @@ error, not a silent truncation.
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
+
 
 class SaveError(ValueError):
     """A save file cannot be handled as asked."""
@@ -515,7 +517,7 @@ class GameProfile:
     """What is known about one game's save."""
     name: str
     kind: str
-    check: object
+    check: Callable[[bytes], SaveCheck]
     #: Substrings of a file name that suggest this game. A fallback only -
     #: identification goes by contents first.
     hints: tuple[str, ...]
@@ -790,7 +792,7 @@ def describe_file(path: str, data: bytes, requested: str | None = None) -> str:
         lines.append("  game      : not recognised - no validation available")
 
     guess = detect_order(data)
-    verdict = (ORDER_LABELS[guess.order] if guess.decided else "undecided")
+    verdict = ORDER_LABELS[guess.order] if guess.order else "undecided"
     lines.append(f"  hint      : looks like {verdict} (unreliable - one save in "
                  f"five is called wrongly; go by the source instead)")
     return "\n".join(lines)

@@ -331,13 +331,12 @@ class TestRoundTripAgainstXdelta3(unittest.TestCase):
             f.write(source)
         with open(tp, "wb") as f:
             f.write(target)
-        args = [XDELTA3_BIN, "-e", "-S", "none"] + list(extra_args) + \
-               ["-s", sp, tp, dp]
+        args = [XDELTA3_BIN, "-e", "-S", "none", *extra_args, "-s", sp, tp, dp]
         res = subprocess.run(args, capture_output=True)
         # xdelta3 >= 3.2 may still emit armor/secondary features; fall back
         # to the plain default encoding when -S none is rejected.
         if res.returncode != 0 or not os.path.isfile(dp):
-            args = [XDELTA3_BIN, "-e"] + list(extra_args) + ["-s", sp, tp, dp]
+            args = [XDELTA3_BIN, "-e", *extra_args, "-s", sp, tp, dp]
             res = subprocess.run(args, capture_output=True)
         self.assertEqual(res.returncode, 0,
                          res.stderr.decode(errors="replace"))
