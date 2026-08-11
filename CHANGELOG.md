@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v3.5.0 - Save Tools and Built-in Deltas
 
 - **Built-in VCDIFF engine: the verified 640x480 deltas now apply without any helper.** `xdelta_patch.py` is a pure-Python RFC 3284 / xdelta3 decoder covering the subset the encoder emits (multi-window, `VCD_SOURCE`, default code table, Adler-32 verification of every window), validated byte-for-byte against the reference binary including on a real 8 MB Super Mario 64 dump. v3.4.0 could only *refuse* a verified dump where no `xdelta3` was runnable - which is every machine without a system install - because the generic widening is not a substitute. That gap is closed: the external tool is still preferred as the reference implementation, and the fallback produces the same bytes. The gate against generic widening stays exactly as it was; it now only fires when a delta genuinely fails.
 - **New per-game menu/HUD fix stage (Stage 1b).** A hi-res delta moves the framebuffer and viewport to 640x480, but games draw their 2D layer with absolute 320x240 coordinates, so menus and HUD stay half-size in the corner - the visible half of the hardware bug that hi-res gating addressed structurally. An optional IPS/BPS fix per dump is now applied on top of a delta that actually applied, matched on the CRC1 of the clean ROM, searched in the shipped `game_fixes/` and in `~/.n64patcher/game_fixes/`. No fix ships yet; `docs/sm64_hires_patch_analysis.md` documents what building the SM64 one involves.

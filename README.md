@@ -41,6 +41,11 @@ Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M6
 - **🔥 SubDrag `.xdelta` Community Patch Integration**:
   - Automatically detects and applies verified high-res patches for *Super Mario 64*, *GoldenEye 007*, *Banjo-Kazooie*, *F-Zero X*, *Forsaken 64*, *Pokemon Snap*, *Quake II*, and *Golden Nugget 64*.
 
+- **🗂️ Save File Tools**:
+  - **Inspect**: identifies the chip (EEPROM 4/16 Kbit, SRAM 256 Kbit, FlashRAM 1 Mbit) and the game from the save's *contents*, so a renamed or copied file is still recognised.
+  - **Convert**: moves a save between an emulator and a flashcart, single file or whole folder. Byte orders are measured per tool **and per chip type**; an unmeasured combination is refused rather than guessed at, and an existing save is never overwritten without `--save-force`.
+  - Where the game's own checksum or marker is known (Super Mario 64, Ocarina of Time, Majora's Mask, Paper Mario), the converted result is verified before it is handed back.
+
 - **🚀 Multi-Threaded Batch Runner**:
   - Parallel ThreadPoolExecutor batch processing. A bad file cannot crash the run, output is logged from a single thread, and Ctrl+C stops the batch while keeping everything already finished.
 
@@ -98,7 +103,7 @@ n64patcher --save-convert "THE LEGEND OF ZELDA-9EB1E8AC.sra" \
            --save-from mupen64plus --save-to sc64
 
 # A whole folder of them at once
-n64patcher --save-convert "/Volumes/NO NAME/saves" -r \\
+n64patcher --save-convert "/Volumes/NO NAME/saves" -r \
            --save-from sc64 --save-to mupen64plus -o ~/emulator-saves
 
 # Which tools have been measured, and on what evidence
@@ -456,6 +461,8 @@ the installed package rather than the working directory):
 - `presets.py` — Preset profile definitions and warning validators.
 - `zip_handler.py` — Hardened archive handling for `.zip` and `.7z` (zip-slip protected, streaming size cap, compression-ratio limit, symlink members rejected).
 - `ips_bps_patcher.py` — Community `.ips` & `.bps` delta patcher (spec-correct BPS with CRC32 verification; IPS sources are format-checked and byte-order corrected).
+- `xdelta_patch.py` — Built-in pure-Python VCDIFF/xdelta3 decoder (RFC 3284, multi-window, `VCD_SOURCE`, default code table, Adler-32 per window), so the verified hi-res deltas apply with no external binary.
+- `savegame.py` — Save file engine: chip type identification, per-tool/per-chip byte order, content-based game recognition with checksum/marker verification, and safe conversion between emulators and flashcarts.
 - `batch_runner.py` — Multi-threaded ThreadPoolExecutor engine with cooperative cancellation and single-threaded log draining.
 - `mmap_vi_scanner.py` — Memory-mapped fast VI table scanner (used by inspection).
 - `patchdb.py` — Declarative patch recipe database (`patches/*.json`, user-extensible).
@@ -463,12 +470,20 @@ the installed package rather than the working directory):
 - `manifest.py` — Undo manifests: change recording, auditing and revert.
 - `gui.py` — PyQt6 GUI with preset controls, background inspector table, drag & drop & thread exception safety.
 - `cli.py` — Headless CLI runner (`n64patcher`).
-- `tests/` — Synthetic ROM unit suite, 256 tests, no game files required.
+- `tests/` — Synthetic ROM unit suite, 410 tests, no game files required.
 
 ---
 
 ## 📜 Version History
 
+- **v3.5.0 (Save Tools & Built-in Deltas)**:
+  - **The verified 640x480 deltas now apply without any helper.** `xdelta_patch.py` is a pure-Python RFC 3284 / xdelta3 decoder covering the subset the encoder emits, validated byte-for-byte against the reference binary including on a real 8 MB Super Mario 64 dump. v3.4.0 could only *refuse* a verified dump where no `xdelta3` was runnable — which is every machine without a system install. That gap is closed; the external tool is still preferred as the reference implementation.
+  - **Per-game menu/HUD fix stage.** A hi-res delta moves the framebuffer and viewport to 640x480, but games draw their 2D layer with absolute 320x240 coordinates, so menus and HUD stay half-size in the corner. An optional IPS/BPS fix per dump is now applied on top of a delta that actually applied, matched on the CRC1 of the clean ROM. No fix ships yet; `docs/sm64_hires_patch_analysis.md` documents what building the SM64 one involves.
+  - **Save file tools**: `--save-info` reports what a save file is — chip type, the game it belongs to, whether it is valid — and `--save-convert` moves one between an emulator and a flashcart, folders included. The GUI gains a **💾 Saves** tab. Both ends of a conversion are named rather than detected: scored against a 132-save SummerCart64 card, the detection heuristic was right 32 % of the time and **wrong 20 %**, so it is shown as a hint and drives nothing.
+  - Every byte order is a measurement against real files, kept **per tool and per chip type**, because one tool disagrees with itself — mupen64plus writes EEPROM in chip order and reverses the 32-bit words of SRAM and FlashRAM. Saves are identified by contents in every byte arrangement, and a game's own checksum or marker verifies the result. An existing save is never overwritten without `--save-force`.
+  - Fixed: `--strip-header` produced output named after the intermediate (`Game.z64.stripped [NoAA].z64`). Affected the CLI flag and the GUI checkbox alike.
+  - A CRC1 that does not parse now matches **no** game fix rather than the first file in the folder — an IPS carries no source checksum, so a fix handed to the wrong dump would apply cleanly and corrupt it in silence.
+  - Tests: 410, up from 281; smoke test 32 checks.
 - **v3.4.0 (macOS & Linux)**:
   - **A verified dump could receive the broken generic hi-res transform.** Where the bundled `xdelta3.exe` cannot run — every macOS and Linux machine — a ROM classified `verified` skipped its hand-made delta and fell through to the generic VI widening: the same transform behind the doubled-image hardware bug. The platform without the helper silently got the broken output. Now refused, naming the cause and the install command.
   - **Emoji output could abort a run off Windows.** The UTF-8 stream reconfiguration was guarded by `sys.platform == "win32"`; a process under the C/POSIX locale gets an ASCII stdout and raised `UnicodeEncodeError` mid-batch. Now applied everywhere, to stdout and stderr.

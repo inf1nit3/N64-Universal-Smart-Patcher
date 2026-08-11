@@ -5,4 +5,4 @@ and `--version`) and pyproject.toml (dynamic metadata), so a release only
 has to change it here.
 """
 
-__version__ = "3.4.0"
+__version__ = "3.5.0"
