@@ -538,14 +538,14 @@ def main(argv=None):
     roms, archives = collect_roms_and_archives(args.inputs, args.recursive)
 
     temp_dirs = []
-    rom_output_dir = {}  # rom path -> desired output dir (None = neben der Quelle)
+    rom_output_dir = {}  # rom path -> desired output dir (None = beside the source)
     exit_code = 0
     try:
         # Loose ROMs: output next to the source (or -o)
         for rom in roms:
             rom_output_dir[rom] = args.output_dir
 
-        # Archive extrahieren
+        # Extract archives
         for archive in archives:
             log(f"📦 Extracting: {os.path.basename(archive)}")
             temp_dir = create_extraction_dir()
@@ -671,7 +671,7 @@ def main(argv=None):
                 "   This renders incorrectly on hardware (doubled image, "
                 "misplaced UI).\n")
 
-        # Header-Stripping (vor dem Patchen)
+        # Header stripping (before patching)
         stripped_tmp_files = []
         if args.strip_header:
             log("🔧 Stripping scene headers...")

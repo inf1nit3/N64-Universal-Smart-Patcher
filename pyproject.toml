@@ -69,6 +69,8 @@ n64patcher = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+# Lets `pytest` run from a checkout without installing the package first.
+pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100
@@ -86,7 +88,7 @@ ignore = [
 # Tests reach into private helpers deliberately, and the reference CRC
 # implementation mirrors C variable names on purpose.
 "tests/*" = ["SLF001", "E741", "SIM117"]
-# Emoji in the German UI labels are intentional, not ambiguous typos.
+# Emoji in the UI labels are intentional, not ambiguous typos.
 "src/n64patcher/gui.py" = ["RUF001"]
 
 [tool.mypy]
@@ -100,7 +102,7 @@ no_implicit_optional = true
 
 # --strict on the modules that were reviewed and are dependency-free.
 # gui.py (PyQt6) and cli.py (argparse-heavy) are held to the baseline above
-# until they get the same treatment; tightening them is tracked in the README.
+# until they get the same treatment.
 [[tool.mypy.overrides]]
 module = [
     "n64patcher.ips_bps_patcher",

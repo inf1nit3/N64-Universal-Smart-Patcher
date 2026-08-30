@@ -29,9 +29,9 @@ N64_Patcher_Log.txt
 *.n64
 *.v64
 *.exe
-!N64noAAPatcher/additionals/u64aap.exe
-!N64noAAPatcher/additionals/rn64crc.exe
-!N64noAAPatcher/additionals/xdelta3.exe
+!src/n64patcher/N64noAAPatcher/additionals/u64aap.exe
+!src/n64patcher/N64noAAPatcher/additionals/rn64crc.exe
+!src/n64patcher/N64noAAPatcher/additionals/xdelta3.exe
 
 # OS generated
 .DS_Store
