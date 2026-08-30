@@ -19,7 +19,9 @@ import signal
 import sys
 import tempfile
 import threading
+from collections.abc import Callable
 from datetime import datetime
+from typing import Any
 
 from . import datdb, patchdb, savegame
 from . import manifest as manifest_mod
@@ -41,7 +43,7 @@ from .zip_handler import (
 )
 
 
-def _force_utf8_streams():
+def _force_utf8_streams() -> None:
     """Make stdout/stderr able to carry the emoji this tool prints.
 
     Not a Windows-only concern: older Windows terminals default to cp1252,
@@ -68,14 +70,14 @@ _force_utf8_streams()
 class RunLogger:
     """Prints to stdout and collects lines for the persistent log file."""
 
-    def __init__(self):
-        self.lines = []
+    def __init__(self) -> None:
+        self.lines: list[str] = []
 
-    def __call__(self, msg=""):
+    def __call__(self, msg: object = "") -> None:
         print(msg)
         self.lines.append(str(msg))
 
-    def flush_to_file(self):
+    def flush_to_file(self) -> None:
         if self.lines:
             try:
                 core.append_log(self.lines)
@@ -83,7 +85,9 @@ class RunLogger:
                 pass
 
 
-def collect_roms_and_archives(paths: list, recursive: bool = False) -> tuple:
+def collect_roms_and_archives(
+    paths: list[str], recursive: bool = False
+) -> tuple[list[str], list[str]]:
     """
     Collect ROMs and archives separately.
     Returns: (rom_files, archive_files)
@@ -118,22 +122,23 @@ def _clean_base_name(rom_path: str) -> str:
     return base_fn
 
 
-def _tagged_output_path(rom_path: str, tag: str, output_dir=None) -> str:
+def _tagged_output_path(rom_path: str, tag: str, output_dir: str | None = None) -> str:
     """Tagged output path that collides neither with the input nor with an
     existing file (see core._free_output_path)."""
     dir_name = output_dir or (os.path.dirname(os.path.abspath(rom_path)) or ".")
     suffix = f"{tag}.z64"
     base_fn = core._fit_base_name(_clean_base_name(rom_path), suffix)
-    return core._free_output_path(os.path.join(dir_name, base_fn + suffix), avoid=rom_path)
+    chosen = core._free_output_path(os.path.join(dir_name, base_fn + suffix), avoid=rom_path)
+    return str(chosen)
 
 
 def apply_community_patch(
     rom_path: str,
     patch_path: str,
-    output_dir=None,
+    output_dir: str | None = None,
     strip_header: bool = False,
     fix_crc: bool = False,
-    log=print,
+    log: Callable[[object], object] = print,
 ) -> dict:
     """
     Apply an .ips/.bps community patch to the CLEAN ROM (community
@@ -179,7 +184,12 @@ def apply_community_patch(
         shutil.rmtree(workdir, ignore_errors=True)
 
 
-def make_crcfix_copy(rom_path: str, output_dir=None, strip_header: bool = False, log=print) -> dict:
+def make_crcfix_copy(
+    rom_path: str,
+    output_dir: str | None = None,
+    strip_header: bool = False,
+    log: Callable[[object], object] = print,
+) -> dict:
     """Create a CRC-repaired .z64 copy of a (skipped) ROM."""
     workdir = tempfile.mkdtemp(prefix="n64_crcfix_")
     try:
@@ -212,7 +222,7 @@ def make_crcfix_copy(rom_path: str, output_dir=None, strip_header: bool = False,
 # ---------------------------------------------------------------------------
 
 
-def _list_save_sources(log) -> int:
+def _list_save_sources(log: Callable[[object], object]) -> int:
     log("Tools whose save byte order has been measured:\n")
     for source in savegame.SOURCES:
         log(f"  {source.key}  -  {source.label}")
@@ -227,12 +237,12 @@ def _list_save_sources(log) -> int:
     return 0
 
 
-def _read_save(path: str):
+def _read_save(path: str) -> bytes:
     with open(path, "rb") as f:
         return f.read()
 
 
-def _save_info(args, log) -> int:
+def _save_info(args: argparse.Namespace, log: Callable[[object], object]) -> int:
     try:
         data = _read_save(args.save_info)
         log(savegame.describe_file(args.save_info, data, args.save_type))
@@ -242,7 +252,7 @@ def _save_info(args, log) -> int:
     return 0
 
 
-def _report_save_result(res: dict, log) -> None:
+def _report_save_result(res: dict, log: Callable[[object], object]) -> None:
     log(f"💾 {os.path.basename(str(res['input']))}")
     if res.get("game"):
         log(f"   game: {res['game']}")
@@ -262,7 +272,7 @@ def _report_save_result(res: dict, log) -> None:
         log(f"   ❌ {res['message']}")
 
 
-def _save_convert(args, log) -> int:
+def _save_convert(args: argparse.Namespace, log: Callable[[object], object]) -> int:
     if not args.save_from or not args.save_to:
         log(
             "❌ --save-convert needs --save-from and --save-to. The byte "
@@ -312,7 +322,7 @@ def _save_convert(args, log) -> int:
     return 0 if converted else 1
 
 
-def main(argv=None):
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="n64patcher",
         description="Universal N64 ROM Inspector & Smart Patcher - headless mode. "
@@ -543,7 +553,7 @@ def main(argv=None):
         return 0
 
     if args.list_dats:
-        problems = []
+        problems: list[str] = []
         index = datdb.load_dats(args.dat, on_error=problems.append)
         log(datdb.describe(index))
         for problem in problems:
@@ -592,7 +602,7 @@ def main(argv=None):
 
     # One index per run: re-parsing a few thousand DAT entries for every
     # ROM would dominate a large batch.
-    dat_problems = []
+    dat_problems: list[str] = []
     dat_index = datdb.load_dats(args.dat, on_error=dat_problems.append)
     for problem in dat_problems:
         log(f"⚠️  {problem}")
@@ -662,7 +672,7 @@ def main(argv=None):
                     log(f"⚠️  Error inspecting {os.path.basename(rom)}: {e}")
                     continue
                 infos.append(info)
-                res = "640x480" if info["is_hires_640x480"] else "320x240"
+                resolution = "640x480" if info["is_hires_640x480"] else "320x240"
                 aa = "No-AA" if info["no_aa"] else "AA"
                 hires_label = {
                     core.HIRES_VERIFIED: "hi-res: verified",
@@ -677,7 +687,7 @@ def main(argv=None):
                     dump += f" ({info['dump_name']})"
                 log(
                     f"{info['filename']}: {info['title']} [{info['region']}] "
-                    f"{info['format']} | {res} | {aa} | VI: {info['vi_table_count']} "
+                    f"{info['format']} | {resolution} | {aa} | VI: {info['vi_table_count']} "
                     f"| {hires_label}{dump}"
                 )
 
@@ -772,18 +782,18 @@ def main(argv=None):
         # Multi-threaded batch patching (grouped by target directory,
         # so ROMs extracted from archives don't land in the temp dir)
         log(f"🚀 Starting batch patching ({args.jobs} worker(s))...\n")
-        groups = {}
+        groups: dict[str | None, list[str]] = {}
         for rom in roms:
             groups.setdefault(rom_output_dir.get(rom), []).append(rom)
 
-        results = {"patched": 0, "skipped": 0, "errors": 0, "results": []}
+        results: dict[str, Any] = {"patched": 0, "skipped": 0, "errors": 0, "results": []}
         # An Event rather than a plain flag: it is read from worker threads,
         # and SIGINT sets it from the signal handler while a group is still
         # running, which a closed-over local could not express.
         cancel = threading.Event()
         previous_sigint = signal.getsignal(signal.SIGINT)
 
-        def _on_sigint(_signum, _frame):
+        def _on_sigint(_signum: int, _frame: Any) -> None:
             cancel.set()
             log("\n⛔ Cancellation requested - finishing in-flight ROMs...")
 

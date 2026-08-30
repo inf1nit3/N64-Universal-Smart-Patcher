@@ -101,8 +101,6 @@ warn_unused_ignores = true
 no_implicit_optional = true
 
 # --strict on the modules that were reviewed and are dependency-free.
-# gui.py (PyQt6) and cli.py (argparse-heavy) are held to the baseline above
-# until they get the same treatment.
 [[tool.mypy.overrides]]
 module = [
     "n64patcher.ips_bps_patcher",
@@ -110,6 +108,8 @@ module = [
     "n64patcher.batch_runner",
     "n64patcher.presets",
     "n64patcher._version",
+    "n64patcher.gui",
+    "n64patcher.cli",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
