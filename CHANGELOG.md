@@ -13,7 +13,7 @@
 - **The GUI can undo its own patches.** A "Write undo manifest" checkbox produces the same .n64patch.json sidecars the CLI writes, and "Revert a patch…" (Inspector tab, Action menu) recovers the exact original bytes through one, showing what it changed first and refusing when the sidecar does not describe the file offered.
 - **DAT identification in the Inspector.** With No-Intro/Redump DATs present (default folder or a chosen one), two new columns report the matched dump name and status; the index loads once per run and asking for it implies the hashing pass a match needs.
 - **hires2d: the per-game 2D fix toolkit, GoldenEye analysed.** The SM64 analysis method, lifted from one engine to a survey any game can run: `diffreport` (delta classification), `find2d` (coordinate-packer and static-rectangle survey of a hi-res image) and `makefix2d` (expected-word-checked fix builds and IPS emission from a per-game site table). Applied to the real GoldenEye Enhanced delta: the delta restructures the ROM, yet its 33 coordinate packers are byte-identical to the clean dump - the 2D layer stays in 320-space exactly as SM64's did, and the glyph blitter is located with its step constants. Four bisect variants are specified for the hardware run; nothing ships for GoldenEye until that decides.
-- Tests: 435 with every optional dependency installed, up from 410.
+- Tests: 444 with every optional dependency installed, up from 410.
 
 ## v3.5.0 - Save Tools and Built-in Deltas
 
