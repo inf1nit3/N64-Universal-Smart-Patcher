@@ -21,8 +21,9 @@ _MENU_SITE_INDEXES = (1, 2, 3, 4)
 
 
 def _load_makefix():
-    path = os.path.join(os.path.dirname(core.__file__), "..", "..",
-                        "scripts", "sm64_hires", "makefix.py")
+    path = os.path.join(
+        os.path.dirname(core.__file__), "..", "..", "scripts", "sm64_hires", "makefix.py"
+    )
     path = os.path.normpath(path)
     spec = importlib.util.spec_from_file_location("sm64_makefix", path)
     module = importlib.util.module_from_spec(spec)
@@ -35,12 +36,12 @@ def _parse_ips(data):
     assert data[:5] == b"PATCH", "missing IPS header"
     assert data[-3:] == b"EOF", "missing IPS trailer"
     records, pos = [], 5
-    while data[pos:pos + 3] != b"EOF":
-        offset = int.from_bytes(data[pos:pos + 3], "big")
-        size = int.from_bytes(data[pos + 3:pos + 5], "big")
+    while data[pos : pos + 3] != b"EOF":
+        offset = int.from_bytes(data[pos : pos + 3], "big")
+        size = int.from_bytes(data[pos + 3 : pos + 5], "big")
         pos += 5
         assert size > 0, "RLE records are not expected here"
-        records.append((offset, data[pos:pos + size]))
+        records.append((offset, data[pos : pos + size]))
         pos += size
     return records
 
@@ -77,8 +78,7 @@ class TestShippedMenuFix(unittest.TestCase):
         self.assertTrue(name.startswith(_SM64_CRC1), name)
         self.assertTrue(name.endswith(".ips"), name)
         # int and str spellings key the same lookup
-        self.assertEqual(
-            core.get_game_fix_for_rom(0x635A2BFF), self.fix_path)
+        self.assertEqual(core.get_game_fix_for_rom(0x635A2BFF), self.fix_path)
 
     def test_every_changed_byte_lies_inside_the_four_menu_sites(self):
         allowed = set()
@@ -86,8 +86,7 @@ class TestShippedMenuFix(unittest.TestCase):
             allowed.update(rng)
         for offset, data in self.records:
             for i in range(len(data)):
-                self.assertIn(offset + i, allowed,
-                              f"byte {offset + i:08X} is outside sites 1-4")
+                self.assertIn(offset + i, allowed, f"byte {offset + i:08X} is outside sites 1-4")
 
     def test_every_site_word_has_its_transform_byte_changed(self):
         """Each word's low half carries the edit (shamt bit / immediate),
@@ -96,8 +95,7 @@ class TestShippedMenuFix(unittest.TestCase):
         for offset, data in self.records:
             changed.update(range(offset, offset + len(data)))
         for rng in _site_word_ranges(self.makefix):
-            self.assertTrue(set(rng) & changed,
-                            f"word {rng.start:08X} is not touched at all")
+            self.assertTrue(set(rng) & changed, f"word {rng.start:08X} is not touched at all")
         # 4 sites x (4 coordinate words + 2 texture-step words) = 24 words
         self.assertEqual(len(_site_word_ranges(self.makefix)), 24)
 
@@ -126,28 +124,27 @@ class TestShippedMenuFix(unittest.TestCase):
         self.addCleanup(os.remove, src)
         self.addCleanup(lambda: os.path.exists(dst) and os.remove(dst))
 
-        res = ips_bps_patcher.apply_ips_patch(
-            src, self.fix_path, dst, require_n64=False)
+        res = ips_bps_patcher.apply_ips_patch(src, self.fix_path, dst, require_n64=False)
         self.assertEqual(res["status"], "patched", res.get("message"))
         with open(dst, "rb") as f:
             out = f.read()
 
         for off in coords:
             word = struct.unpack_from(">I", out, off)[0]
-            self.assertEqual(word, 0x000210C0,
-                             f"{off:08X}: shamt not shifted to 3")
+            self.assertEqual(word, 0x000210C0, f"{off:08X}: shamt not shifted to 3")
         for off in steps:
             word = struct.unpack_from(">I", out, off)[0]
-            self.assertEqual(word, 0x3C040200,
-                             f"{off:08X}: immediate not halved "
-                             f"(got {word & 0xFFFF:04X})")
+            self.assertEqual(
+                word, 0x3C040200, f"{off:08X}: immediate not halved (got {word & 0xFFFF:04X})"
+            )
 
     def test_shipped_bytes_are_the_verified_wip_restricted_to_menus(self):
         """Two independent artifacts, one claim: the shipped IPS must be
         exactly the hardware-verified .wip's changed bytes for sites 1-4."""
         base = os.path.dirname(self.makefix.__file__)
         spec = importlib.util.spec_from_file_location(
-            "sm64_make_ips", os.path.join(base, "make_ips.py"))
+            "sm64_make_ips", os.path.join(base, "make_ips.py")
+        )
         make_ips = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(make_ips)
 
@@ -168,13 +165,13 @@ class TestShippedMenuFix(unittest.TestCase):
 
     def test_apply_game_fix_reports_success_for_the_keyed_crc(self):
         import tempfile
+
         orig_dirs = core.game_fix_dirs
         core.game_fix_dirs = lambda: [core.GAME_FIXES_DIR]
         self.addCleanup(setattr, core, "game_fix_dirs", orig_dirs)
         with tempfile.TemporaryDirectory() as tmp:
             rom = os.path.join(tmp, "sm64_hires.z64")
-            size = max(off for off in
-                       [r[0] + len(r[1]) for r in self.records]) + 0x100
+            size = max(off for off in [r[0] + len(r[1]) for r in self.records]) + 0x100
             buffer = bytearray(b"\x00" * size)
             # Enough of a header that the format check recognises z64.
             buffer[0:4] = b"\x80\x37\x12\x40"

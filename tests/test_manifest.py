@@ -5,6 +5,7 @@ proving what a patch changed, and being able to undo it from the output
 alone. A manifest that looks reversible but is not would be worse than none,
 so the refusal paths get as much attention as the happy one.
 """
+
 import json
 import os
 import tempfile
@@ -38,7 +39,7 @@ class TestDiffRuns(unittest.TestCase):
         before = bytes(size)
         after = bytearray(before)
         start = manifest._BLOCK - 3
-        after[start:start + 6] = b"\x01" * 6
+        after[start : start + 6] = b"\x01" * 6
         runs, total, complete = manifest.diff_runs(before, bytes(after))
         self.assertTrue(complete)
         self.assertEqual(total, 6)
@@ -70,8 +71,7 @@ class ManifestTestBase(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
 
-    def _pair(self, mutate=None, name="in.z64", out_name="out.z64",
-              size=0x4000):
+    def _pair(self, mutate=None, name="in.z64", out_name="out.z64", size=0x4000):
         data = bytearray(make_synthetic_rom(vi_tables=1, size=size))
         src = os.path.join(self.tmp.name, name)
         with open(src, "wb") as f:
@@ -118,7 +118,7 @@ class TestBuildAndRevert(ManifestTestBase):
         self.assertTrue(ok)
 
     def test_revert_restores_a_size_change(self):
-        src, dst = self._pair(lambda d: d.extend(b"\xAA" * 64))
+        src, dst = self._pair(lambda d: d.extend(b"\xaa" * 64))
         man = manifest.build_manifest(src, dst)
         restored = os.path.join(self.tmp.name, "r.z64")
         ok, msg = manifest.revert(dst, man, restored)
@@ -133,8 +133,7 @@ class TestBuildAndRevert(ManifestTestBase):
         with open(dst, "r+b") as f:
             f.seek(0x3000)
             f.write(b"\x99")
-        ok, msg = manifest.revert(dst, man,
-                                  os.path.join(self.tmp.name, "r.z64"))
+        ok, msg = manifest.revert(dst, man, os.path.join(self.tmp.name, "r.z64"))
         self.assertFalse(ok)
         self.assertIn("different file", msg)
 
@@ -143,11 +142,11 @@ class TestBuildAndRevert(ManifestTestBase):
         # shape of a delta-patched ROM.
         src, dst = self._pair(
             lambda d: d.__setitem__(slice(0, len(d)), bytes([0xFF]) * len(d)),
-            size=manifest.MAX_RECORDED_BYTES * 2)
+            size=manifest.MAX_RECORDED_BYTES * 2,
+        )
         man = manifest.build_manifest(src, dst)
         self.assertFalse(man["revertible"])
-        ok, msg = manifest.revert(dst, man,
-                                  os.path.join(self.tmp.name, "r.z64"))
+        ok, msg = manifest.revert(dst, man, os.path.join(self.tmp.name, "r.z64"))
         self.assertFalse(ok)
         self.assertIn("Keep the input ROM", msg)
 
@@ -177,8 +176,8 @@ class TestPipelineIntegration(ManifestTestBase):
         rom[0x1400:0x1404] = core.AA_PATTERN
         for i in range(2):
             off = 0x1800 + i * 0x40
-            rom[off:off + 4] = core.WIDTH_320_DATA
-            rom[off + 4:off + 8] = core.NTSC_BURST
+            rom[off : off + 4] = core.WIDTH_320_DATA
+            rom[off + 4 : off + 8] = core.NTSC_BURST
         p = os.path.join(self.tmp.name, name)
         with open(p, "wb") as f:
             f.write(bytes(rom))
@@ -190,15 +189,15 @@ class TestPipelineIntegration(ManifestTestBase):
         res = core.patch_rom(src, opts, log=lambda m: None)
         self.assertEqual(res["status"], "patched", res)
         self.assertNotIn("manifest", res)
-        self.assertFalse([f for f in os.listdir(self.tmp.name)
-                          if f.endswith(manifest.MANIFEST_SUFFIX)])
+        self.assertFalse(
+            [f for f in os.listdir(self.tmp.name) if f.endswith(manifest.MANIFEST_SUFFIX)]
+        )
 
     def test_manifest_written_and_reverts(self):
         src = self._rom()
         with open(src, "rb") as f:
             original = f.read()
-        opts = core.PatchOptions(no_aa=True, no_dither=False, hires=False,
-                                 write_manifest=True)
+        opts = core.PatchOptions(no_aa=True, no_dither=False, hires=False, write_manifest=True)
         res = core.patch_rom(src, opts, log=lambda m: None)
         self.assertEqual(res["status"], "patched", res)
         self.assertTrue(os.path.isfile(res["manifest"]))
@@ -214,16 +213,16 @@ class TestPipelineIntegration(ManifestTestBase):
     def test_manifest_records_the_crc_header_write(self):
         """The CRC stamp is a real change and must appear in the audit."""
         src = self._rom()
-        opts = core.PatchOptions(no_aa=True, no_dither=False, hires=False,
-                                 write_manifest=True)
+        opts = core.PatchOptions(no_aa=True, no_dither=False, hires=False, write_manifest=True)
         res = core.patch_rom(src, opts, log=lambda m: None)
         man = manifest.load_manifest(res["manifest"])
         touched = set()
         for run in man["runs"]:
             length = max(len(run["old"]), len(run["new"])) // 2
             touched.update(range(run["offset"], run["offset"] + length))
-        self.assertTrue(touched & set(range(0x10, 0x18)),
-                        "CRC1/CRC2 header write is missing from the manifest")
+        self.assertTrue(
+            touched & set(range(0x10, 0x18)), "CRC1/CRC2 header write is missing from the manifest"
+        )
 
 
 if __name__ == "__main__":

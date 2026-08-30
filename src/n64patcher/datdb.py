@@ -91,7 +91,8 @@ def parse_dat(path: str) -> dict[str, Any]:
     if root.tag != "datafile":
         raise DatError(
             f"{os.path.basename(path)}: root element is <{root.tag}>, "
-            f"expected <datafile> (Logiqx XML)")
+            f"expected <datafile> (Logiqx XML)"
+        )
 
     header = root.find("header")
     dat_name = ""
@@ -113,14 +114,16 @@ def parse_dat(path: str) -> dict[str, Any]:
                 size = int(rom.get("size") or 0)
             except ValueError:
                 size = 0
-            entries.append({
-                "game": game_name,
-                "rom": (rom.get("name") or "").strip(),
-                "size": size,
-                "crc32": crc,
-                "md5": md5,
-                "sha1": sha1,
-            })
+            entries.append(
+                {
+                    "game": game_name,
+                    "rom": (rom.get("name") or "").strip(),
+                    "size": size,
+                    "crc32": crc,
+                    "md5": md5,
+                    "sha1": sha1,
+                }
+            )
     if not entries:
         raise DatError(f"{os.path.basename(path)}: no <rom> entries found")
     return {"name": dat_name, "version": dat_version, "entries": entries}
@@ -175,11 +178,9 @@ class DatIndex:
             if entry["sha1"]:
                 self.by_sha1.setdefault(entry["sha1"], entry)
 
-    def lookup(self, crc32: str = "", md5: str = "",
-               sha1: str = "") -> dict[str, Any] | None:
+    def lookup(self, crc32: str = "", md5: str = "", sha1: str = "") -> dict[str, Any] | None:
         """Strongest available hash first: sha1, then md5, then crc32."""
-        for value, table in ((sha1, self.by_sha1), (md5, self.by_md5),
-                             (crc32, self.by_crc32)):
+        for value, table in ((sha1, self.by_sha1), (md5, self.by_md5), (crc32, self.by_crc32)):
             if value:
                 hit = table.get(value.upper())
                 if hit is not None:
@@ -189,6 +190,7 @@ class DatIndex:
 
 def load_dats(paths: list[str] | None = None, on_error: Any = None) -> DatIndex:
     """Load and index DAT files, using the parse cache where valid."""
+
     def report(msg: str) -> None:
         if on_error is not None:
             on_error(msg)
@@ -232,9 +234,11 @@ def file_hashes(path: str, chunk_size: int = 1024 * 1024) -> dict[str, str]:
 
 def describe(index: DatIndex) -> str:
     if not index:
-        return ("No DAT files loaded.\n"
-                f"Put a No-Intro/Redump .dat in {USER_DAT_DIR} "
-                f"or pass --dat <file>.")
+        return (
+            "No DAT files loaded.\n"
+            f"Put a No-Intro/Redump .dat in {USER_DAT_DIR} "
+            f"or pass --dat <file>."
+        )
     lines = [f"{len(index)} dump(s) indexed from {len(index.sources)} DAT file(s):"]
     lines.extend(f"  {s}" for s in index.sources)
     return "\n".join(lines)

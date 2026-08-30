@@ -8,6 +8,7 @@ actions are 0=SourceRead, 1=TargetRead, 2=SourceCopy, 3=TargetCopy,
 and the trailing 12 bytes hold CRC32 checksums (source, target, patch)
 which are all verified here.
 """
+
 import os
 import struct
 import zlib
@@ -49,8 +50,9 @@ def detect_patch_type(patch_path: str) -> str:
     return "unknown"
 
 
-def apply_ips_patch(rom_path: str, patch_path: str, output_path: str,
-                    require_n64: bool = True) -> dict[str, Any]:
+def apply_ips_patch(
+    rom_path: str, patch_path: str, output_path: str, require_n64: bool = True
+) -> dict[str, Any]:
     """Applies a standard IPS patch to the ROM file.
 
     Unlike BPS, IPS carries no checksum, so nothing in the format itself
@@ -70,16 +72,20 @@ def apply_ips_patch(rom_path: str, patch_path: str, output_path: str,
         if require_n64:
             fmt, label = core.detect_format(rom_data)
             if fmt is None:
-                return {"status": "error",
-                        "message": f"Not a recognizable N64 ROM ({label}) - IPS "
-                                   f"patches are built against big-endian .z64 dumps"}
+                return {
+                    "status": "error",
+                    "message": f"Not a recognizable N64 ROM ({label}) - IPS "
+                    f"patches are built against big-endian .z64 dumps",
+                }
             if fmt != "z64":
                 rom_data = bytearray(core.to_big_endian(bytes(rom_data), fmt))
                 notes.append(f"converted .{fmt} to .z64 first")
             if len(rom_data) > IPS_MAX_ADDRESSABLE:
-                notes.append(f"IPS offsets are 3 bytes: nothing past "
-                             f"{IPS_MAX_ADDRESSABLE // (1024 * 1024)} MB of this "
-                             f"{len(rom_data) // (1024 * 1024)} MB ROM is addressable")
+                notes.append(
+                    f"IPS offsets are 3 bytes: nothing past "
+                    f"{IPS_MAX_ADDRESSABLE // (1024 * 1024)} MB of this "
+                    f"{len(rom_data) // (1024 * 1024)} MB ROM is addressable"
+                )
 
         with open(patch_path, "rb") as f:
             patch_data = f.read()
@@ -92,7 +98,7 @@ def apply_ips_patch(rom_path: str, patch_path: str, output_path: str,
         end = len(patch_data)
 
         while pos + 3 <= end:
-            if patch_data[pos:pos + 3] == IPS_EOF:
+            if patch_data[pos : pos + 3] == IPS_EOF:
                 pos += 3
                 break
 
@@ -107,14 +113,14 @@ def apply_ips_patch(rom_path: str, patch_path: str, output_path: str,
                 # Normal record
                 if pos + size > end:
                     return {"status": "error", "message": "IPS patch truncated in record data"}
-                val_bytes = patch_data[pos:pos + size]
+                val_bytes = patch_data[pos : pos + size]
                 pos += size
             else:
                 # RLE record
                 if pos + 3 > end:
                     return {"status": "error", "message": "IPS patch truncated in RLE record"}
                 rle_size = (patch_data[pos] << 8) | patch_data[pos + 1]
-                val_bytes = bytes(patch_data[pos + 2:pos + 3]) * rle_size
+                val_bytes = bytes(patch_data[pos + 2 : pos + 3]) * rle_size
                 pos += 3
 
             # Expand rom_data array if needed
@@ -122,12 +128,14 @@ def apply_ips_patch(rom_path: str, patch_path: str, output_path: str,
             if len(rom_data) < required_len:
                 rom_data.extend(b"\x00" * (required_len - len(rom_data)))
 
-            rom_data[offset:offset + len(val_bytes)] = val_bytes
+            rom_data[offset : offset + len(val_bytes)] = val_bytes
             records_applied += 1
 
         # Optional truncation: 3-byte size directly after the EOF marker
         if pos + 3 == end:
-            truncate_size = (patch_data[pos] << 16) | (patch_data[pos + 1] << 8) | patch_data[pos + 2]
+            truncate_size = (
+                (patch_data[pos] << 16) | (patch_data[pos + 1] << 8) | patch_data[pos + 2]
+            )
             if truncate_size < len(rom_data):
                 del rom_data[truncate_size:]
 
@@ -146,6 +154,7 @@ def apply_ips_patch(rom_path: str, patch_path: str, output_path: str,
 
     except Exception as e:
         return {"status": "error", "message": f"IPS patch error: {e}"}
+
 
 def _bps_read_vlv(patch_data: bytes, pos: int) -> tuple[int, int]:
     """Decode one BPS variable-length value (byuu's reference scheme).
@@ -186,13 +195,14 @@ def apply_bps_patch(rom_path: str, patch_path: str, output_path: str) -> dict[st
         source_crc, target_crc, patch_crc = struct.unpack("<III", patch_data[-BPS_FOOTER_SIZE:])
 
         if zlib.crc32(patch_data[:-4]) & 0xFFFFFFFF != patch_crc:
-            return {"status": "error",
-                    "message": "BPS patch file corrupt (patch CRC32 mismatch)"}
+            return {"status": "error", "message": "BPS patch file corrupt (patch CRC32 mismatch)"}
 
         if zlib.crc32(rom_data) & 0xFFFFFFFF != source_crc:
-            return {"status": "error",
-                    "message": "BPS source CRC32 mismatch - this patch was built "
-                               "for a different ROM version"}
+            return {
+                "status": "error",
+                "message": "BPS source CRC32 mismatch - this patch was built "
+                "for a different ROM version",
+            }
 
         # --- Header: source size, target size, metadata -------------------
         pos = 4
@@ -202,9 +212,11 @@ def apply_bps_patch(rom_path: str, patch_path: str, output_path: str) -> dict[st
         pos += meta_size  # skip metadata (usually a file listing)
 
         if len(rom_data) != src_size:
-            return {"status": "error",
-                    "message": f"BPS source size mismatch (patch expects {src_size} "
-                               f"bytes, ROM has {len(rom_data)} bytes)"}
+            return {
+                "status": "error",
+                "message": f"BPS source size mismatch (patch expects {src_size} "
+                f"bytes, ROM has {len(rom_data)} bytes)",
+            }
 
         output_data = bytearray(dst_size)
         out_pos = 0
@@ -217,8 +229,10 @@ def apply_bps_patch(rom_path: str, patch_path: str, output_path: str) -> dict[st
             command = data & 3
             length = (data >> 2) + 1
             if out_pos + length > dst_size:
-                return {"status": "error",
-                        "message": "BPS patch writes beyond declared target size"}
+                return {
+                    "status": "error",
+                    "message": "BPS patch writes beyond declared target size",
+                }
 
             # Action numbering is fixed by the spec: 0=SourceRead,
             # 1=TargetRead, 2=SourceCopy, 3=TargetCopy. 0 and 1 were
@@ -227,12 +241,12 @@ def apply_bps_patch(rom_path: str, patch_path: str, output_path: str) -> dict[st
             if command == BPS_SOURCE_READ:  # copy from source at output offset
                 if out_pos + length > len(rom_data):
                     return {"status": "error", "message": "BPS SourceRead beyond source size"}
-                output_data[out_pos:out_pos + length] = rom_data[out_pos:out_pos + length]
+                output_data[out_pos : out_pos + length] = rom_data[out_pos : out_pos + length]
                 out_pos += length
             elif command == BPS_TARGET_READ:  # literal bytes from the patch
                 if pos + length > end:
                     return {"status": "error", "message": "BPS patch truncated in TargetRead"}
-                output_data[out_pos:out_pos + length] = patch_data[pos:pos + length]
+                output_data[out_pos : out_pos + length] = patch_data[pos : pos + length]
                 pos += length
                 out_pos += length
             elif command == 2:  # SourceCopy: relative copy from source
@@ -241,8 +255,9 @@ def apply_bps_patch(rom_path: str, patch_path: str, output_path: str) -> dict[st
                 src_rel_offset += -magnitude if (offset_data & 1) else magnitude
                 if src_rel_offset < 0 or src_rel_offset + length > len(rom_data):
                     return {"status": "error", "message": "BPS SourceCopy out of bounds"}
-                output_data[out_pos:out_pos + length] = \
-                    rom_data[src_rel_offset:src_rel_offset + length]
+                output_data[out_pos : out_pos + length] = rom_data[
+                    src_rel_offset : src_rel_offset + length
+                ]
                 src_rel_offset += length
                 out_pos += length
             else:  # command == 3, TargetCopy: relative copy from target (may overlap)
@@ -257,12 +272,13 @@ def apply_bps_patch(rom_path: str, patch_path: str, output_path: str) -> dict[st
                     dst_rel_offset += 1
 
         if out_pos != dst_size:
-            return {"status": "error",
-                    "message": f"BPS patch incomplete (produced {out_pos} of {dst_size} bytes)"}
+            return {
+                "status": "error",
+                "message": f"BPS patch incomplete (produced {out_pos} of {dst_size} bytes)",
+            }
 
         if zlib.crc32(bytes(output_data)) & 0xFFFFFFFF != target_crc:
-            return {"status": "error",
-                    "message": "BPS target CRC32 mismatch - output is corrupt"}
+            return {"status": "error", "message": "BPS target CRC32 mismatch - output is corrupt"}
 
         with open(output_path, "wb") as f:
             f.write(output_data)
@@ -300,6 +316,7 @@ def apply_bps_patch(rom_path: str, patch_path: str, output_path: str) -> dict[st
 # because the format does not require a particular matching strategy.
 # ---------------------------------------------------------------------------
 
+
 def _bps_write_vlv(value: int) -> bytes:
     """Encode one variable-length value (inverse of _bps_read_vlv)."""
     out = bytearray()
@@ -314,8 +331,9 @@ def _bps_write_vlv(value: int) -> bytes:
     return bytes(out)
 
 
-def create_bps_patch(source_path: str, target_path: str,
-                     output_path: str, metadata: bytes = b"") -> dict[str, Any]:
+def create_bps_patch(
+    source_path: str, target_path: str, output_path: str, metadata: bytes = b""
+) -> dict[str, Any]:
     """Build a .bps that turns *source_path* into *target_path*."""
     if not os.path.isfile(source_path) or not os.path.isfile(target_path):
         return {"status": "error", "message": "Source or target file missing"}
@@ -327,8 +345,10 @@ def create_bps_patch(source_path: str, target_path: str,
             target = f.read()
 
         if source == target:
-            return {"status": "error",
-                    "message": "Source and target are identical; nothing to diff"}
+            return {
+                "status": "error",
+                "message": "Source and target are identical; nothing to diff",
+            }
 
         body = bytearray(b"BPS1")
         body += _bps_write_vlv(len(source))
@@ -350,8 +370,7 @@ def create_bps_patch(source_path: str, target_path: str,
 
         while pos < len(target):
             run = 0
-            while (pos + run < aligned_limit
-                   and source[pos + run] == target[pos + run]):
+            while pos + run < aligned_limit and source[pos + run] == target[pos + run]:
                 run += 1
             # A one-byte SourceRead costs the same as a literal byte plus its
             # own command, so only break the literal stream for longer runs.
@@ -373,8 +392,9 @@ def create_bps_patch(source_path: str, target_path: str,
 
         return {
             "status": "created",
-            "message": (f"BPS patch created ({len(body)} bytes, "
-                        f"{len(source)} -> {len(target)} byte ROM)"),
+            "message": (
+                f"BPS patch created ({len(body)} bytes, {len(source)} -> {len(target)} byte ROM)"
+            ),
             "output": output_path,
             "size": len(body),
         }

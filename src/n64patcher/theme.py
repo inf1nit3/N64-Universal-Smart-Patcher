@@ -20,14 +20,14 @@ from __future__ import annotations
 # --- palette --------------------------------------------------------------
 # Warm charcoal rather than neutral grey: that is the difference between a
 # generic dark theme and moulded ABS plastic.
-PLASTIC_DARK = "#17171B"      # deep recesses, data surfaces
-PLASTIC = "#26262D"           # main shell
-PLASTIC_LIGHT = "#33333C"     # raised controls
-PLASTIC_HILIGHT = "#41414D"   # hover
-BEVEL_LIGHT = "#55555F"       # top/left edge of a raised control
-BEVEL_DARK = "#0D0D10"        # bottom/right edge
+PLASTIC_DARK = "#17171B"  # deep recesses, data surfaces
+PLASTIC = "#26262D"  # main shell
+PLASTIC_LIGHT = "#33333C"  # raised controls
+PLASTIC_HILIGHT = "#41414D"  # hover
+BEVEL_LIGHT = "#55555F"  # top/left edge of a raised control
+BEVEL_DARK = "#0D0D10"  # bottom/right edge
 
-LABEL = "#EDE9DE"             # warm off-white, like a printed cart label
+LABEL = "#EDE9DE"  # warm off-white, like a printed cart label
 LABEL_DIM = "#948F85"
 DISABLED = "#54545E"
 
@@ -49,11 +49,15 @@ ACCENTS = (ACCENT_RED, ACCENT_BLUE, ACCENT_GREEN, ACCENT_YELLOW)
 # with Windows since 3.x, so the era reads correctly and nothing needs to be
 # bundled or licensed. Everything after them is a graceful fallback for
 # macOS and Linux, ending at the generic families.
-MONO_STACK = ('"Fixedsys", "Terminal", "Consolas", "Lucida Console", '
-              '"DejaVu Sans Mono", "Menlo", "Courier New", monospace')
+MONO_STACK = (
+    '"Fixedsys", "Terminal", "Consolas", "Lucida Console", '
+    '"DejaVu Sans Mono", "Menlo", "Courier New", monospace'
+)
 #: Headings: a condensed grotesque reads like moulded case lettering.
-DISPLAY_STACK = ('"Bahnschrift", "Arial Narrow", "Liberation Sans Narrow", '
-                 '"DejaVu Sans Condensed", "Segoe UI", sans-serif')
+DISPLAY_STACK = (
+    '"Bahnschrift", "Arial Narrow", "Liberation Sans Narrow", '
+    '"DejaVu Sans Condensed", "Segoe UI", sans-serif'
+)
 BODY_STACK = '"Segoe UI", "Tahoma", "DejaVu Sans", sans-serif'
 
 

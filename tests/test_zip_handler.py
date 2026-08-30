@@ -1,4 +1,5 @@
 """Unit tests for zip_handler (extraction + zip-slip protection)."""
+
 import os
 import stat
 import tempfile
@@ -66,8 +67,7 @@ class TestZipHandler(unittest.TestCase):
         try:
             extracted = extract_roms_from_archive(zp, out_dir)
             for p in extracted:
-                self.assertTrue(os.path.realpath(p).startswith(
-                    os.path.realpath(out_dir) + os.sep))
+                self.assertTrue(os.path.realpath(p).startswith(os.path.realpath(out_dir) + os.sep))
         except RuntimeError:
             pass  # rejected outright - also acceptable
         self.assertFalse(os.path.exists("/tmp/abs_evil.z64"))
@@ -175,10 +175,10 @@ class TestZipHandler(unittest.TestCase):
             with open(p, "rb") as f:
                 self.assertEqual(f.read(), rom)
 
-    @unittest.skipUnless(__import__("importlib").util.find_spec("py7zr"),
-                         "py7zr not installed")
+    @unittest.skipUnless(__import__("importlib").util.find_spec("py7zr"), "py7zr not installed")
     def test_7z_zip_slip_blocked(self):
         import py7zr
+
         inner = self._path("x.z64")
         with open(inner, "wb") as f:
             f.write(make_synthetic_rom())
@@ -191,10 +191,10 @@ class TestZipHandler(unittest.TestCase):
         self.assertIn("traversal", str(ctx.exception).lower())
         self.assertFalse(os.path.exists(self._path("evil7.z64")))
 
-    @unittest.skipUnless(__import__("importlib").util.find_spec("py7zr"),
-                         "py7zr not installed")
+    @unittest.skipUnless(__import__("importlib").util.find_spec("py7zr"), "py7zr not installed")
     def test_7z_roundtrip(self):
         import py7zr
+
         rom = make_synthetic_rom()
         rom_path = self._path("inner.z64")
         with open(rom_path, "wb") as f:

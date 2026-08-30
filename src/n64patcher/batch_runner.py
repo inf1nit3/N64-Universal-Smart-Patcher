@@ -2,6 +2,7 @@
 batch_runner.py
 Multi-threaded batch patching engine.
 """
+
 import queue
 import threading
 from collections.abc import Callable
@@ -24,8 +25,7 @@ class LogPump:
     def __init__(self, sink: Callable[[str], None]):
         self._sink = sink
         self._queue: queue.Queue = queue.Queue()
-        self._thread = threading.Thread(target=self._drain, daemon=True,
-                                        name="n64-log-pump")
+        self._thread = threading.Thread(target=self._drain, daemon=True, name="n64-log-pump")
 
     def _drain(self) -> None:
         while True:
@@ -82,8 +82,7 @@ def batch_patch_roms(
 
     with LogPump(log_func) as pump, ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_rom = {
-            executor.submit(core.patch_rom, rom, options, pump,
-                            cancelled, output_dir): rom
+            executor.submit(core.patch_rom, rom, options, pump, cancelled, output_dir): rom
             for rom in rom_paths
         }
 
@@ -102,14 +101,16 @@ def batch_patch_roms(
                         error_count += 1
                 except Exception as e:
                     error_count += 1
-                    results_list.append({
-                        "status": "error",
-                        "filename": rom,
-                        "message": str(e),
-                        "output": None,
-                        "input": rom,
-                        "applied": set(),
-                    })
+                    results_list.append(
+                        {
+                            "status": "error",
+                            "filename": rom,
+                            "message": str(e),
+                            "output": None,
+                            "input": rom,
+                            "applied": set(),
+                        }
+                    )
         except KeyboardInterrupt:
             # Tell running workers to wind down and drop whatever has
             # not started yet, so the executor's shutdown is quick.

@@ -18,6 +18,7 @@ shifts and unrelated arithmetic cannot be swept in by accident.
 Every edit states the word it expects to find. A mismatch aborts the whole
 build rather than writing into whatever happens to be at that offset.
 """
+
 import os
 import struct
 import sys
@@ -28,20 +29,55 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # one draws. The names are inferred from behaviour, not from symbols; the
 # ROM carries none.
 SITES = [
-    (0x00091BB8, "print.c render_textrect - HUD font: coins, stars, lives, timer",
-     [0x091BC0, 0x091BD0, 0x091BF4, 0x091BFC], 0x091C64, 0x091C68),
-    (0x00092D80, "ingame_menu.c - generic 16x16 glyph (menu text)",
-     [0x092D88, 0x092D98, 0x092DBC, 0x092DC4], 0x092E2C, 0x092E30),
-    (0x00093020, "ingame_menu.c - generic glyph, second form",
-     [0x093028, 0x093038, 0x09305C, 0x093064], 0x0930CC, 0x0930D0),
-    (0x000931A4, "ingame_menu.c - generic glyph, third form",
-     [0x0931AC, 0x0931BC, 0x0931E0, 0x0931EC], 0x093258, 0x09325C),
-    (0x00093520, "ingame_menu.c - generic glyph, fourth form",
-     [0x093528, 0x093538, 0x09355C, 0x093564], 0x0935CC, 0x0935D0),
-    (0x0009DDB4, "HUD LUT char - large digits and icons",
-     [0x09DD9C, 0x09DDAC, 0x09DDC8, 0x09DDD4], 0x09DE3C, 0x09DE40),
-    (0x0009E010, "HUD LUT char, second form",
-     [0x09DFF8, 0x09E008, 0x09E024, 0x09E030], 0x09E098, 0x09E09C),
+    (
+        0x00091BB8,
+        "print.c render_textrect - HUD font: coins, stars, lives, timer",
+        [0x091BC0, 0x091BD0, 0x091BF4, 0x091BFC],
+        0x091C64,
+        0x091C68,
+    ),
+    (
+        0x00092D80,
+        "ingame_menu.c - generic 16x16 glyph (menu text)",
+        [0x092D88, 0x092D98, 0x092DBC, 0x092DC4],
+        0x092E2C,
+        0x092E30,
+    ),
+    (
+        0x00093020,
+        "ingame_menu.c - generic glyph, second form",
+        [0x093028, 0x093038, 0x09305C, 0x093064],
+        0x0930CC,
+        0x0930D0,
+    ),
+    (
+        0x000931A4,
+        "ingame_menu.c - generic glyph, third form",
+        [0x0931AC, 0x0931BC, 0x0931E0, 0x0931EC],
+        0x093258,
+        0x09325C,
+    ),
+    (
+        0x00093520,
+        "ingame_menu.c - generic glyph, fourth form",
+        [0x093528, 0x093538, 0x09355C, 0x093564],
+        0x0935CC,
+        0x0935D0,
+    ),
+    (
+        0x0009DDB4,
+        "HUD LUT char - large digits and icons",
+        [0x09DD9C, 0x09DDAC, 0x09DDC8, 0x09DDD4],
+        0x09DE3C,
+        0x09DE40,
+    ),
+    (
+        0x0009E010,
+        "HUD LUT char, second form",
+        [0x09DFF8, 0x09E008, 0x09E024, 0x09E030],
+        0x09E098,
+        0x09E09C,
+    ),
 ]
 
 # Which emitters to include. Trimming this is how a site gets ruled out after
@@ -73,6 +109,7 @@ def crc_fix(data):
     so a ROM with stale values black-screens on real hardware.
     """
     from n64patcher import n64_core
+
     result = n64_core.calculate_n64_crc(data)
     if result is None:
         raise SystemExit("CIC chip not identified - refusing to stamp a CRC")
@@ -84,10 +121,8 @@ def crc_fix(data):
 
 def main():
     src = os.path.join(HERE, "hires.z64")
-    dst = os.path.join(HERE, sys.argv[1] if len(sys.argv) > 1
-                       else "hires_fixed.z64")
-    enabled = ({int(x) for x in sys.argv[2].split(",") if x != ""}
-               if len(sys.argv) > 2 else ENABLED)
+    dst = os.path.join(HERE, sys.argv[1] if len(sys.argv) > 1 else "hires_fixed.z64")
+    enabled = {int(x) for x in sys.argv[2].split(",") if x != ""} if len(sys.argv) > 2 else ENABLED
     with open(src, "rb") as f:
         data = bytearray(f.read())
     edits = 0

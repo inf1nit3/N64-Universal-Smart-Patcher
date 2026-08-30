@@ -73,6 +73,7 @@ class XdeltaPatchError(ValueError):
 # VCDIFF integer encoding (base-128, big-endian groups, MSB = continue)
 # ---------------------------------------------------------------------------
 
+
 def _read_int(data: bytes, pos: int) -> tuple[int, int]:
     """Read one VCDIFF varint. Returns (value, new_pos)."""
     value = 0
@@ -108,6 +109,7 @@ def encode_size(value: int) -> bytes:
 # Default RFC 3284 code table
 # ---------------------------------------------------------------------------
 
+
 def _build_default_code_table() -> list[tuple[int, int, int, int]]:
     """Build the 256-entry RFC 3284 default code table exactly like
     xdelta3's xd3_build_code_table(). Each entry is
@@ -128,15 +130,13 @@ def _build_default_code_table() -> list[tuple[int, int, int, int]]:
             table.append((XD3_CPY + mode, size1, XD3_NOOP, 0))
 
     for mode in range(cpy_modes):
-        cpy_max = (ADDCOPY_NEAR_CPY_MAX if mode < 2 + NEAR_MODES
-                   else ADDCOPY_SAME_CPY_MAX)
+        cpy_max = ADDCOPY_NEAR_CPY_MAX if mode < 2 + NEAR_MODES else ADDCOPY_SAME_CPY_MAX
         for size1 in range(1, ADDCOPY_ADD_MAX + 1):
             for size2 in range(MIN_MATCH, cpy_max + 1):
                 table.append((XD3_ADD, size1, XD3_CPY + mode, size2))
 
     for mode in range(cpy_modes):
-        cpy_max = (COPYADD_NEAR_CPY_MAX if mode < 2 + NEAR_MODES
-                   else COPYADD_SAME_CPY_MAX)
+        cpy_max = COPYADD_NEAR_CPY_MAX if mode < 2 + NEAR_MODES else COPYADD_SAME_CPY_MAX
         for size1 in range(MIN_MATCH, cpy_max + 1):
             for size2 in range(1, COPYADD_ADD_MAX + 1):
                 table.append((XD3_CPY + mode, size1, XD3_ADD, size2))
@@ -152,6 +152,7 @@ CODE_TABLE = _build_default_code_table()
 # ---------------------------------------------------------------------------
 # Structural parsing (also used for inspection without a source ROM)
 # ---------------------------------------------------------------------------
+
 
 def iter_windows(patch_data: bytes) -> Iterator[dict[str, Any]]:
     """Yield one dict per window with all header fields plus the three
@@ -178,8 +179,7 @@ def iter_windows(patch_data: bytes) -> Iterator[dict[str, Any]]:
         win_ind = patch_data[pos]
         pos += 1
         if win_ind & VCD_INVWIN:
-            raise XdeltaPatchError(
-                f"invalid window indicator bits: {win_ind:#04x}")
+            raise XdeltaPatchError(f"invalid window indicator bits: {win_ind:#04x}")
         if win_ind & VCD_TARGET:
             raise XdeltaPatchError("VCD_TARGET windows are not supported")
 
@@ -193,16 +193,14 @@ def iter_windows(patch_data: bytes) -> Iterator[dict[str, Any]]:
 
         tgt_len, pos = _read_int(patch_data, pos)
         if tgt_len > MAX_WINDOW_SIZE:
-            raise XdeltaPatchError(
-                f"window size {tgt_len} exceeds sanity limit")
+            raise XdeltaPatchError(f"window size {tgt_len} exceeds sanity limit")
 
         if pos >= n:
             raise XdeltaPatchError("truncated window header")
         delta_ind = patch_data[pos]
         pos += 1
         if delta_ind != 0:
-            raise XdeltaPatchError(
-                "delta indicator set (secondary compression) - not supported")
+            raise XdeltaPatchError("delta indicator set (secondary compression) - not supported")
 
         data_len, pos = _read_int(patch_data, pos)
         inst_len, pos = _read_int(patch_data, pos)
@@ -212,16 +210,16 @@ def iter_windows(patch_data: bytes) -> Iterator[dict[str, Any]]:
         if win_ind & VCD_ADLER32:
             if pos + 4 > n:
                 raise XdeltaPatchError("truncated window checksum")
-            adler32 = int.from_bytes(patch_data[pos:pos + 4], "big")
+            adler32 = int.from_bytes(patch_data[pos : pos + 4], "big")
             pos += 4
 
         if pos + data_len + inst_len + addr_len > n:
             raise XdeltaPatchError("truncated window sections")
-        data = patch_data[pos:pos + data_len]
+        data = patch_data[pos : pos + data_len]
         pos += data_len
-        inst = patch_data[pos:pos + inst_len]
+        inst = patch_data[pos : pos + inst_len]
         pos += inst_len
-        addr = patch_data[pos:pos + addr_len]
+        addr = patch_data[pos : pos + addr_len]
         pos += addr_len
 
         if pos != body_start + enc_len:
@@ -243,6 +241,7 @@ def iter_windows(patch_data: bytes) -> Iterator[dict[str, Any]]:
 # Window replay
 # ---------------------------------------------------------------------------
 
+
 def _replay_window(win: dict[str, Any], source: bytes) -> bytes:
     """Replay one window's instruction stream against the source file and
     return the decoded target window bytes."""
@@ -253,7 +252,8 @@ def _replay_window(win: dict[str, Any], source: bytes) -> bytes:
         if need > len(source):
             raise XdeltaPatchError(
                 f"source ROM too short for this patch (needs {need} bytes, "
-                f"got {len(source)} - wrong ROM version/region?)")
+                f"got {len(source)} - wrong ROM version/region?)"
+            )
 
     inst = win["inst"]
     data = win["data"]
@@ -283,24 +283,24 @@ def _replay_window(win: dict[str, Any], source: bytes) -> bytes:
             if typ == XD3_ADD:
                 if dp + size > len(data):
                     raise XdeltaPatchError("data section underflow")
-                out += data[dp:dp + size]
+                out += data[dp : dp + size]
                 dp += size
             elif typ == XD3_RUN:
                 if dp + 1 > len(data):
                     raise XdeltaPatchError("data section underflow")
-                out += data[dp:dp + 1] * size
+                out += data[dp : dp + 1] * size
                 dp += 1
             else:  # COPY
                 mode = typ - XD3_CPY
                 if mode < same_start:
                     d, ap = _read_int(addr, ap)
-                    if mode == 0:              # VCD_SELF
+                    if mode == 0:  # VCD_SELF
                         a = d
-                    elif mode == 1:            # VCD_HERE
+                    elif mode == 1:  # VCD_HERE
                         a = here - d
-                    else:                      # VCD_NEAR
+                    else:  # VCD_NEAR
                         a = near[mode - 2] + d
-                else:                          # VCD_SAME
+                else:  # VCD_SAME
                     if ap >= len(addr):
                         raise XdeltaPatchError("address section underflow")
                     a = same[(mode - same_start) * 256 + addr[ap]]
@@ -317,11 +317,11 @@ def _replay_window(win: dict[str, Any], source: bytes) -> bytes:
                     raise XdeltaPatchError("copy crosses source window end")
 
                 if a < cpy_len:
-                    out += source[cpy_off + a:cpy_off + a + size]
+                    out += source[cpy_off + a : cpy_off + a + size]
                 else:
                     o = a - cpy_len
                     if o + size <= len(out):
-                        out += out[o:o + size]
+                        out += out[o : o + size]
                     else:  # overlapping forward copy
                         for i in range(size):
                             out.append(out[o + i])
@@ -337,8 +337,8 @@ def _replay_window(win: dict[str, Any], source: bytes) -> bytes:
 # Public API
 # ---------------------------------------------------------------------------
 
-def decode_xdelta(patch_data: bytes, source_data: bytes,
-                  verify_adler: bool = True) -> bytes:
+
+def decode_xdelta(patch_data: bytes, source_data: bytes, verify_adler: bool = True) -> bytes:
     """Decode a VCDIFF/xdelta3 delta against the source bytes and return
     the full reconstructed target. Raises XdeltaPatchError on malformed
     input, unsupported features or checksum/size mismatches."""
@@ -351,13 +351,13 @@ def decode_xdelta(patch_data: bytes, source_data: bytes,
                 raise XdeltaPatchError(
                     f"Adler-32 mismatch (expected {win['adler32']:08X}, got "
                     f"{actual:08X}) - the source ROM does not match this "
-                    f"patch (wrong version/region?)")
+                    f"patch (wrong version/region?)"
+                )
         out += decoded
     return bytes(out)
 
 
-def apply_xdelta_patch(rom_path: str, patch_path: str,
-                       output_path: str) -> dict[str, Any]:
+def apply_xdelta_patch(rom_path: str, patch_path: str, output_path: str) -> dict[str, Any]:
     """File-level API in the same result-dict style as ips_bps_patcher:
     {'status': 'patched'|'error', 'message': ..., 'output': ...}."""
     if not os.path.isfile(rom_path) or not os.path.isfile(patch_path):
@@ -372,8 +372,9 @@ def apply_xdelta_patch(rom_path: str, patch_path: str,
             f.write(target)
         return {
             "status": "patched",
-            "message": (f"xdelta patch applied (built-in VCDIFF engine, "
-                        f"{len(target)} bytes written)"),
+            "message": (
+                f"xdelta patch applied (built-in VCDIFF engine, {len(target)} bytes written)"
+            ),
             "output": output_path,
         }
     except XdeltaPatchError as e:

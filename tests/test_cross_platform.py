@@ -5,6 +5,7 @@ they only report a problem to the people who do not have it. So nothing here
 asks the filesystem "does this path exist?" - the directory is listed once and
 names are compared as strings.
 """
+
 import os
 import re
 import unittest
@@ -12,14 +13,16 @@ import unittest
 from n64patcher import n64_core as core
 from n64patcher import patchdb
 
-SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                   "src", "n64patcher")
+SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src", "n64patcher")
 
 # Windows forbids these in filenames; Linux and macOS do not. A shipped asset
 # named with one of them is unpackable on Windows.
 WINDOWS_RESERVED = set('<>:"|?*\\')
 WINDOWS_RESERVED_STEMS = {
-    "CON", "PRN", "AUX", "NUL",
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
     *(f"COM{i}" for i in range(1, 10)),
     *(f"LPT{i}" for i in range(1, 10)),
 }
@@ -28,11 +31,9 @@ WINDOWS_RESERVED_STEMS = {
 def bundled_patch_entries():
     """The recipes that actually ship, not a synthetic fixture."""
     problems = []
-    db = patchdb.load_patch_db([os.path.join(SRC, "patches")],
-                               on_error=problems.append)
+    db = patchdb.load_patch_db([os.path.join(SRC, "patches")], on_error=problems.append)
     if problems:
-        raise AssertionError("bundled patch database has errors: "
-                             + "; ".join(problems))
+        raise AssertionError("bundled patch database has errors: " + "; ".join(problems))
     return list(db.values())
 
 
@@ -56,8 +57,9 @@ class TestPatchAssetNamesResolveCaseExactly(unittest.TestCase):
 
     def test_database_is_not_empty(self):
         """A load failure would make every other test here vacuously pass."""
-        self.assertTrue(list(self.referenced_files()),
-                        "no xdelta operations found - did the database load?")
+        self.assertTrue(
+            list(self.referenced_files()), "no xdelta operations found - did the database load?"
+        )
 
     def test_every_referenced_patch_exists_with_exact_case(self):
         missing = []
@@ -68,8 +70,8 @@ class TestPatchAssetNamesResolveCaseExactly(unittest.TestCase):
             actual = lowered.get(filename.lower())
             if actual:
                 missing.append(
-                    f"{entry_id}: case mismatch, json says {filename!r} "
-                    f"but disk has {actual!r}")
+                    f"{entry_id}: case mismatch, json says {filename!r} but disk has {actual!r}"
+                )
             else:
                 missing.append(f"{entry_id}: no such file {filename!r}")
         self.assertEqual(missing, [], "\n".join(missing))
@@ -92,9 +94,7 @@ class TestShippedAssetNamesArePortable(unittest.TestCase):
     assumes that they survive a checkout on every target platform."""
 
     def asset_names(self):
-        for sub in ("N64noAAPatcher/hires_patches",
-                    "N64noAAPatcher/additionals",
-                    "patches"):
+        for sub in ("N64noAAPatcher/hires_patches", "N64noAAPatcher/additionals", "patches"):
             directory = os.path.join(SRC, *sub.split("/"))
             if not os.path.isdir(directory):
                 continue
@@ -102,20 +102,21 @@ class TestShippedAssetNamesArePortable(unittest.TestCase):
                 yield os.path.join(sub, name), name
 
     def test_no_characters_windows_rejects(self):
-        bad = [path for path, name in self.asset_names()
-               if WINDOWS_RESERVED & set(name)]
+        bad = [path for path, name in self.asset_names() if WINDOWS_RESERVED & set(name)]
         self.assertEqual(bad, [])
 
     def test_no_reserved_device_names(self):
-        bad = [path for path, name in self.asset_names()
-               if name.split(".")[0].upper() in WINDOWS_RESERVED_STEMS]
+        bad = [
+            path
+            for path, name in self.asset_names()
+            if name.split(".")[0].upper() in WINDOWS_RESERVED_STEMS
+        ]
         self.assertEqual(bad, [])
 
     def test_no_trailing_space_or_dot(self):
         """Windows silently strips both, so the file lands under a name that
         no longer matches what the database asks for."""
-        bad = [path for path, name in self.asset_names()
-               if name != name.rstrip(" .")]
+        bad = [path for path, name in self.asset_names() if name != name.rstrip(" .")]
         self.assertEqual(bad, [])
 
 
@@ -169,9 +170,11 @@ class TestBundledHelpersAreOptional(unittest.TestCase):
         directory = os.path.join(SRC, "N64noAAPatcher", "additionals")
         if not os.path.isdir(directory):
             self.skipTest("bundled helpers not present in this layout")
-        executable = [n for n in os.listdir(directory)
-                      if n.lower().endswith(".exe")
-                      and os.access(os.path.join(directory, n), os.X_OK)]
+        executable = [
+            n
+            for n in os.listdir(directory)
+            if n.lower().endswith(".exe") and os.access(os.path.join(directory, n), os.X_OK)
+        ]
         self.assertEqual(executable, [])
 
     def test_install_hint_is_offered_for_every_platform(self):

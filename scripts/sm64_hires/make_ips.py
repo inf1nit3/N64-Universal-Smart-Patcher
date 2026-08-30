@@ -26,6 +26,7 @@ Usage:
     python make_ips.py --out PATH         # somewhere else
     python make_ips.py --bisect           # HUD bisect variants (see README)
 """
+
 import argparse
 import os
 import struct
@@ -39,8 +40,8 @@ import makefix  # noqa: E402  (SITES is the shared, checked site table)
 WIP_NAME = "635A2BFF_sm64_hud_textrect_2x.bps.wip"
 CRC_OFFSET, CRC_LEN = 0x10, 8
 DEFAULT_OUT = os.path.join(
-    HERE, "..", "..", "src", "n64patcher", "game_fixes",
-    "635A2BFF_sm64_menu_2x.ips")
+    HERE, "..", "..", "src", "n64patcher", "game_fixes", "635A2BFF_sm64_menu_2x.ips"
+)
 BPS_SOURCE_READ, BPS_TARGET_READ = 0, 1
 
 
@@ -51,8 +52,7 @@ def parse_bps_literals(patch):
         raise SystemExit("not a BPS patch")
     if len(patch) < 16:
         raise SystemExit("BPS too short")
-    if zlib.crc32(patch[:-4]) & 0xFFFFFFFF != \
-            struct.unpack("<I", patch[-4:])[0]:
+    if zlib.crc32(patch[:-4]) & 0xFFFFFFFF != struct.unpack("<I", patch[-4:])[0]:
         raise SystemExit("BPS patch corrupt (patch CRC32 mismatch)")
 
     def vlv(pos):
@@ -81,12 +81,13 @@ def parse_bps_literals(patch):
         if command == BPS_TARGET_READ:
             if pos + length > end:
                 raise SystemExit("BPS truncated in TargetRead")
-            literals.append((out_pos, patch[pos:pos + length]))
+            literals.append((out_pos, patch[pos : pos + length]))
             pos += length
         elif command != BPS_SOURCE_READ:
             raise SystemExit(
                 f"unexpected BPS action {command} - this decoder matches "
-                "the project encoder, not arbitrary patches")
+                "the project encoder, not arbitrary patches"
+            )
         out_pos += length
     if out_pos != dst_size:
         raise SystemExit("BPS action stream does not cover the target")
@@ -97,8 +98,7 @@ def site_byte_ranges():
     """{(offset, position-in-word)} for every byte the site edits can
     touch, per site index: coordinate words and texture-step words."""
     ranges = {}
-    for index, (_emitter, _note, coords, dsdx, dtdy) in \
-            enumerate(makefix.SITES):
+    for index, (_emitter, _note, coords, dsdx, dtdy) in enumerate(makefix.SITES):
         touched = set()
         for off in coords:
             # `sll rd, rt, 2` -> `sll rd, rt, 3` sets bit 6, so only the
@@ -124,13 +124,14 @@ def check_structure(changed):
     if stray:
         raise SystemExit(
             "the .wip changes bytes outside makefix.SITES and the CRC "
-            "restamp:\n  "
-            + ", ".join(f"{o:08X}" for o in sorted(stray)))
+            "restamp:\n  " + ", ".join(f"{o:08X}" for o in sorted(stray))
+        )
     for index, offsets in per_site.items():
         if not offsets:
             raise SystemExit(
                 f"site {index} contributes no changed bytes - the .wip "
-                "does not carry makefix's full edit")
+                "does not carry makefix's full edit"
+            )
     # Byte positions the transforms cannot touch rule out a mismatched
     # site table even when every offset happens to line up.
     for off in changed:
@@ -139,7 +140,8 @@ def check_structure(changed):
         if off % 4 < 2:
             raise SystemExit(
                 f"changed byte {off:08X} sits in the high half of a word - "
-                "neither the shift nor the immediate halving touches that")
+                "neither the shift nor the immediate halving touches that"
+            )
     return per_site
 
 
@@ -177,23 +179,33 @@ def build_ips(chosen):
 
 BisectPlan = [
     # (file name, sites, what the run decides)
-    ("635A2BFF_bisect_A_menus.ips", [1, 2, 3, 4],
-     "menus only - the shipped configuration, for comparison"),
-    ("635A2BFF_bisect_B_plus_hud_font.ips", [0, 1, 2, 3, 4],
-     "+ site 0: do the HUD numbers come back?"),
-    ("635A2BFF_bisect_C_plus_hud_lut.ips", [1, 2, 3, 4, 5, 6],
-     "+ sites 5,6: do the HUD numbers come back?"),
+    (
+        "635A2BFF_bisect_A_menus.ips",
+        [1, 2, 3, 4],
+        "menus only - the shipped configuration, for comparison",
+    ),
+    (
+        "635A2BFF_bisect_B_plus_hud_font.ips",
+        [0, 1, 2, 3, 4],
+        "+ site 0: do the HUD numbers come back?",
+    ),
+    (
+        "635A2BFF_bisect_C_plus_hud_lut.ips",
+        [1, 2, 3, 4, 5, 6],
+        "+ sites 5,6: do the HUD numbers come back?",
+    ),
 ]
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--sites", default="1,2,3,4",
-                        help="site indexes to include (default: 1,2,3,4)")
-    parser.add_argument("--out", default=os.path.normpath(DEFAULT_OUT),
-                        help="output .ips path")
-    parser.add_argument("--bisect", action="store_true",
-                        help="write the HUD bisect variants instead")
+    parser.add_argument(
+        "--sites", default="1,2,3,4", help="site indexes to include (default: 1,2,3,4)"
+    )
+    parser.add_argument("--out", default=os.path.normpath(DEFAULT_OUT), help="output .ips path")
+    parser.add_argument(
+        "--bisect", action="store_true", help="write the HUD bisect variants instead"
+    )
     args = parser.parse_args()
 
     with open(os.path.join(HERE, WIP_NAME), "rb") as f:
@@ -228,8 +240,7 @@ def main():
     ips = build_ips(chosen)
     with open(args.out, "wb") as f:
         f.write(ips)
-    print(f"{len(sites)} site(s), {len(chosen)} changed bytes "
-          f"-> {args.out} ({len(ips)} bytes)")
+    print(f"{len(sites)} site(s), {len(chosen)} changed bytes -> {args.out} ({len(ips)} bytes)")
     for index in sites:
         emitter, note, _c, _d, _t = makefix.SITES[index]
         print(f"  site {index}  rom {emitter:08X}  {note}")

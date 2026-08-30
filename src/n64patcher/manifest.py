@@ -43,8 +43,9 @@ def manifest_path_for(output_path: str) -> str:
 _BLOCK = 4096
 
 
-def diff_runs(before: bytes, after: bytes,
-              max_bytes: int = MAX_RECORDED_BYTES) -> tuple[list[dict[str, Any]], int, bool]:
+def diff_runs(
+    before: bytes, after: bytes, max_bytes: int = MAX_RECORDED_BYTES
+) -> tuple[list[dict[str, Any]], int, bool]:
     """Contiguous differing runs between two images.
 
     Returns (runs, changed_bytes, complete). *complete* is False when the
@@ -71,11 +72,13 @@ def diff_runs(before: bytes, after: bytes,
         total += length
         if total > max_bytes:
             return False
-        runs.append({
-            "offset": start,
-            "old": before[start:min(end, lb)].hex().upper(),
-            "new": after[start:min(end, la)].hex().upper(),
-        })
+        runs.append(
+            {
+                "offset": start,
+                "old": before[start : min(end, lb)].hex().upper(),
+                "new": after[start : min(end, la)].hex().upper(),
+            }
+        )
         return True
 
     i = 0
@@ -100,9 +103,9 @@ def diff_runs(before: bytes, after: bytes,
     return runs, total, True
 
 
-def build_manifest(input_path: str, output_path: str,
-                   applied: Any = None,
-                   stages: list[str] | None = None) -> dict[str, Any]:
+def build_manifest(
+    input_path: str, output_path: str, applied: Any = None, stages: list[str] | None = None
+) -> dict[str, Any]:
     """Describe the difference between an input ROM and its patched output."""
     with open(input_path, "rb") as f:
         before = f.read()
@@ -133,9 +136,12 @@ def build_manifest(input_path: str, output_path: str,
         "changed_bytes": total,
         "changed_runs": len(runs),
         "revertible": complete,
-        "revert_note": "" if complete else (
+        "revert_note": ""
+        if complete
+        else (
             f"Change set exceeds {MAX_RECORDED_BYTES} bytes, so the original "
-            f"bytes were not stored. Keep the input ROM; it was never modified."),
+            f"bytes were not stored. Keep the input ROM; it was never modified."
+        ),
         "runs": runs,
     }
 
@@ -156,20 +162,21 @@ def load_manifest(path: str) -> dict[str, Any]:
     if version != MANIFEST_VERSION:
         raise ValueError(
             f"{os.path.basename(path)}: manifest_version {version!r} is not "
-            f"supported (expected {MANIFEST_VERSION})")
+            f"supported (expected {MANIFEST_VERSION})"
+        )
     return data
 
 
-def revert(patched_path: str, manifest: dict[str, Any],
-           out_path: str) -> tuple[bool, str]:
+def revert(patched_path: str, manifest: dict[str, Any], out_path: str) -> tuple[bool, str]:
     """Undo a manifest's changes, writing the original to *out_path*.
 
     Refuses rather than guessing when the manifest does not describe this
     file, or when it never held the bytes needed to undo.
     """
     if not manifest.get("revertible"):
-        return False, (manifest.get("revert_note")
-                       or "Manifest does not contain the original bytes")
+        return False, (
+            manifest.get("revert_note") or "Manifest does not contain the original bytes"
+        )
 
     with open(patched_path, "rb") as f:
         data = bytearray(f.read())
@@ -179,17 +186,19 @@ def revert(patched_path: str, manifest: dict[str, Any],
     if expect.get("sha1") and expect["sha1"] != actual["sha1"]:
         return False, (
             f"Manifest describes a different file "
-            f"(expected sha1 {expect['sha1'][:16]}..., got {actual['sha1'][:16]}...)")
+            f"(expected sha1 {expect['sha1'][:16]}..., got {actual['sha1'][:16]}...)"
+        )
 
     for run in manifest.get("runs", []):
         offset = run["offset"]
         old = bytes.fromhex(run["old"])
         new = bytes.fromhex(run["new"])
-        if data[offset:offset + len(new)] != new:
+        if data[offset : offset + len(new)] != new:
             return False, (
                 f"Byte run at 0x{offset:X} does not match the manifest; "
-                f"the file has been modified since it was patched")
-        data[offset:offset + len(old)] = old
+                f"the file has been modified since it was patched"
+            )
+        data[offset : offset + len(old)] = old
 
     target_size = manifest.get("input", {}).get("size")
     if isinstance(target_size, int) and target_size != len(data):
@@ -202,8 +211,10 @@ def revert(patched_path: str, manifest: dict[str, Any],
     if want:
         got = datdb.file_hashes(out_path)["sha1"]
         if got != want:
-            return False, (f"Reverted file does not match the recorded original "
-                           f"(sha1 {got[:16]}... != {want[:16]}...)")
+            return False, (
+                f"Reverted file does not match the recorded original "
+                f"(sha1 {got[:16]}... != {want[:16]}...)"
+            )
     return True, f"Reverted to {os.path.basename(out_path)} (sha1 verified)"
 
 

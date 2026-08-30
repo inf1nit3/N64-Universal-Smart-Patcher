@@ -4,6 +4,7 @@ DAT files key on hashes of the *file*, unrelated to the N64 boot checksums
 the patch database matches on. A ROM can be a verified dump with no patch
 recipe, and vice versa - these tests keep the two straight.
 """
+
 import os
 import tempfile
 import unittest
@@ -16,8 +17,9 @@ from n64patcher import n64_core as core
 from tests.test_n64_core import make_synthetic_rom
 
 
-def write_dat(directory, name="test.dat", games=(), header="Test DAT",
-              version="1.0", root_tag="datafile"):
+def write_dat(
+    directory, name="test.dat", games=(), header="Test DAT", version="1.0", root_tag="datafile"
+):
     root = ET.Element(root_tag)
     hdr = ET.SubElement(root, "header")
     ET.SubElement(hdr, "name").text = header
@@ -32,6 +34,7 @@ def write_dat(directory, name="test.dat", games=(), header="Test DAT",
 
 def hashes_of(data):
     import hashlib
+
     return {
         "crc32": f"{zlib.crc32(data) & 0xFFFFFFFF:08X}",
         "md5": hashlib.md5(data).hexdigest().upper(),
@@ -50,8 +53,7 @@ class DatTestBase(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
         # ...nor the real ~/.n64patcher/dats.
-        p2 = mock.patch.object(datdb, "USER_DAT_DIR",
-                               os.path.join(self.tmp.name, "no_such_dir"))
+        p2 = mock.patch.object(datdb, "USER_DAT_DIR", os.path.join(self.tmp.name, "no_such_dir"))
         p2.start()
         self.addCleanup(p2.stop)
 
@@ -82,11 +84,21 @@ class TestFileHashes(DatTestBase):
 
 class TestParseDat(DatTestBase):
     def test_parses_games_and_header(self):
-        p = write_dat(self.tmp.name, games=[
-            ("Super Mario 64 (USA)", {"name": "smb.z64", "size": "8388608",
-                                      "crc": "4EAA3D0E", "md5": "AA" * 16,
-                                      "sha1": "BB" * 20}),
-        ])
+        p = write_dat(
+            self.tmp.name,
+            games=[
+                (
+                    "Super Mario 64 (USA)",
+                    {
+                        "name": "smb.z64",
+                        "size": "8388608",
+                        "crc": "4EAA3D0E",
+                        "md5": "AA" * 16,
+                        "sha1": "BB" * 20,
+                    },
+                ),
+            ],
+        )
         out = datdb.parse_dat(p)
         self.assertEqual(out["name"], "Test DAT")
         self.assertEqual(len(out["entries"]), 1)
@@ -94,25 +106,29 @@ class TestParseDat(DatTestBase):
         self.assertEqual(out["entries"][0]["size"], 8388608)
 
     def test_hashes_are_uppercased(self):
-        p = write_dat(self.tmp.name, games=[
-            ("G", {"name": "g.z64", "crc": "abcdef01", "md5": "aa" * 16,
-                   "sha1": "bb" * 20}),
-        ])
+        p = write_dat(
+            self.tmp.name,
+            games=[
+                ("G", {"name": "g.z64", "crc": "abcdef01", "md5": "aa" * 16, "sha1": "bb" * 20}),
+            ],
+        )
         entry = datdb.parse_dat(p)["entries"][0]
         self.assertEqual(entry["crc32"], "ABCDEF01")
         self.assertEqual(entry["md5"], "AA" * 16)
 
     def test_rom_without_any_hash_skipped(self):
-        p = write_dat(self.tmp.name, games=[
-            ("NoHash", {"name": "a.z64", "size": "1"}),
-            ("HasHash", {"name": "b.z64", "crc": "11111111"}),
-        ])
+        p = write_dat(
+            self.tmp.name,
+            games=[
+                ("NoHash", {"name": "a.z64", "size": "1"}),
+                ("HasHash", {"name": "b.z64", "crc": "11111111"}),
+            ],
+        )
         entries = datdb.parse_dat(p)["entries"]
         self.assertEqual([e["game"] for e in entries], ["HasHash"])
 
     def test_wrong_root_element_rejected(self):
-        p = write_dat(self.tmp.name, root_tag="mame",
-                      games=[("G", {"name": "g", "crc": "1"})])
+        p = write_dat(self.tmp.name, root_tag="mame", games=[("G", {"name": "g", "crc": "1"})])
         with self.assertRaises(datdb.DatError) as ctx:
             datdb.parse_dat(p)
         self.assertIn("expected <datafile>", str(ctx.exception))
@@ -133,10 +149,19 @@ class TestParseDat(DatTestBase):
 class TestDatIndex(DatTestBase):
     def _index(self, data, game="A Game"):
         h = hashes_of(data)
-        p = write_dat(self.tmp.name, games=[
-            (game, {"name": "g.z64", "size": str(len(data)), **{
-                "crc": h["crc32"], "md5": h["md5"], "sha1": h["sha1"]}}),
-        ])
+        p = write_dat(
+            self.tmp.name,
+            games=[
+                (
+                    game,
+                    {
+                        "name": "g.z64",
+                        "size": str(len(data)),
+                        **{"crc": h["crc32"], "md5": h["md5"], "sha1": h["sha1"]},
+                    },
+                ),
+            ],
+        )
         return datdb.load_dats([p]), h
 
     def test_lookup_by_each_hash(self):
@@ -159,10 +184,13 @@ class TestDatIndex(DatTestBase):
         """CRC32 collides in 4 billion; the strongest hash must decide."""
         _, data = self._rom()
         h = hashes_of(data)
-        p = write_dat(self.tmp.name, games=[
-            ("Right", {"name": "r.z64", "sha1": h["sha1"]}),
-            ("Wrong", {"name": "w.z64", "crc": h["crc32"]}),
-        ])
+        p = write_dat(
+            self.tmp.name,
+            games=[
+                ("Right", {"name": "r.z64", "sha1": h["sha1"]}),
+                ("Wrong", {"name": "w.z64", "crc": h["crc32"]}),
+            ],
+        )
         index = datdb.load_dats([p])
         hit = index.lookup(crc32=h["crc32"], sha1=h["sha1"])
         self.assertEqual(hit["game"], "Right")
@@ -172,16 +200,14 @@ class TestDatIndex(DatTestBase):
 
     def test_missing_file_reported_not_raised(self):
         problems = []
-        index = datdb.load_dats([os.path.join(self.tmp.name, "nope.dat")],
-                                on_error=problems.append)
+        index = datdb.load_dats([os.path.join(self.tmp.name, "nope.dat")], on_error=problems.append)
         self.assertFalse(index)
         self.assertTrue(any("not found" in p for p in problems))
 
     def test_bad_dat_does_not_stop_a_good_one(self):
         _, data = self._rom()
         h = hashes_of(data)
-        good = write_dat(self.tmp.name, "good.dat",
-                         games=[("G", {"name": "g", "sha1": h["sha1"]})])
+        good = write_dat(self.tmp.name, "good.dat", games=[("G", {"name": "g", "sha1": h["sha1"]})])
         bad = os.path.join(self.tmp.name, "bad.dat")
         with open(bad, "w", encoding="utf-8") as f:
             f.write("<datafile><broken")
@@ -199,8 +225,9 @@ class TestDatCache(DatTestBase):
 
         first = datdb.load_dats([p])
         self.assertEqual(len(os.listdir(self.cache.name)), 1)
-        with mock.patch.object(datdb, "parse_dat",
-                               side_effect=AssertionError("should not re-parse")):
+        with mock.patch.object(
+            datdb, "parse_dat", side_effect=AssertionError("should not re-parse")
+        ):
             second = datdb.load_dats([p])
         self.assertEqual(len(first), len(second))
         self.assertIsNotNone(second.lookup(sha1=h["sha1"]))
@@ -211,8 +238,9 @@ class TestDatCache(DatTestBase):
         p = write_dat(self.tmp.name, games=[("Old", {"name": "g", "sha1": h["sha1"]})])
         datdb.load_dats([p])
 
-        write_dat(self.tmp.name, os.path.basename(p),
-                  games=[("New", {"name": "g", "sha1": h["sha1"]})])
+        write_dat(
+            self.tmp.name, os.path.basename(p), games=[("New", {"name": "g", "sha1": h["sha1"]})]
+        )
         os.utime(p, (0, 0))  # force a different mtime
         index = datdb.load_dats([p])
         self.assertEqual(index.lookup(sha1=h["sha1"])["game"], "New")
@@ -233,8 +261,9 @@ class TestInspectionIntegration(DatTestBase):
     def test_verified_dump_is_reported(self):
         path, data = self._rom()
         h = hashes_of(data)
-        p = write_dat(self.tmp.name, games=[
-            ("Test Game (USA)", {"name": "g.z64", "sha1": h["sha1"]})])
+        p = write_dat(
+            self.tmp.name, games=[("Test Game (USA)", {"name": "g.z64", "sha1": h["sha1"]})]
+        )
         index = datdb.load_dats([p])
         info = core.inspect_rom_details(path, dat=index)
         self.assertEqual(info["dump_status"], "verified")
@@ -242,8 +271,9 @@ class TestInspectionIntegration(DatTestBase):
 
     def test_unlisted_dump_is_flagged(self):
         path, _ = self._rom()
-        other = write_dat(self.tmp.name, games=[
-            ("Something Else", {"name": "x.z64", "sha1": "00" * 20})])
+        other = write_dat(
+            self.tmp.name, games=[("Something Else", {"name": "x.z64", "sha1": "00" * 20})]
+        )
         info = core.inspect_rom_details(path, dat=datdb.load_dats([other]))
         self.assertEqual(info["dump_status"], "unknown")
         self.assertEqual(info["dump_name"], "")
@@ -251,8 +281,9 @@ class TestInspectionIntegration(DatTestBase):
     def test_no_dat_means_no_status_and_no_hashing(self):
         """Without a DAT the lookup must not silently cost a full read."""
         path, _ = self._rom()
-        with mock.patch.object(datdb, "file_hashes",
-                               side_effect=AssertionError("hashed without need")):
+        with mock.patch.object(
+            datdb, "file_hashes", side_effect=AssertionError("hashed without need")
+        ):
             info = core.inspect_rom_details(path)
         self.assertEqual(info["dump_status"], "")
 

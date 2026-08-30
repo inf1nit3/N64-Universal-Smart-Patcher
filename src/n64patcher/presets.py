@@ -2,6 +2,7 @@
 presets.py
 Presets profiles for the Universal N64 Smart Patcher.
 """
+
 from dataclasses import dataclass, field
 
 from . import n64_core as core
@@ -67,17 +68,16 @@ PRESETS: dict[str, Preset] = {
             no_gamma=False,
             hires=False,
         ),
-        warnings=["Always verify competition rules before using patched ROMs in official leaderboards."],
+        warnings=[
+            "Always verify competition rules before using patched ROMs in official leaderboards."
+        ],
     ),
 }
 
 
 def list_presets() -> list[dict[str, str]]:
     """Returns a list of dictionaries with preset keys, names, and descriptions."""
-    return [
-        {"key": p.key, "name": p.name, "description": p.description}
-        for p in PRESETS.values()
-    ]
+    return [{"key": p.key, "name": p.name, "description": p.description} for p in PRESETS.values()]
 
 
 def apply_preset(preset_key: str) -> core.PatchOptions:

@@ -132,7 +132,8 @@ def validate_entry(entry: Any, source: str = "<memory>") -> dict[str, Any]:
             # would leave a half-patched ROM, which is worse than skipping.
             raise PatchDBError(
                 f"{entry_id}: operation {i} has unknown type {op_type!r} "
-                f"(known: {', '.join(KNOWN_OPERATIONS)})")
+                f"(known: {', '.join(KNOWN_OPERATIONS)})"
+            )
         if op_type == "xdelta" and not isinstance(op.get("file"), str):
             raise PatchDBError(f"{entry_id}: xdelta operation needs a 'file'")
         if op_type == "poke":
@@ -152,8 +153,8 @@ def validate_entry(entry: Any, source: str = "<memory>") -> dict[str, Any]:
     unknown = [p for p in provides if p not in KNOWN_CAPABILITIES]
     if unknown:
         raise PatchDBError(
-            f"{entry_id}: unknown capability {unknown!r} "
-            f"(known: {', '.join(KNOWN_CAPABILITIES)})")
+            f"{entry_id}: unknown capability {unknown!r} (known: {', '.join(KNOWN_CAPABILITIES)})"
+        )
 
     return {
         "id": entry_id,
@@ -168,19 +169,21 @@ def validate_entry(entry: Any, source: str = "<memory>") -> dict[str, Any]:
     }
 
 
-def load_patch_db(dirs: list[str] | None = None,
-                  on_error: Any = None) -> dict[tuple[int, int], dict[str, Any]]:
+def load_patch_db(
+    dirs: list[str] | None = None, on_error: Any = None
+) -> dict[tuple[int, int], dict[str, Any]]:
     """Load and merge every recipe file. Returns {(crc1, crc2): entry}.
 
     *on_error* is called with a human-readable string for each problem found;
     loading continues regardless.
     """
+
     def report(msg: str) -> None:
         if on_error is not None:
             on_error(msg)
 
     db: dict[tuple[int, int], dict[str, Any]] = {}
-    for directory in (dirs if dirs is not None else patch_dirs()):
+    for directory in dirs if dirs is not None else patch_dirs():
         if not os.path.isdir(directory):
             continue
         for name in sorted(os.listdir(directory)):
@@ -195,8 +198,10 @@ def load_patch_db(dirs: list[str] | None = None,
 
             version = data.get("schema_version")
             if version != SCHEMA_VERSION:
-                report(f"patch db: {name}: schema_version {version!r} is not "
-                       f"supported (expected {SCHEMA_VERSION}), file skipped")
+                report(
+                    f"patch db: {name}: schema_version {version!r} is not "
+                    f"supported (expected {SCHEMA_VERSION}), file skipped"
+                )
                 continue
 
             for raw in data.get("patches", []):
@@ -209,11 +214,11 @@ def load_patch_db(dirs: list[str] | None = None,
     return db
 
 
-def entries_providing(db: dict[tuple[int, int], dict[str, Any]],
-                      capability: str) -> list[dict[str, Any]]:
+def entries_providing(
+    db: dict[tuple[int, int], dict[str, Any]], capability: str
+) -> list[dict[str, Any]]:
     """Every entry advertising *capability*, sorted by id."""
-    return sorted((e for e in db.values() if capability in e["provides"]),
-                  key=lambda e: e["id"])
+    return sorted((e for e in db.values() if capability in e["provides"]), key=lambda e: e["id"])
 
 
 def describe(db: dict[tuple[int, int], dict[str, Any]]) -> str:
@@ -225,8 +230,7 @@ def describe(db: dict[tuple[int, int], dict[str, Any]]) -> str:
         caps = ", ".join(entry["provides"]) or "-"
         lines.append(f"  {entry['id']}")
         lines.append(f"    {entry['name']}")
-        lines.append(f"    match: {entry['crc1']:08X}/{entry['crc2']:08X}"
-                     f"   provides: {caps}")
+        lines.append(f"    match: {entry['crc1']:08X}/{entry['crc2']:08X}   provides: {caps}")
         ops = ", ".join(op["type"] for op in entry["operations"])
         lines.append(f"    operations: {ops}   from: {entry['origin']}")
         if entry["notes"]:

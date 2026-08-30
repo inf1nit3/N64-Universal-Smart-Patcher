@@ -1,4 +1,5 @@
 """Unit tests for header_utils (scene-header strip, CRC fix, header info)."""
+
 import os
 import tempfile
 import unittest
@@ -34,8 +35,9 @@ class TestSceneHeaderStrip(HeaderTestBase):
         res = detect_and_strip_scene_header(src, out)
         self.assertFalse(res["stripped"])
         self.assertEqual(res["header_size"], 0)
-        self.assertFalse(os.path.exists(out),
-                         "no output file may be created when nothing is stripped")
+        self.assertFalse(
+            os.path.exists(out), "no output file may be created when nothing is stripped"
+        )
 
     def test_strip_512(self):
         rom = make_synthetic_rom()
@@ -50,7 +52,7 @@ class TestSceneHeaderStrip(HeaderTestBase):
 
     def test_strip_1024(self):
         rom = make_synthetic_rom()
-        prefixed = b"PARADOX!" + b"\xAA" * (1024 - 8) + rom
+        prefixed = b"PARADOX!" + b"\xaa" * (1024 - 8) + rom
         src = self._write("scene1024.z64", prefixed)
         out = os.path.join(self.tmp.name, "stripped.z64")
         res = detect_and_strip_scene_header(src, out)
@@ -62,10 +64,8 @@ class TestSceneHeaderStrip(HeaderTestBase):
     def test_detect_sizes(self):
         rom = make_synthetic_rom()
         self.assertEqual(detect_scene_header(self._write("a.z64", rom)), 0)
-        self.assertEqual(detect_scene_header(
-            self._write("b.z64", b"\x00" * 512 + rom)), 512)
-        self.assertEqual(detect_scene_header(
-            self._write("c.z64", b"\x00" * 896 + rom)), 896)
+        self.assertEqual(detect_scene_header(self._write("b.z64", b"\x00" * 512 + rom)), 512)
+        self.assertEqual(detect_scene_header(self._write("c.z64", b"\x00" * 896 + rom)), 896)
 
     def test_unknown_format(self):
         src = self._write("junk.z64", b"\x00" * 2000)
@@ -85,7 +85,7 @@ class TestGetRomInfo(HeaderTestBase):
         self.assertEqual(info["title"], "INFO GAME")
         self.assertEqual(info["crc1"], "DEADBEEF")
         self.assertEqual(info["crc2"], "12345678")
-        self.assertEqual(info["version"], 0x42)          # 0x3F = version
+        self.assertEqual(info["version"], 0x42)  # 0x3F = version
         self.assertEqual(info["region"], core.REGION_MAP["E"])  # 0x3E = country
 
     def test_fields_behind_scene_header(self):
@@ -133,8 +133,10 @@ class TestFixRomCrcTrustsTheFileNotTheTool(HeaderTestBase):
         self.assertFalse(core.crc_header_is_valid(p), "fixture should start invalid")
         res = fix_rom_crc(p)
         self.assertEqual(res["status"], "fixed", res)
-        self.assertTrue(core.crc_header_is_valid(p),
-                        f"reported {res['message']!r} but checksums are still wrong")
+        self.assertTrue(
+            core.crc_header_is_valid(p),
+            f"reported {res['message']!r} but checksums are still wrong",
+        )
 
     def test_falls_back_when_tool_exits_zero_without_doing_anything(self):
         p = self._write("rom.z64", make_cic6102_rom())
@@ -149,8 +151,10 @@ class TestFixRomCrcTrustsTheFileNotTheTool(HeaderTestBase):
         def fake_run(*args, **kwargs):
             return FakeResult()
 
-        with mock.patch.object(core, "_is_runnable", lambda _p: True), \
-             mock.patch("n64patcher.header_utils.subprocess.run", fake_run):
+        with (
+            mock.patch.object(core, "_is_runnable", lambda _p: True),
+            mock.patch("n64patcher.header_utils.subprocess.run", fake_run),
+        ):
             res = fix_rom_crc(p)
 
         self.assertEqual(res["status"], "fixed", res)

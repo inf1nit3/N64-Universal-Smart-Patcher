@@ -20,6 +20,7 @@ try:
     from PyQt6.QtWidgets import QApplication
 
     from n64patcher import gui
+
     HAVE_QT = True
 except ImportError:  # pragma: no cover - environment without PyQt6
     HAVE_QT = False
@@ -49,6 +50,7 @@ def drain_hires_scan(win):
 
 def make_rom(directory, name, crc):
     from tests.test_n64_core import make_synthetic_rom
+
     rom = bytearray(make_synthetic_rom(vi_tables=0, size=0x4000))
     rom[0x10:0x14] = crc[0].to_bytes(4, "big")
     rom[0x14:0x18] = crc[1].to_bytes(4, "big")
@@ -70,14 +72,12 @@ class TestMenuBarAndShortcuts(unittest.TestCase):
             self.assertIn(expected, titles)
 
     def test_run_controls_are_connected(self):
-        for action in (self.win.act_start, self.win.act_inspect,
-                       self.win.act_cancel):
+        for action in (self.win.act_start, self.win.act_inspect, self.win.act_cancel):
             self.assertGreater(action.receivers(action.triggered), 0)
 
     def test_run_controls_carry_shortcuts(self):
         for action in (self.win.act_start, self.win.act_inspect):
-            self.assertFalse(action.shortcut().isEmpty(),
-                             f"{action.text()} has no shortcut")
+            self.assertFalse(action.shortcut().isEmpty(), f"{action.text()} has no shortcut")
 
     def test_cancel_starts_disabled_and_tracks_the_run(self):
         self.assertFalse(self.win.act_cancel.isEnabled())
@@ -126,8 +126,7 @@ class TestOutputFolder(unittest.TestCase):
         self.assertEqual(self.win._patch_output_dir(), None)
 
     def test_choosing_a_folder_updates_the_field_and_settings(self):
-        with mock.patch.object(gui.QFileDialog, "getExistingDirectory",
-                               return_value=self.tmp.name):
+        with mock.patch.object(gui.QFileDialog, "getExistingDirectory", return_value=self.tmp.name):
             self.win.choose_output_dir()
         self.assertEqual(self.win.output_dir_edit.text(), self.tmp.name)
         self.assertEqual(self.win._patch_output_dir(), self.tmp.name)
@@ -136,8 +135,7 @@ class TestOutputFolder(unittest.TestCase):
         self.assertEqual(stored.value("output_dir", type=str), self.tmp.name)
 
     def test_reset_clears_field_and_setting(self):
-        with mock.patch.object(gui.QFileDialog, "getExistingDirectory",
-                               return_value=self.tmp.name):
+        with mock.patch.object(gui.QFileDialog, "getExistingDirectory", return_value=self.tmp.name):
             self.win.choose_output_dir()
         self.win.reset_output_dir()
         self.assertEqual(self.win.output_dir_edit.text(), "")
@@ -157,8 +155,7 @@ class TestOutputFolder(unittest.TestCase):
         self.assertEqual(win.output_dir_edit.text(), "")
 
     def test_the_folder_reaches_the_patch_worker(self):
-        with mock.patch.object(gui.QFileDialog, "getExistingDirectory",
-                               return_value=self.tmp.name):
+        with mock.patch.object(gui.QFileDialog, "getExistingDirectory", return_value=self.tmp.name):
             self.win.choose_output_dir()
         rom = make_rom(self.tmp.name, "plain.z64", (0xDEADBEEF, 0x12345678))
         self.win.rom_list = [rom]

@@ -3,6 +3,7 @@
 PyInstaller needs a script path, not a console-script entry point, so the
 frozen build starts here and immediately hands over to the package.
 """
+
 import sys
 
 from n64patcher.cli import main

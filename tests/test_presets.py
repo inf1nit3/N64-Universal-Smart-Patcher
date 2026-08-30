@@ -1,4 +1,5 @@
 """Unit tests for presets (immutability guarantees)."""
+
 import unittest
 
 from n64patcher import n64_core as core

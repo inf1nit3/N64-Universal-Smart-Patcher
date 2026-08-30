@@ -15,15 +15,14 @@ from n64patcher import savegame as sg
 def oot_save(slots=2):
     """A synthetic Ocarina of Time SRAM save: the fixed header the game
     always writes, plus a marker for each save slot the player created."""
-    blob = bytearray(b"\xFF" * (32 * 1024))
-    blob[:len(sg.OOT_HEADER)] = sg.OOT_HEADER
+    blob = bytearray(b"\xff" * (32 * 1024))
+    blob[: len(sg.OOT_HEADER)] = sg.OOT_HEADER
     for off in sg.OOT_MARKER_OFFSETS[:slots]:
-        blob[off:off + len(sg.OOT_MARKER)] = sg.OOT_MARKER
+        blob[off : off + len(sg.OOT_MARKER)] = sg.OOT_MARKER
     return bytes(blob)
 
 
 class TestSaveKinds(unittest.TestCase):
-
     def test_sizes_are_the_hardware_sizes(self):
         expected = {
             sg.EEPROM_4K: 512,
@@ -46,15 +45,14 @@ class TestSaveKinds(unittest.TestCase):
         self.assertEqual(sg.kinds_for_size(1234), [])
 
     def test_extension_lookup(self):
-        self.assertEqual([k.key for k in sg.kinds_for_extension("/x/game.fla")],
-                         [sg.FLASHRAM_1M])
-        self.assertEqual({k.key for k in sg.kinds_for_extension("/x/GAME.EEP")},
-                         {sg.EEPROM_4K, sg.EEPROM_16K})
+        self.assertEqual([k.key for k in sg.kinds_for_extension("/x/game.fla")], [sg.FLASHRAM_1M])
+        self.assertEqual(
+            {k.key for k in sg.kinds_for_extension("/x/GAME.EEP")}, {sg.EEPROM_4K, sg.EEPROM_16K}
+        )
         self.assertEqual(sg.kinds_for_extension("/x/game.z64"), [])
 
 
 class TestByteOrder(unittest.TestCase):
-
     SAMPLE = bytes(range(64))
 
     def test_word_swap_reverses_groups_of_four(self):
@@ -77,8 +75,7 @@ class TestByteOrder(unittest.TestCase):
     def test_trailing_partial_group_is_left_alone(self):
         """A file whose length is not a multiple of 4 is already suspect;
         padding it to complete a group would change its size."""
-        self.assertEqual(sg.swap_words(b"\x01\x02\x03\x04\xAA\xBB"),
-                         b"\x04\x03\x02\x01\xAA\xBB")
+        self.assertEqual(sg.swap_words(b"\x01\x02\x03\x04\xaa\xbb"), b"\x04\x03\x02\x01\xaa\xbb")
         self.assertEqual(sg.swap_halfwords(b"\x01\x02\x03"), b"\x02\x01\x03")
 
     def test_convert_between_two_non_raw_orders(self):
@@ -87,12 +84,10 @@ class TestByteOrder(unittest.TestCase):
         as_half = sg.convert_order(as_word, sg.ORDER_WORD, sg.ORDER_HALF)
         self.assertEqual(as_half, sg.reorder(original, sg.ORDER_HALF))
         # ... and back again
-        self.assertEqual(
-            sg.convert_order(as_half, sg.ORDER_HALF, sg.ORDER_WORD), as_word)
+        self.assertEqual(sg.convert_order(as_half, sg.ORDER_HALF, sg.ORDER_WORD), as_word)
 
     def test_converting_to_the_same_order_is_a_copy(self):
-        self.assertEqual(sg.convert_order(self.SAMPLE, sg.ORDER_WORD,
-                                          sg.ORDER_WORD), self.SAMPLE)
+        self.assertEqual(sg.convert_order(self.SAMPLE, sg.ORDER_WORD, sg.ORDER_WORD), self.SAMPLE)
 
     def test_unknown_order_is_rejected(self):
         with self.assertRaises(ValueError):
@@ -102,7 +97,6 @@ class TestByteOrder(unittest.TestCase):
 
 
 class TestStructureScore(unittest.TestCase):
-
     def test_big_endian_small_integers_score_positive(self):
         self.assertGreater(sg.structure_score(b"\x00\x00\x00\x01"), 0)
 
@@ -113,14 +107,13 @@ class TestStructureScore(unittest.TestCase):
         """Zeroed structures and erased chip read identically in every
         arrangement, so counting them would only add noise."""
         self.assertEqual(sg.structure_score(b"\x00" * 64), 0)
-        self.assertEqual(sg.structure_score(b"\xFF" * 64), 0)
+        self.assertEqual(sg.structure_score(b"\xff" * 64), 0)
 
     def test_a_trailing_partial_group_is_ignored(self):
         self.assertEqual(sg.structure_score(b"\x00\x00\x01"), 0)
 
 
 class TestOrderDetection(unittest.TestCase):
-
     def _save(self):
         """Stand-in for a real save: erased chip, a few player-facing
         strings, and the counters and offsets that carry the byte order."""
@@ -129,7 +122,7 @@ class TestOrderDetection(unittest.TestCase):
         blob[0x40:0x45] = b"EMPTY"
         for i in range(16):
             # small big-endian values: star counts, flags, offsets
-            blob[0x100 + i * 4:0x104 + i * 4] = (i + 1).to_bytes(4, "big")
+            blob[0x100 + i * 4 : 0x104 + i * 4] = (i + 1).to_bytes(4, "big")
         return bytes(blob)
 
     def test_printable_text_carries_no_order_information(self):
@@ -140,8 +133,7 @@ class TestOrderDetection(unittest.TestCase):
         printable = sum(1 for b in text if 0x20 <= b <= 0x7E)
         for order in sg.ORDERS:
             swapped = sg.reorder(text, order)
-            self.assertEqual(sum(1 for b in swapped if 0x20 <= b <= 0x7E),
-                             printable, order)
+            self.assertEqual(sum(1 for b in swapped if 0x20 <= b <= 0x7E), printable, order)
 
     def test_chip_order_is_recognised(self):
         guess = sg.detect_order(self._save())
@@ -191,7 +183,6 @@ class TestOrderDetection(unittest.TestCase):
 
 
 class TestNormalizeSize(unittest.TestCase):
-
     def test_exact_size_is_untouched(self):
         kind = sg.SAVE_KINDS_BY_KEY[sg.EEPROM_4K]
         data = bytes(range(256)) * 2
@@ -219,7 +210,7 @@ class TestNormalizeSize(unittest.TestCase):
 
     def test_trailing_erased_padding_is_trimmed(self):
         kind = sg.SAVE_KINDS_BY_KEY[sg.EEPROM_4K]
-        data = b"\x01" * kind.size + b"\xFF" * 64
+        data = b"\x01" * kind.size + b"\xff" * 64
         self.assertEqual(sg.normalize_size(data, kind), b"\x01" * kind.size)
 
     def test_trimming_real_data_is_refused(self):
@@ -233,11 +224,9 @@ class TestNormalizeSize(unittest.TestCase):
 
 
 class TestSources(unittest.TestCase):
-
     def test_the_flashcart_writes_chip_order_for_every_chip(self):
         for kind in sg.SAVE_KINDS:
-            self.assertEqual(sg.order_for_source("sc64", kind), sg.ORDER_RAW,
-                             kind.key)
+            self.assertEqual(sg.order_for_source("sc64", kind), sg.ORDER_RAW, kind.key)
 
     def test_one_tool_can_disagree_with_itself(self):
         """The measurement that shaped this whole model: mupen64plus writes
@@ -252,8 +241,7 @@ class TestSources(unittest.TestCase):
         }
         for kind_key, order in expected.items():
             kind = sg.SAVE_KINDS_BY_KEY[kind_key]
-            self.assertEqual(sg.order_for_source("mupen64plus", kind), order,
-                             kind_key)
+            self.assertEqual(sg.order_for_source("mupen64plus", kind), order, kind_key)
 
     def test_an_unmeasured_chip_type_is_refused_not_inferred(self):
         pak = sg.SAVE_KINDS_BY_KEY[sg.CONTROLLER_PAK]
@@ -278,14 +266,13 @@ class TestSources(unittest.TestCase):
 
 
 class TestOcarinaOfTimeCheck(unittest.TestCase):
-
     def _save(self, slots=2):
         return oot_save(slots)
 
     def test_the_header_and_both_slots_are_checked(self):
         result = sg.check_oot(self._save())
         self.assertTrue(result.ok)
-        self.assertEqual(result.valid, 3)   # header + two slots
+        self.assertEqual(result.valid, 3)  # header + two slots
 
     def test_a_save_with_no_slots_yet_is_valid_not_broken(self):
         """Two of the six real saves examined were exactly this: the game
@@ -293,7 +280,7 @@ class TestOcarinaOfTimeCheck(unittest.TestCase):
         Reading them as damaged was this checker's first mistake."""
         result = sg.check_oot(self._save(slots=0))
         self.assertTrue(result.ok)
-        self.assertEqual(result.valid, 1)   # the header alone
+        self.assertEqual(result.valid, 1)  # the header alone
         self.assertEqual(result.unused, 2)
 
     def test_a_foreign_file_of_the_right_size_is_rejected(self):
@@ -309,7 +296,7 @@ class TestOcarinaOfTimeCheck(unittest.TestCase):
         self.assertFalse(sg.check_oot(sg.swap_words(self._save())).ok)
 
     def test_an_untouched_chip_is_empty_not_broken(self):
-        result = sg.check_oot(b"\xFF" * (32 * 1024))
+        result = sg.check_oot(b"\xff" * (32 * 1024))
         self.assertEqual((result.valid, result.invalid), (0, 0))
 
 
@@ -317,14 +304,14 @@ class TestFlashRamGames(unittest.TestCase):
     """The two FlashRAM titles that settled that chip's byte order."""
 
     def _mm(self, copies=2):
-        blob = bytearray(b"\xFF" * (128 * 1024))
+        blob = bytearray(b"\xff" * (128 * 1024))
         for off in sg.MM_MARKER_OFFSETS[:copies]:
-            blob[off:off + len(sg.MM_MARKER)] = sg.MM_MARKER
+            blob[off : off + len(sg.MM_MARKER)] = sg.MM_MARKER
         return bytes(blob)
 
     def _pm(self):
-        blob = bytearray(b"\xFF" * (128 * 1024))
-        blob[:len(sg.PM_MARKER)] = sg.PM_MARKER
+        blob = bytearray(b"\xff" * (128 * 1024))
+        blob[: len(sg.PM_MARKER)] = sg.PM_MARKER
         return bytes(blob)
 
     def test_majoras_mask_marker_and_its_copy(self):
@@ -350,25 +337,25 @@ class TestFlashRamGames(unittest.TestCase):
     def test_both_reject_the_wrong_size(self):
         for checker in (sg.check_mm, sg.check_paper_mario):
             with self.assertRaises(sg.SaveError):
-                checker(b"\xFF" * (32 * 1024))
+                checker(b"\xff" * (32 * 1024))
 
     def test_an_untouched_chip_is_empty_not_broken(self):
         for checker in (sg.check_mm, sg.check_paper_mario):
-            result = checker(b"\xFF" * (128 * 1024))
+            result = checker(b"\xff" * (128 * 1024))
             self.assertEqual((result.valid, result.invalid), (0, 0))
 
     def test_flashram_conversion_is_verified_end_to_end(self):
         kind = sg.SAVE_KINDS_BY_KEY[sg.FLASHRAM_1M]
         emulator_file = sg.swap_words(self._mm())
-        result = sg.convert_save(emulator_file, kind, "mupen64plus", "sc64",
-                                 game="The Legend of Zelda: Majora's Mask")
+        result = sg.convert_save(
+            emulator_file, kind, "mupen64plus", "sc64", game="The Legend of Zelda: Majora's Mask"
+        )
         self.assertTrue(result.changed)
         self.assertEqual(result.data, self._mm())
         self.assertTrue(result.check.ok)
 
 
 class TestIdentifyGame(unittest.TestCase):
-
     def _oot(self, order=sg.ORDER_RAW):
         return sg.reorder(oot_save(), order)
 
@@ -378,21 +365,25 @@ class TestIdentifyGame(unittest.TestCase):
         """A renamed save must still be recognised. Name matching alone
         loses the validation exactly when files are being moved around,
         which is when it is needed."""
-        self.assertEqual(sg.identify_game("/x/backup-01.bin", self.SRAM, self._oot()),
-                         "The Legend of Zelda: Ocarina of Time")
+        self.assertEqual(
+            sg.identify_game("/x/backup-01.bin", self.SRAM, self._oot()),
+            "The Legend of Zelda: Ocarina of Time",
+        )
 
     def test_recognised_even_while_still_in_the_source_order(self):
         """Identification happens before conversion, so the file is still
         arranged the way the emulator wrote it."""
         self.assertEqual(
             sg.identify_game("/x/anything.sra", self.SRAM, self._oot(sg.ORDER_WORD)),
-            "The Legend of Zelda: Ocarina of Time")
+            "The Legend of Zelda: Ocarina of Time",
+        )
 
     def test_the_name_still_helps_when_contents_do_not(self):
-        empty = b"\xFF" * (32 * 1024)
+        empty = b"\xff" * (32 * 1024)
         self.assertEqual(
             sg.identify_game("/x/Ocarina of Time.sav", self.SRAM, empty),
-            "The Legend of Zelda: Ocarina of Time")
+            "The Legend of Zelda: Ocarina of Time",
+        )
 
     def test_a_game_is_only_considered_for_its_own_chip(self):
         """Otherwise a 32 KiB file would match both SRAM and Controller Pak
@@ -401,25 +392,20 @@ class TestIdentifyGame(unittest.TestCase):
         self.assertIsNone(sg.identify_game("/x/zelda.mpk", pak, self._oot()))
 
     def test_unknown_data_yields_nothing(self):
-        self.assertIsNone(sg.identify_game("/x/mystery.sra", self.SRAM,
-                                           bytes(range(256)) * 128))
+        self.assertIsNone(sg.identify_game("/x/mystery.sra", self.SRAM, bytes(range(256)) * 128))
 
 
 class TestKindForFile(unittest.TestCase):
-
     def test_a_unique_size_is_enough(self):
-        self.assertEqual(sg.kind_for_file("/x/a.bin", b"\x00" * 512).key,
-                         sg.EEPROM_4K)
+        self.assertEqual(sg.kind_for_file("/x/a.bin", b"\x00" * 512).key, sg.EEPROM_4K)
 
     def test_the_extension_settles_an_ambiguous_size(self):
-        self.assertEqual(sg.kind_for_file("/x/a.sra", b"\x00" * 32768).key,
-                         sg.SRAM_256K)
+        self.assertEqual(sg.kind_for_file("/x/a.sra", b"\x00" * 32768).key, sg.SRAM_256K)
 
     def test_contents_settle_what_the_flashcart_naming_cannot(self):
         """Every save on the card is called .sav whatever the chip, so the
         commonest real file has no extension to go on."""
-        self.assertEqual(sg.kind_for_file("/x/game.sav", oot_save()).key,
-                         sg.SRAM_256K)
+        self.assertEqual(sg.kind_for_file("/x/game.sav", oot_save()).key, sg.SRAM_256K)
 
     def test_a_genuinely_ambiguous_file_is_refused(self):
         with self.assertRaises(sg.SaveError) as ctx:
@@ -428,9 +414,9 @@ class TestKindForFile(unittest.TestCase):
 
     def test_an_explicit_type_wins(self):
         self.assertEqual(
-            sg.kind_for_file("/x/game.sav", b"\x00" * 32768,
-                             requested=sg.CONTROLLER_PAK).key,
-            sg.CONTROLLER_PAK)
+            sg.kind_for_file("/x/game.sav", b"\x00" * 32768, requested=sg.CONTROLLER_PAK).key,
+            sg.CONTROLLER_PAK,
+        )
 
     def test_a_size_no_chip_has_is_refused(self):
         with self.assertRaises(sg.SaveError) as ctx:
@@ -449,8 +435,7 @@ class TestConvertSave(unittest.TestCase):
 
     def test_emulator_sram_to_flashcart_swaps_the_words(self):
         emulator_file = sg.swap_words(self._chip_order_save())
-        result = sg.convert_save(emulator_file, self.SRAM, "mupen64plus",
-                                 "sc64", game=self.OOT)
+        result = sg.convert_save(emulator_file, self.SRAM, "mupen64plus", "sc64", game=self.OOT)
         self.assertTrue(result.changed)
         self.assertEqual(result.data, self._chip_order_save())
         self.assertTrue(result.check.ok)
@@ -475,14 +460,14 @@ class TestConvertSave(unittest.TestCase):
         until the save failed on the console."""
         emulator_file = sg.swap_words(self._chip_order_save())
         with self.assertRaises(sg.SaveError) as ctx:
-            sg.convert_save(emulator_file, self.SRAM, "sc64", "sc64",
-                            game=self.OOT)
+            sg.convert_save(emulator_file, self.SRAM, "sc64", "sc64", game=self.OOT)
         self.assertIn("Refusing to hand back", str(ctx.exception))
 
     def test_an_unknown_game_converts_without_a_verdict(self):
         emulator_file = sg.swap_words(self._chip_order_save())
-        result = sg.convert_save(emulator_file, self.SRAM, "mupen64plus", "sc64",
-                                 game="Some Game With No Profile")
+        result = sg.convert_save(
+            emulator_file, self.SRAM, "mupen64plus", "sc64", game="Some Game With No Profile"
+        )
         self.assertIsNone(result.check)
         self.assertTrue(result.changed)
 
@@ -492,7 +477,7 @@ class TestSuperMario64Check(unittest.TestCase):
     six of them, European and American, 10 blocks of 10 each."""
 
     def _block(self, size, payload):
-        body = bytearray(payload[:size - 2].ljust(size - 2, b"\x00"))
+        body = bytearray(payload[: size - 2].ljust(size - 2, b"\x00"))
         body += (sum(body) & 0xFFFF).to_bytes(2, "big")
         return bytes(body)
 
@@ -502,7 +487,7 @@ class TestSuperMario64Check(unittest.TestCase):
             if i < written_slots:
                 out += self._block(sg.SM64_SLOT_SIZE, b"\x00\x00\x3c\x01" + bytes([i]))
             else:
-                out += b"\xFF" * sg.SM64_SLOT_SIZE
+                out += b"\xff" * sg.SM64_SLOT_SIZE
         for _ in range(2):
             out += self._block(sg.SM64_MENU_SIZE, b"\x44\x41")
         return bytes(out)
@@ -510,14 +495,16 @@ class TestSuperMario64Check(unittest.TestCase):
     def test_a_well_formed_save_passes(self):
         result = sg.check_sm64(self._save())
         self.assertTrue(result.ok)
-        self.assertEqual(result.valid, 6)   # 4 slots + 2 menu blocks
+        self.assertEqual(result.valid, 6)  # 4 slots + 2 menu blocks
         self.assertEqual(result.invalid, 0)
 
     def test_the_layout_fills_the_chip_exactly(self):
         self.assertEqual(len(self._save()), 512)
         self.assertEqual(
             len(sg.SM64_SLOT_BLOCKS) * sg.SM64_SLOT_SIZE
-            + len(sg.SM64_MENU_BLOCKS) * sg.SM64_MENU_SIZE, 512)
+            + len(sg.SM64_MENU_BLOCKS) * sg.SM64_MENU_SIZE,
+            512,
+        )
 
     def test_a_flipped_byte_is_caught(self):
         data = bytearray(self._save())
@@ -525,7 +512,7 @@ class TestSuperMario64Check(unittest.TestCase):
         self.assertFalse(sg.check_sm64(bytes(data)).ok)
 
     def test_an_erased_chip_reports_empty_rather_than_broken(self):
-        result = sg.check_sm64(b"\xFF" * 512)
+        result = sg.check_sm64(b"\xff" * 512)
         self.assertEqual((result.valid, result.invalid), (0, 0))
         self.assertIn("empty save", result.describe())
 
@@ -540,11 +527,10 @@ class TestSuperMario64Check(unittest.TestCase):
 
     def test_a_wrong_size_is_rejected(self):
         with self.assertRaises(sg.SaveError):
-            sg.check_sm64(b"\xFF" * 2048)
+            sg.check_sm64(b"\xff" * 2048)
 
 
 class TestRegion(unittest.TestCase):
-
     def test_region_note_does_not_promise_a_conversion(self):
         """Until a game has a profile, the tool must not imply that it can
         transform a save between regions - for most titles there is nothing

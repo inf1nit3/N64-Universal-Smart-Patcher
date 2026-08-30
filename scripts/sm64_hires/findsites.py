@@ -10,6 +10,7 @@ shifts (`sll rd, rt, 12`) and unrelated arithmetic out of the patch set.
 Reports each site with the 0xE400 emitter it belongs to and the texture step
 constants (dsdx, dtdy) that have to be halved alongside.
 """
+
 import os
 import struct
 
@@ -35,8 +36,7 @@ def main():
     wl = list(words(data))
     index = dict(wl)
 
-    emitters = [off for off, w in wl
-                if (w >> 26) == 0x0F and (w & 0xFFFF) == 0xE400]
+    emitters = [off for off, w in wl if (w >> 26) == 0x0F and (w & 0xFFFF) == 0xE400]
 
     coord_shifts = []
     for off, w in wl:
@@ -48,13 +48,11 @@ def main():
             if nxt is None:
                 continue
             # andi rX, rd, 0x0FFF
-            if (nxt >> 26) == 0x0C and ((nxt >> 21) & 31) == rd \
-                    and (nxt & 0xFFFF) == 0x0FFF:
+            if (nxt >> 26) == 0x0C and ((nxt >> 21) & 31) == rd and (nxt & 0xFFFF) == 0x0FFF:
                 coord_shifts.append(off)
                 break
 
-    print(f"{len(emitters)} TEXRECT emitters, "
-          f"{len(coord_shifts)} coordinate shifts\n")
+    print(f"{len(emitters)} TEXRECT emitters, {len(coord_shifts)} coordinate shifts\n")
 
     for e in emitters:
         near = [o for o in coord_shifts if abs(o - e) <= 0x100]
@@ -67,15 +65,15 @@ def main():
             if op in (0x0F, 0x0D) and imm in (0x1000, 0x0400):
                 scale.append((e + k, "lui" if op == 0x0F else "ori", imm))
         print(f"emitter rom {e:08X}  ram {RAM + e - MAIN_S:08X}")
-        print(f"  coords: {' '.join(f'{o:06X}' for o in sorted(near))}"
-              f"   ({len(near)})")
+        print(f"  coords: {' '.join(f'{o:06X}' for o in sorted(near))}   ({len(near)})")
         print(f"  scale : {' '.join(f'{o:06X}={k}:{v:04X}' for o, k, v in scale)}")
 
-    orphan = [o for o in coord_shifts
-              if not any(abs(o - e) <= 0x100 for e in emitters)]
+    orphan = [o for o in coord_shifts if not any(abs(o - e) <= 0x100 for e in emitters)]
     if orphan:
-        print(f"\ncoordinate shifts with no emitter within 0x100: "
-              f"{' '.join(f'{o:06X}' for o in orphan)}")
+        print(
+            f"\ncoordinate shifts with no emitter within 0x100: "
+            f"{' '.join(f'{o:06X}' for o in orphan)}"
+        )
 
 
 if __name__ == "__main__":

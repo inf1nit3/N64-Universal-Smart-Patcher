@@ -6,6 +6,7 @@ Security-hardened: every member path is validated against path traversal
 (zip-slip) before extraction and the total uncompressed size is capped,
 so crafted archives cannot write outside the temp dir or fill the disk.
 """
+
 import os
 import shutil
 import stat
@@ -44,8 +45,9 @@ def _is_7z_symlink(info: object) -> bool:
     return bool(attrs & 0x8000) and stat.S_ISLNK(attrs >> 16)
 
 
-def _extract_member(zf: zipfile.ZipFile, member: zipfile.ZipInfo,
-                    target: str, budget: list[int]) -> None:
+def _extract_member(
+    zf: zipfile.ZipFile, member: zipfile.ZipInfo, target: str, budget: list[int]
+) -> None:
     """Stream one member to *target*, counting real bytes against *budget*.
 
     zf.extract() is deliberately not used: it applies its own sanitization
@@ -63,12 +65,13 @@ def _extract_member(zf: zipfile.ZipFile, member: zipfile.ZipInfo,
             if budget[0] < 0:
                 raise RuntimeError(
                     f"Archive exceeds the {MAX_EXTRACT_TOTAL_BYTES} byte "
-                    f"extraction cap - aborted for safety")
-            if (member.compress_size > 0
-                    and written > member.compress_size * MAX_COMPRESSION_RATIO):
+                    f"extraction cap - aborted for safety"
+                )
+            if member.compress_size > 0 and written > member.compress_size * MAX_COMPRESSION_RATIO:
                 raise RuntimeError(
                     f"'{member.filename}' expands more than "
-                    f"{MAX_COMPRESSION_RATIO}x - refusing to continue")
+                    f"{MAX_COMPRESSION_RATIO}x - refusing to continue"
+                )
             dst.write(chunk)
 
 
@@ -106,19 +109,18 @@ def _extract_zip(archive_path: str, temp_dir: str) -> list[str]:
     extracted = []
     budget = [MAX_EXTRACT_TOTAL_BYTES]
     with zipfile.ZipFile(archive_path, "r") as zf:
-        rom_members = [m for m in zf.infolist()
-                       if not m.is_dir() and core.is_rom_file(m.filename)]
+        rom_members = [m for m in zf.infolist() if not m.is_dir() and core.is_rom_file(m.filename)]
         for member in rom_members:
             if _is_zip_symlink(member):
-                raise ValueError(
-                    f"Refusing to extract symlink member: {member.filename}")
+                raise ValueError(f"Refusing to extract symlink member: {member.filename}")
         # The declared file_size is attacker-controlled metadata, so it is
         # only used to reject the obviously absurd up front. The cap that
         # matters is enforced byte-by-byte in _extract_member.
         declared = sum(m.file_size for m in rom_members)
         if declared > MAX_EXTRACT_TOTAL_BYTES:
             raise RuntimeError(
-                f"Archive declares {declared} bytes uncompressed - aborted for safety")
+                f"Archive declares {declared} bytes uncompressed - aborted for safety"
+            )
         for member in rom_members:
             target = _safe_member_path(temp_dir, member.filename)
             os.makedirs(os.path.dirname(target), exist_ok=True)
@@ -131,28 +133,27 @@ def _extract_7z(archive_path: str, temp_dir: str) -> list[str]:
     try:
         import py7zr
     except ImportError as e:
-        raise RuntimeError("py7zr not installed - cannot extract .7z archives "
-                           "(pip install 'n64patcher[archive]')") from e
+        raise RuntimeError(
+            "py7zr not installed - cannot extract .7z archives (pip install 'n64patcher[archive]')"
+        ) from e
     extracted: list[str] = []
     with py7zr.SevenZipFile(archive_path, mode="r") as sz:
         infos = sz.list()
-        rom_names = [i.filename for i in infos
-                     if not i.is_directory and core.is_rom_file(i.filename)]
+        rom_names = [
+            i.filename for i in infos if not i.is_directory and core.is_rom_file(i.filename)
+        ]
         if not rom_names:
             return extracted
-        total = sum(getattr(i, "uncompressed", 0) or 0 for i in infos
-                    if i.filename in rom_names)
+        total = sum(getattr(i, "uncompressed", 0) or 0 for i in infos if i.filename in rom_names)
         if total > MAX_EXTRACT_TOTAL_BYTES:
-            raise RuntimeError(
-                f"Archive declares {total} bytes uncompressed - aborted for safety")
+            raise RuntimeError(f"Archive declares {total} bytes uncompressed - aborted for safety")
         # Validate EVERY member path before extracting anything (a single
         # malicious entry aborts the whole archive), then extract only the
         # ROM members we actually need.
         for info in infos:
             _safe_member_path(temp_dir, info.filename)
             if _is_7z_symlink(info):
-                raise ValueError(
-                    f"Refusing to extract symlink member: {info.filename}")
+                raise ValueError(f"Refusing to extract symlink member: {info.filename}")
         sz.extract(path=temp_dir, targets=rom_names)
         for name in rom_names:
             extracted.append(os.path.join(temp_dir, *name.replace("\\", "/").split("/")))
@@ -199,8 +200,7 @@ def extract_roms_from_archive(archive_path: str, temp_dir: str) -> list[str]:
         # Security / policy errors: propagate with context
         raise RuntimeError(f"{os.path.basename(archive_path)}: {e}") from e
     except Exception as e:
-        raise RuntimeError(
-            f"Error extracting archive {os.path.basename(archive_path)}: {e}") from e
+        raise RuntimeError(f"Error extracting archive {os.path.basename(archive_path)}: {e}") from e
 
     return []
 

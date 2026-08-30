@@ -1,4 +1,5 @@
 """`python -m n64patcher` runs the CLI."""
+
 import sys
 
 from .cli import main

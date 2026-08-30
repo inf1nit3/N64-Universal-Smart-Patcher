@@ -11,6 +11,7 @@ Notes on semantics:
   the engine skipped (flashcart repair use case); patched outputs always
   get corrected boot checksums from the pipeline itself.
 """
+
 import argparse
 import os
 import shutil
@@ -113,7 +114,7 @@ def _clean_base_name(rom_path: str) -> str:
     base_fn, _ = os.path.splitext(os.path.basename(rom_path))
     for t in core.OUTPUT_TAGS:
         if base_fn.endswith(t):
-            return base_fn[:-len(t)]
+            return base_fn[: -len(t)]
     return base_fn
 
 
@@ -123,12 +124,17 @@ def _tagged_output_path(rom_path: str, tag: str, output_dir=None) -> str:
     dir_name = output_dir or (os.path.dirname(os.path.abspath(rom_path)) or ".")
     suffix = f"{tag}.z64"
     base_fn = core._fit_base_name(_clean_base_name(rom_path), suffix)
-    return core._free_output_path(os.path.join(dir_name, base_fn + suffix),
-                                  avoid=rom_path)
+    return core._free_output_path(os.path.join(dir_name, base_fn + suffix), avoid=rom_path)
 
-def apply_community_patch(rom_path: str, patch_path: str, output_dir=None,
-                          strip_header: bool = False, fix_crc: bool = False,
-                          log=print) -> dict:
+
+def apply_community_patch(
+    rom_path: str,
+    patch_path: str,
+    output_dir=None,
+    strip_header: bool = False,
+    fix_crc: bool = False,
+    log=print,
+) -> dict:
     """
     Apply an .ips/.bps community patch to the CLEAN ROM (community
     patches are built against unmodified dumps).
@@ -137,8 +143,7 @@ def apply_community_patch(rom_path: str, patch_path: str, output_dir=None,
     if patch_type == "ups":
         return {"status": "error", "message": "UPS format is not supported"}
     if patch_type not in ("ips", "bps"):
-        return {"status": "error",
-                "message": f"Unknown patch format: {patch_type}"}
+        return {"status": "error", "message": f"Unknown patch format: {patch_type}"}
 
     workdir = tempfile.mkdtemp(prefix="n64_community_")
     try:
@@ -152,8 +157,7 @@ def apply_community_patch(rom_path: str, patch_path: str, output_dir=None,
 
         clean_z64 = os.path.join(workdir, "clean.z64")
         if not core.ensure_z64(base_rom, clean_z64):
-            return {"status": "error",
-                    "message": "Not a recognizable N64 ROM (bad header magic)"}
+            return {"status": "error", "message": "Not a recognizable N64 ROM (bad header magic)"}
 
         patched = os.path.join(workdir, "patched.z64")
         if patch_type == "ips":
@@ -170,14 +174,12 @@ def apply_community_patch(rom_path: str, patch_path: str, output_dir=None,
         final_path = _tagged_output_path(rom_path, " [COMMUNITY]", output_dir)
         os.makedirs(os.path.dirname(final_path) or ".", exist_ok=True)
         shutil.move(patched, final_path)
-        return {"status": "patched", "output": final_path,
-                "message": res.get("message", "")}
+        return {"status": "patched", "output": final_path, "message": res.get("message", "")}
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
 
 
-def make_crcfix_copy(rom_path: str, output_dir=None, strip_header: bool = False,
-                     log=print) -> dict:
+def make_crcfix_copy(rom_path: str, output_dir=None, strip_header: bool = False, log=print) -> dict:
     """Create a CRC-repaired .z64 copy of a (skipped) ROM."""
     workdir = tempfile.mkdtemp(prefix="n64_crcfix_")
     try:
@@ -200,8 +202,7 @@ def make_crcfix_copy(rom_path: str, output_dir=None, strip_header: bool = False,
         final_path = _tagged_output_path(rom_path, " [CRCFIX]", output_dir)
         os.makedirs(os.path.dirname(final_path) or ".", exist_ok=True)
         shutil.move(clean_z64, final_path)
-        return {"status": "fixed", "output": final_path,
-                "message": crc_res.get("message", "")}
+        return {"status": "fixed", "output": final_path, "message": crc_res.get("message", "")}
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
 
@@ -210,6 +211,7 @@ def make_crcfix_copy(rom_path: str, output_dir=None, strip_header: bool = False,
 # Save files
 # ---------------------------------------------------------------------------
 
+
 def _list_save_sources(log) -> int:
     log("Tools whose save byte order has been measured:\n")
     for source in savegame.SOURCES:
@@ -217,8 +219,7 @@ def _list_save_sources(log) -> int:
         for kind_key, order in sorted(source.orders.items()):
             kind = savegame.SAVE_KINDS_BY_KEY[kind_key]
             log(f"      {kind.label:<18} {savegame.ORDER_LABELS[order]}")
-        missing = [k.label for k in savegame.SAVE_KINDS
-                   if k.key not in source.orders]
+        missing = [k.label for k in savegame.SAVE_KINDS if k.key not in source.orders]
         if missing:
             log(f"      not measured: {', '.join(missing)}")
         log(f"      evidence: {source.evidence}")
@@ -250,8 +251,10 @@ def _report_save_result(res: dict, log) -> None:
             log(f"   {line}")
     if res["status"] == "converted":
         if not res["changed"]:
-            log("   these two tools agree for this chip - the bytes are "
-                "unchanged and only the name differs")
+            log(
+                "   these two tools agree for this chip - the bytes are "
+                "unchanged and only the name differs"
+            )
         log(f"   ✅ {res['output']}")
     elif res["status"] == "exists":
         log(f"   ⏭️  {res['message']} - pass --save-force to replace it")
@@ -261,9 +264,11 @@ def _report_save_result(res: dict, log) -> None:
 
 def _save_convert(args, log) -> int:
     if not args.save_from or not args.save_to:
-        log("❌ --save-convert needs --save-from and --save-to. The byte "
+        log(
+            "❌ --save-convert needs --save-from and --save-to. The byte "
             "order belongs to the tool that wrote the file and is not "
-            "detected: see --list-save-sources.")
+            "detected: see --list-save-sources."
+        )
         return 1
 
     targets = savegame.collect_saves([args.save_convert], args.recursive)
@@ -282,9 +287,14 @@ def _save_convert(args, log) -> int:
     converted = skipped = failed = 0
     for path in targets:
         res = savegame.convert_file(
-            path, args.save_from, args.save_to,
-            out_path=args.save_out, out_dir=args.output_dir,
-            requested_kind=args.save_type, force=args.save_force)
+            path,
+            args.save_from,
+            args.save_to,
+            out_path=args.save_out,
+            out_dir=args.output_dir,
+            requested_kind=args.save_type,
+            force=args.save_force,
+        )
         _report_save_result(res, log)
         if res["status"] == "converted":
             converted += 1
@@ -306,7 +316,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="n64patcher",
         description="Universal N64 ROM Inspector & Smart Patcher - headless mode. "
-                    "Original ROMs are never modified."
+        "Original ROMs are never modified.",
     )
 
     # Input/Output
@@ -315,70 +325,110 @@ def main(argv=None):
     parser.add_argument("-o", "--output-dir", help="Output directory (default: next to the ROMs)")
 
     # Presets
-    parser.add_argument("--preset", choices=list(PRESETS.keys()),
-                        help="Use a preconfigured preset profile")
+    parser.add_argument(
+        "--preset", choices=list(PRESETS.keys()), help="Use a preconfigured preset profile"
+    )
 
     # Individual options (override the preset when given)
-    parser.add_argument("--hires", action="store_true",
-                        help="640x480 hi-res patching (only applied to dumps with "
-                             "a verified patch; others are reported and skipped)")
-    parser.add_argument("--force-hires", action="store_true",
-                        help="Apply the generic VI-table widening even without a "
-                             "verified patch. Renders incorrectly on hardware: "
-                             "doubled image, misplaced UI. Experimental.")
+    parser.add_argument(
+        "--hires",
+        action="store_true",
+        help="640x480 hi-res patching (only applied to dumps with "
+        "a verified patch; others are reported and skipped)",
+    )
+    parser.add_argument(
+        "--force-hires",
+        action="store_true",
+        help="Apply the generic VI-table widening even without a "
+        "verified patch. Renders incorrectly on hardware: "
+        "doubled image, misplaced UI. Experimental.",
+    )
     parser.add_argument("--keep-aa", action="store_true", help="KEEP anti-aliasing")
     parser.add_argument("--no-dither", action="store_true", help="REMOVE dithering")
     parser.add_argument("--no-divot", action="store_true", help="REMOVE the divot filter")
     parser.add_argument("--no-gamma", action="store_true", help="REMOVE the gamma boost")
 
     # Community Patches
-    parser.add_argument("--patch-file", help=".ips or .bps file to apply to ALL ROMs "
-                                             "(replaces the engine pipeline; applied to clean ROMs)")
+    parser.add_argument(
+        "--patch-file",
+        help=".ips or .bps file to apply to ALL ROMs "
+        "(replaces the engine pipeline; applied to clean ROMs)",
+    )
 
     # Performance
     parser.add_argument("-j", "--jobs", type=int, default=4, help="Parallel workers (default: 4)")
 
     # Flashcart-Optionen
-    parser.add_argument("--strip-header", action="store_true",
-                        help="Strip scene intro headers (for xdelta compatibility)")
-    parser.add_argument("--fix-crc", action="store_true",
-                        help="Repair CRC1/CRC2 for flashcarts (creates [CRCFIX] copies "
-                             "for skipped ROMs; patched outputs are always corrected)")
+    parser.add_argument(
+        "--strip-header",
+        action="store_true",
+        help="Strip scene intro headers (for xdelta compatibility)",
+    )
+    parser.add_argument(
+        "--fix-crc",
+        action="store_true",
+        help="Repair CRC1/CRC2 for flashcarts (creates [CRCFIX] copies "
+        "for skipped ROMs; patched outputs are always corrected)",
+    )
 
     # Inspection
     parser.add_argument("--inspect-only", action="store_true", help="Inspect only, do not patch")
     parser.add_argument("--export", help="Export a report as CSV or JSON")
     parser.add_argument("--list-presets", action="store_true", help="List the available presets")
-    parser.add_argument("--list-patches", action="store_true",
-                        help="List the patch recipes and the directories they load from")
-    parser.add_argument("--dat", action="append", metavar="FILE",
-                        help="No-Intro/Redump DAT to identify dumps against "
-                             "(repeatable). Files in ~/.n64patcher/dats/ are "
-                             "picked up automatically.")
-    parser.add_argument("--create-patch", nargs=3,
-                        metavar=("SOURCE", "TARGET", "OUT.bps"),
-                        help="Diff two ROMs into a .bps patch and exit")
-    parser.add_argument("--manifest", action="store_true",
-                        help="Write a JSON sidecar next to each output listing "
-                             "every changed byte run, for auditing or --revert")
-    parser.add_argument("--revert", metavar="PATCHED_ROM",
-                        help="Undo a patch using its .n64patch.json sidecar, "
-                             "writing the restored ROM next to it")
-    parser.add_argument("--show-manifest", metavar="FILE",
-                        help="Print what a manifest (or a patched ROM with one) "
-                             "changed, and exit")
-    parser.add_argument("--list-dats", action="store_true",
-                        help="Show which DAT files are loaded and how many dumps "
-                             "they index")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Show what would be done without writing any files")
-    parser.add_argument("--verify", action="store_true",
-                        help="Independently re-check every output after patching "
-                             "(format, CIC, boot checksums, expected VI state). "
-                             "Exit code 1 on failure.")
-    parser.add_argument("--verify-report",
-                        help="Write the verification matrix as CSV or JSON "
-                             "(hashes + result, no ROM data)")
+    parser.add_argument(
+        "--list-patches",
+        action="store_true",
+        help="List the patch recipes and the directories they load from",
+    )
+    parser.add_argument(
+        "--dat",
+        action="append",
+        metavar="FILE",
+        help="No-Intro/Redump DAT to identify dumps against "
+        "(repeatable). Files in ~/.n64patcher/dats/ are "
+        "picked up automatically.",
+    )
+    parser.add_argument(
+        "--create-patch",
+        nargs=3,
+        metavar=("SOURCE", "TARGET", "OUT.bps"),
+        help="Diff two ROMs into a .bps patch and exit",
+    )
+    parser.add_argument(
+        "--manifest",
+        action="store_true",
+        help="Write a JSON sidecar next to each output listing "
+        "every changed byte run, for auditing or --revert",
+    )
+    parser.add_argument(
+        "--revert",
+        metavar="PATCHED_ROM",
+        help="Undo a patch using its .n64patch.json sidecar, writing the restored ROM next to it",
+    )
+    parser.add_argument(
+        "--show-manifest",
+        metavar="FILE",
+        help="Print what a manifest (or a patched ROM with one) changed, and exit",
+    )
+    parser.add_argument(
+        "--list-dats",
+        action="store_true",
+        help="Show which DAT files are loaded and how many dumps they index",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Show what would be done without writing any files"
+    )
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="Independently re-check every output after patching "
+        "(format, CIC, boot checksums, expected VI state). "
+        "Exit code 1 on failure.",
+    )
+    parser.add_argument(
+        "--verify-report",
+        help="Write the verification matrix as CSV or JSON (hashes + result, no ROM data)",
+    )
     parser.add_argument("--version", action="store_true", help="Show the version")
 
     # Save files
@@ -387,27 +437,42 @@ def main(argv=None):
         "Move a save between an emulator and a flashcart. The byte order "
         "belongs to the tool that wrote the file, so both ends are named "
         "rather than detected - guessing it is wrong often enough to "
-        "corrupt saves.")
-    saves.add_argument("--save-info", metavar="FILE",
-                       help="Report what a save file is and whether it is valid")
-    saves.add_argument("--save-convert", metavar="FILE",
-                       help="Convert a save file (needs --save-from/--save-to)")
-    saves.add_argument("--save-from", metavar="TOOL",
-                       help="Tool that wrote the file: "
-                            + ", ".join(sorted(savegame.SOURCES_BY_KEY)))
-    saves.add_argument("--save-to", metavar="TOOL",
-                       help="Tool the result is for")
-    saves.add_argument("--save-type", metavar="CHIP",
-                       help="Chip type when size and name do not settle it: "
-                            + ", ".join(savegame.SAVE_KINDS_BY_KEY))
-    saves.add_argument("--save-out", metavar="FILE",
-                       help="Where to write the converted save "
-                            "(default: alongside, with the target's name)")
-    saves.add_argument("--save-force", action="store_true",
-                       help="Allow an existing save file to be replaced "
-                            "(refused by default - a save cannot be recovered)")
-    saves.add_argument("--list-save-sources", action="store_true",
-                       help="List the tools whose byte order has been measured")
+        "corrupt saves.",
+    )
+    saves.add_argument(
+        "--save-info", metavar="FILE", help="Report what a save file is and whether it is valid"
+    )
+    saves.add_argument(
+        "--save-convert", metavar="FILE", help="Convert a save file (needs --save-from/--save-to)"
+    )
+    saves.add_argument(
+        "--save-from",
+        metavar="TOOL",
+        help="Tool that wrote the file: " + ", ".join(sorted(savegame.SOURCES_BY_KEY)),
+    )
+    saves.add_argument("--save-to", metavar="TOOL", help="Tool the result is for")
+    saves.add_argument(
+        "--save-type",
+        metavar="CHIP",
+        help="Chip type when size and name do not settle it: "
+        + ", ".join(savegame.SAVE_KINDS_BY_KEY),
+    )
+    saves.add_argument(
+        "--save-out",
+        metavar="FILE",
+        help="Where to write the converted save (default: alongside, with the target's name)",
+    )
+    saves.add_argument(
+        "--save-force",
+        action="store_true",
+        help="Allow an existing save file to be replaced "
+        "(refused by default - a save cannot be recovered)",
+    )
+    saves.add_argument(
+        "--list-save-sources",
+        action="store_true",
+        help="List the tools whose byte order has been measured",
+    )
 
     args = parser.parse_args(argv)
     log = RunLogger()
@@ -450,9 +515,11 @@ def main(argv=None):
         patched = args.revert
         man_path = manifest_mod.manifest_path_for(patched)
         if not os.path.isfile(man_path):
-            log(f"❌ No manifest beside {os.path.basename(patched)}.\n"
+            log(
+                f"❌ No manifest beside {os.path.basename(patched)}.\n"
                 f"   Expected: {os.path.basename(man_path)}\n"
-                f"   Manifests are written only when --manifest was used.")
+                f"   Manifests are written only when --manifest was used."
+            )
             return 1
         try:
             man = manifest_mod.load_manifest(man_path)
@@ -460,8 +527,8 @@ def main(argv=None):
             log(f"❌ {e}")
             return 1
         restored = core._free_output_path(
-            os.path.join(os.path.dirname(os.path.abspath(patched)),
-                         man["input"]["name"]))
+            os.path.join(os.path.dirname(os.path.abspath(patched)), man["input"]["name"])
+        )
         ok, message = manifest_mod.revert(patched, man, restored)
         if not ok:
             # Leave nothing half-written behind on a refusal.
@@ -520,8 +587,7 @@ def main(argv=None):
         if "rn64crc" in missing:
             log("   rn64crc: CRC fixing uses the built-in pure-Python engine.")
         if "xdelta3" in missing:
-            log("   xdelta3: verified 640x480 patches use the built-in "
-                "VCDIFF engine instead.")
+            log("   xdelta3: verified 640x480 patches use the built-in VCDIFF engine instead.")
         log("")
 
     # One index per run: re-parsing a few thousand DAT entries for every
@@ -574,9 +640,11 @@ def main(argv=None):
             log("🧪 DRY RUN - no files will be written.")
             log(f"   ROMs:       {len(roms)}")
             log(f"   Preset:     {args.preset or 'none (individual flags)'}")
-            log(f"   Options:    hires={args.hires or (args.preset and PRESETS[args.preset].options.hires)} "
+            log(
+                f"   Options:    hires={args.hires or (args.preset and PRESETS[args.preset].options.hires)} "
                 f"no_dither={args.no_dither} no_divot={args.no_divot} no_gamma={args.no_gamma} "
-                f"keep_aa={args.keep_aa}")
+                f"keep_aa={args.keep_aa}"
+            )
             log(f"   Patch file: {args.patch_file or 'none'}")
             log(f"   Output dir: {args.output_dir or 'next to the ROMs'}")
             log(f"   Workers:    {args.jobs}")
@@ -607,9 +675,11 @@ def main(argv=None):
                 }.get(info.get("dump_status"), "")
                 if info.get("dump_name"):
                     dump += f" ({info['dump_name']})"
-                log(f"{info['filename']}: {info['title']} [{info['region']}] "
+                log(
+                    f"{info['filename']}: {info['title']} [{info['region']}] "
                     f"{info['format']} | {res} | {aa} | VI: {info['vi_table_count']} "
-                    f"| {hires_label}{dump}")
+                    f"| {hires_label}{dump}"
+                )
 
             if args.export:
                 core.export_report(infos, args.export)
@@ -626,18 +696,25 @@ def main(argv=None):
             patched = errors = 0
             for rom in roms:
                 res = apply_community_patch(
-                    rom, args.patch_file, output_dir=rom_output_dir.get(rom),
-                    strip_header=args.strip_header, fix_crc=args.fix_crc, log=log)
+                    rom,
+                    args.patch_file,
+                    output_dir=rom_output_dir.get(rom),
+                    strip_header=args.strip_header,
+                    fix_crc=args.fix_crc,
+                    log=log,
+                )
                 if res["status"] == "patched":
                     patched += 1
-                    log(f"   ✓ {os.path.basename(rom)} -> {os.path.basename(res['output'])} "
-                        f"({res['message']})")
+                    log(
+                        f"   ✓ {os.path.basename(rom)} -> {os.path.basename(res['output'])} "
+                        f"({res['message']})"
+                    )
                 else:
                     errors += 1
                     log(f"   ❌ {os.path.basename(rom)}: {res['message']}")
-            log(f"\n{'='*60}")
+            log(f"\n{'=' * 60}")
             log(f"✅ Done. Community-patched: {patched}, errors: {errors}")
-            log(f"{'='*60}\n")
+            log(f"{'=' * 60}\n")
             return 1 if errors > 0 else 0
 
         # Assemble patch options (individual flags override presets)
@@ -666,10 +743,12 @@ def main(argv=None):
         options.write_manifest = args.manifest
         if args.force_hires:
             options.hires = True
-            log("⚠️  --force-hires: applying the generic VI-table widening to "
+            log(
+                "⚠️  --force-hires: applying the generic VI-table widening to "
                 "unverified dumps.\n"
                 "   This renders incorrectly on hardware (doubled image, "
-                "misplaced UI).\n")
+                "misplaced UI).\n"
+            )
 
         # Header stripping (before patching)
         stripped_tmp_files = []
@@ -715,10 +794,14 @@ def main(argv=None):
 
         try:
             for group_dir, group_roms in groups.items():
-                summary = batch_patch_roms(group_roms, options, max_workers=args.jobs,
-                                           log_func=lambda m: log(f"   {m}"),
-                                           output_dir=group_dir,
-                                           should_cancel=cancel.is_set)
+                summary = batch_patch_roms(
+                    group_roms,
+                    options,
+                    max_workers=args.jobs,
+                    log_func=lambda m: log(f"   {m}"),
+                    output_dir=group_dir,
+                    should_cancel=cancel.is_set,
+                )
                 results["patched"] += summary["patched"]
                 results["skipped"] += summary["skipped"]
                 results["errors"] += summary["errors"]
@@ -743,20 +826,20 @@ def main(argv=None):
 
         # Flashcart CRC repair: [CRCFIX] copies for skipped ROMs
         if args.fix_crc:
-            skipped = [res for res in results["results"]
-                       if res.get("status") in ("skipped", "error")]
+            skipped = [
+                res for res in results["results"] if res.get("status") in ("skipped", "error")
+            ]
             if skipped:
-                log(f"\n🔧 Creating CRC-repaired copies for {len(skipped)} "
-                    f"skipped ROM(s)...")
+                log(f"\n🔧 Creating CRC-repaired copies for {len(skipped)} skipped ROM(s)...")
                 for res in skipped:
                     src = res.get("input")
                     if not src or not os.path.isfile(src):
                         continue
-                    crc_res = make_crcfix_copy(src, output_dir=rom_output_dir.get(src),
-                                               log=log)
+                    crc_res = make_crcfix_copy(src, output_dir=rom_output_dir.get(src), log=log)
                     if crc_res.get("status") == "fixed":
-                        log(f"   ✓ {os.path.basename(src)} -> "
-                            f"{os.path.basename(crc_res['output'])}")
+                        log(
+                            f"   ✓ {os.path.basename(src)} -> {os.path.basename(crc_res['output'])}"
+                        )
                     else:
                         log(f"   ⚠️  {os.path.basename(src)}: {crc_res.get('message')}")
 
@@ -783,13 +866,14 @@ def main(argv=None):
                 log(f"   📄 Matrix written: {args.verify_report}")
 
         # Summary
-        log(f"\n{'='*60}")
-        log(f"✅ Done. Patched: {results['patched']}, Skipped: {results['skipped']}, "
-            f"Errors: {results['errors']}")
+        log(f"\n{'=' * 60}")
+        log(
+            f"✅ Done. Patched: {results['patched']}, Skipped: {results['skipped']}, "
+            f"Errors: {results['errors']}"
+        )
         if args.verify:
-            log(f"🔎 Verified: {results['patched'] - verify_failed} OK, "
-                f"{verify_failed} failed")
-        log(f"{'='*60}\n")
+            log(f"🔎 Verified: {results['patched'] - verify_failed} OK, {verify_failed} failed")
+        log(f"{'=' * 60}\n")
         exit_code = 1 if (results["errors"] > 0 or verify_failed > 0) else 0
 
         # Clean up stripped ROMs

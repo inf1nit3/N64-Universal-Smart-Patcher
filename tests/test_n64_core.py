@@ -10,23 +10,30 @@ from unittest import mock
 from n64patcher import n64_core as core
 
 
-def make_synthetic_rom(title=b"TEST GAME", country=b"E", game_code=b"NTSE",
-                       crc1=0xDEADBEEF, crc2=0x12345678, vi_tables=1, size=0x2000):
+def make_synthetic_rom(
+    title=b"TEST GAME",
+    country=b"E",
+    game_code=b"NTSE",
+    crc1=0xDEADBEEF,
+    crc2=0x12345678,
+    vi_tables=1,
+    size=0x2000,
+):
     """Build a minimal big-endian z64 image with a valid header and an
     optional synthetic OSViMode table (width 320 + NTSC burst)."""
     rom = bytearray(size)
     rom[0:4] = bytes.fromhex("80371240")
-    rom[4:8] = (0x0000000F).to_bytes(4, "big")          # clock rate
-    rom[8:12] = (0x80000400).to_bytes(4, "big")         # entry point
+    rom[4:8] = (0x0000000F).to_bytes(4, "big")  # clock rate
+    rom[8:12] = (0x80000400).to_bytes(4, "big")  # entry point
     rom[16:20] = crc1.to_bytes(4, "big")
     rom[20:24] = crc2.to_bytes(4, "big")
-    rom[32:32 + 20] = title.ljust(20, b" ")[:20]
+    rom[32 : 32 + 20] = title.ljust(20, b" ")[:20]
     rom[59:61] = game_code[:2]
     rom[62:63] = country
     for i in range(vi_tables):
         off = 0x1000 + i * 0x40
-        rom[off:off + 4] = core.WIDTH_320_DATA
-        rom[off + 4:off + 8] = core.NTSC_BURST
+        rom[off : off + 4] = core.WIDTH_320_DATA
+        rom[off + 4 : off + 8] = core.NTSC_BURST
     return bytes(rom)
 
 
@@ -39,7 +46,11 @@ def byteswap_halfwords(data):
 def byteswap_words(data):
     ba = bytearray(data)
     ba[0::4], ba[1::4], ba[2::4], ba[3::4] = (
-        bytes(ba[3::4]), bytes(ba[2::4]), bytes(ba[1::4]), bytes(ba[0::4]))
+        bytes(ba[3::4]),
+        bytes(ba[2::4]),
+        bytes(ba[1::4]),
+        bytes(ba[0::4]),
+    )
     return bytes(ba)
 
 
@@ -50,7 +61,7 @@ def make_cic6102_rom(size=0x2000):
     rom = bytearray(make_synthetic_rom(vi_tables=0, size=size))
     for i in range(208):
         off = 0x40 + i * 4
-        rom[off:off + 4] = b"\xff\xff\xff\xff"
+        rom[off : off + 4] = b"\xff\xff\xff\xff"
     rom[0x380:0x384] = bytes.fromhex("57C85314")
     return bytes(rom)
 
@@ -94,17 +105,17 @@ class TestEndianConversion(unittest.TestCase):
 
     def test_odd_length_v64_does_not_crash(self):
         z64 = make_synthetic_rom()
-        v64_odd = byteswap_halfwords(z64) + b"\xAA"
+        v64_odd = byteswap_halfwords(z64) + b"\xaa"
         out = core.to_big_endian(v64_odd, "v64")
-        self.assertEqual(out[:len(z64)], z64)
+        self.assertEqual(out[: len(z64)], z64)
         self.assertEqual(out[-1], 0xAA)
 
     def test_odd_length_n64_does_not_crash(self):
         z64 = make_synthetic_rom()
-        n64_odd = byteswap_words(z64) + b"\xAA\xBB"
+        n64_odd = byteswap_words(z64) + b"\xaa\xbb"
         out = core.to_big_endian(n64_odd, "n64")
-        self.assertEqual(out[:len(z64)], z64)
-        self.assertEqual(out[-2:], b"\xAA\xBB")
+        self.assertEqual(out[: len(z64)], z64)
+        self.assertEqual(out[-2:], b"\xaa\xbb")
 
 
 class TestEnsureZ64(unittest.TestCase):
@@ -127,7 +138,7 @@ class TestEnsureZ64(unittest.TestCase):
             self.assertEqual(f.read(), z64)
 
     def test_rejects_unknown_magic(self):
-        src = self._write("not_a_rom.z64", b"\xDE\xAD\xBE\xEF" * 100)
+        src = self._write("not_a_rom.z64", b"\xde\xad\xbe\xef" * 100)
         out = os.path.join(self.tmp.name, "out.z64")
         self.assertFalse(core.ensure_z64(src, out))
 
@@ -142,7 +153,7 @@ class TestViTableEngine(unittest.TestCase):
     def test_ignores_width_without_burst(self):
         rom = bytearray(make_synthetic_rom(vi_tables=0))
         rom[0x800:0x804] = core.WIDTH_320_DATA
-        rom[0x804:0x808] = b"\xCA\xFE\xBA\xBE"  # not a burst constant
+        rom[0x804:0x808] = b"\xca\xfe\xba\xbe"  # not a burst constant
         self.assertEqual(core.find_vi_tables(bytes(rom)), [])
 
     def test_pal_and_mpal_detected(self):
@@ -169,7 +180,7 @@ class TestViTableEngine(unittest.TestCase):
             self.assertEqual(patched[0x1040:0x1044], core.WIDTH_640_DATA)
             # Everything except the two width words is untouched
             for off in (0x1000, 0x1040):
-                rom = rom[:off] + core.WIDTH_640_DATA + rom[off + 4:]
+                rom = rom[:off] + core.WIDTH_640_DATA + rom[off + 4 :]
             self.assertEqual(patched, rom)
 
     def test_hires_patch_no_tables(self):
@@ -190,9 +201,9 @@ class TestDynamicViPatch(unittest.TestCase):
 
     def _rom_with_patterns(self, size=0x4000):
         rom = bytearray(make_synthetic_rom(vi_tables=0, size=size))
-        rom[self.DITHER_AT:self.DITHER_AT + 4] = core.DITHER_PATTERN
-        rom[self.DITHER_AT + 4:self.DITHER_AT + 8] = core.DITHER_BRANCH
-        rom[self.AA_AT:self.AA_AT + 4] = core.AA_PATTERN
+        rom[self.DITHER_AT : self.DITHER_AT + 4] = core.DITHER_PATTERN
+        rom[self.DITHER_AT + 4 : self.DITHER_AT + 8] = core.DITHER_BRANCH
+        rom[self.AA_AT : self.AA_AT + 4] = core.AA_PATTERN
         return bytes(rom)
 
     def _run(self, data, **kwargs):
@@ -208,20 +219,21 @@ class TestDynamicViPatch(unittest.TestCase):
     def test_both_patterns(self):
         applied, out = self._run(self._rom_with_patterns())
         self.assertEqual(applied, {"NoAA", "NoDither"})
-        self.assertEqual(out[self.DITHER_AT:self.DITHER_AT + 4], core.DITHER_REPLACEMENT)
-        self.assertEqual(out[self.DITHER_AT + 4:self.DITHER_AT + 8],
-                         core.DITHER_BRANCH_REPLACEMENT)
-        self.assertEqual(out[self.AA_AT:self.AA_AT + 4], core.AA_REPLACEMENT)
+        self.assertEqual(out[self.DITHER_AT : self.DITHER_AT + 4], core.DITHER_REPLACEMENT)
+        self.assertEqual(
+            out[self.DITHER_AT + 4 : self.DITHER_AT + 8], core.DITHER_BRANCH_REPLACEMENT
+        )
+        self.assertEqual(out[self.AA_AT : self.AA_AT + 4], core.AA_REPLACEMENT)
 
     def test_dither_only(self):
         applied, out = self._run(self._rom_with_patterns(), no_aa=False)
         self.assertEqual(applied, {"NoDither"})
-        self.assertEqual(out[self.AA_AT:self.AA_AT + 4], core.AA_PATTERN)
+        self.assertEqual(out[self.AA_AT : self.AA_AT + 4], core.AA_PATTERN)
 
     def test_aa_only(self):
         applied, out = self._run(self._rom_with_patterns(), no_dither=False)
         self.assertEqual(applied, {"NoAA"})
-        self.assertEqual(out[self.DITHER_AT:self.DITHER_AT + 4], core.DITHER_PATTERN)
+        self.assertEqual(out[self.DITHER_AT : self.DITHER_AT + 4], core.DITHER_PATTERN)
 
     def test_nothing_requested(self):
         applied, out = self._run(self._rom_with_patterns(), no_aa=False, no_dither=False)
@@ -246,7 +258,7 @@ class TestDynamicViPatch(unittest.TestCase):
         """The complementary case: a real CIC-6102 boot region survives a
         patch that does fire in the code segment."""
         rom = bytearray(make_cic6102_rom(size=0x4000))
-        rom[self.AA_AT:self.AA_AT + 4] = core.AA_PATTERN
+        rom[self.AA_AT : self.AA_AT + 4] = core.AA_PATTERN
         applied, out = self._run(bytes(rom), no_dither=False)
         self.assertEqual(applied, {"NoAA"})
         self.assertEqual(core.detect_cic_chip(out), "6102")
@@ -257,22 +269,22 @@ class TestDynamicViPatch(unittest.TestCase):
         patcher rewrote every hit in the whole ROM."""
         far = core.CODE_REGION_END + 0x40
         rom = bytearray(make_synthetic_rom(vi_tables=0, size=far + 0x100))
-        rom[far:far + 4] = core.AA_PATTERN
+        rom[far : far + 4] = core.AA_PATTERN
         rom = bytes(rom)
         applied, out = self._run(rom)
         self.assertEqual(applied, set())
-        self.assertEqual(out[far:far + 4], core.AA_PATTERN)
+        self.assertEqual(out[far : far + 4], core.AA_PATTERN)
 
     def test_unaligned_match_is_not_touched(self):
         """MIPS instructions are word-aligned; a hit at offset % 4 != 0 is
         data that happens to contain the byte sequence."""
         at = 0x1502  # deliberately not a multiple of 4
         rom = bytearray(make_synthetic_rom(vi_tables=0, size=0x4000))
-        rom[at:at + 4] = core.AA_PATTERN
+        rom[at : at + 4] = core.AA_PATTERN
         rom = bytes(rom)
         applied, out = self._run(rom)
         self.assertEqual(applied, set())
-        self.assertEqual(out[at:at + 4], core.AA_PATTERN)
+        self.assertEqual(out[at : at + 4], core.AA_PATTERN)
 
     def test_implausible_match_density_aborts(self):
         """Hundreds of hits means the scan is in data, not code. Bail out
@@ -281,7 +293,7 @@ class TestDynamicViPatch(unittest.TestCase):
         count = core.MAX_DYNAMIC_PATCH_SITES + 1
         for i in range(count):
             off = 0x1000 + i * 4
-            rom[off:off + 4] = core.AA_PATTERN
+            rom[off : off + 4] = core.AA_PATTERN
         rom = bytes(rom)
         messages = []
         applied, out = self._run(rom, no_dither=False, log=messages.append)
@@ -293,7 +305,7 @@ class TestDynamicViPatch(unittest.TestCase):
         rom = bytearray(make_synthetic_rom(vi_tables=0, size=0x8000))
         for i in range(core.MAX_DYNAMIC_PATCH_SITES):
             off = 0x1000 + i * 4
-            rom[off:off + 4] = core.AA_PATTERN
+            rom[off : off + 4] = core.AA_PATTERN
         applied, out = self._run(bytes(rom), no_dither=False)
         self.assertEqual(applied, {"NoAA"})
         self.assertEqual(out.count(core.AA_PATTERN), 0)
@@ -339,6 +351,7 @@ class TestInspection(unittest.TestCase):
 
     def test_hashes(self):
         import hashlib
+
         rom = make_synthetic_rom()
         p = self._write("hashed.z64", rom)
         info = core.inspect_rom_details(p, with_hashes=True)
@@ -346,7 +359,7 @@ class TestInspection(unittest.TestCase):
         self.assertEqual(info["sha1"], hashlib.sha1(rom).hexdigest().upper())
 
     def test_garbage_file(self):
-        p = self._write("junk.z64", b"\xFF" * 100)
+        p = self._write("junk.z64", b"\xff" * 100)
         info = core.inspect_rom_details(p)
         self.assertIn("Unknown", info["format"])
         self.assertEqual(info["title"], "Unknown")
@@ -378,8 +391,9 @@ class TestHelpers(unittest.TestCase):
         result must be named after the game, not after the intermediate."""
         for suffix in core.TEMP_SUFFIXES:
             p = core.build_output_path(f"/roms/game.z64{suffix}", {"NoAA"})
-            self.assertEqual(os.path.basename(p), "game [NoAA].z64",
-                             f"{suffix} leaked into the output name")
+            self.assertEqual(
+                os.path.basename(p), "game [NoAA].z64", f"{suffix} leaked into the output name"
+            )
 
     def test_build_output_path_keeps_moderately_long_names_intact(self):
         """Names that fit the filesystem limit are never shortened - the old
@@ -390,8 +404,7 @@ class TestHelpers(unittest.TestCase):
 
     def test_build_output_path_long_name_fits_filesystem_limit(self):
         p = core.build_output_path("/roms/" + "A" * 400 + ".z64", {"NoAA"})
-        self.assertLessEqual(
-            len(os.path.basename(p).encode("utf-8")), core.MAX_FILENAME_BYTES)
+        self.assertLessEqual(len(os.path.basename(p).encode("utf-8")), core.MAX_FILENAME_BYTES)
 
     def test_build_output_path_long_shared_prefix_stays_distinct(self):
         """Two ROMs sharing a long prefix must not produce the same output
@@ -518,14 +531,16 @@ class TestHiresSupportGate(unittest.TestCase):
         width = core.WIDTH_640_DATA if hires else core.WIDTH_320_DATA
         for i in range(tables):
             off = 0x1000 + i * 0x40
-            rom[off:off + 4] = width
-            rom[off + 4:off + 8] = core.NTSC_BURST
+            rom[off : off + 4] = width
+            rom[off + 4 : off + 8] = core.NTSC_BURST
         return bytes(rom)
 
     def _inspect(self, **kw):
         p = self._write("g.z64", self._rom(**kw))
-        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
-             mock.patch.object(core, "SUBDRAG_PATCHES", self.table):
+        with (
+            mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir),
+            mock.patch.object(core, "SUBDRAG_PATCHES", self.table),
+        ):
             return core.inspect_rom_details(p)
 
     # --- classification ---------------------------------------------------
@@ -566,8 +581,7 @@ class TestHiresSupportGate(unittest.TestCase):
 
     def test_force_hires_still_allows_it(self):
         src = self._write("game.z64", self._rom())
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
-                                 force_hires=True)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True, force_hires=True)
         logs = []
         res = core.patch_rom(src, opts, log=logs.append)
         self.assertEqual(res["status"], "patched", res)
@@ -599,16 +613,25 @@ class TestHiresSupportGate(unittest.TestCase):
         system xdelta3 would otherwise quietly run the real binary and the
         test would prove nothing about the fallback path."""
         src = self._write("game.z64", self._rom(crc=self.SM64))
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
-                                 **opt_kw)
+        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True, **opt_kw)
         logs = []
-        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
-             mock.patch.object(core, "SUBDRAG_PATCHES", self.table), \
-             mock.patch.object(core, "XDELTA3_PATH", "/nonexistent/xdelta3"), \
-             mock.patch.object(core, "check_tools", lambda: {
-                 "u64aap": False, "rn64crc": False, "xdelta3": False,
-                 "xdelta_native": True, "hires_patches": True,
-                 "crc_native": True}):
+        with (
+            mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir),
+            mock.patch.object(core, "SUBDRAG_PATCHES", self.table),
+            mock.patch.object(core, "XDELTA3_PATH", "/nonexistent/xdelta3"),
+            mock.patch.object(
+                core,
+                "check_tools",
+                lambda: {
+                    "u64aap": False,
+                    "rn64crc": False,
+                    "xdelta3": False,
+                    "xdelta_native": True,
+                    "hires_patches": True,
+                    "crc_native": True,
+                },
+            ),
+        ):
             res = core.patch_rom(src, opts, log=logs.append)
         return src, res, logs
 
@@ -643,13 +666,23 @@ class TestHiresSupportGate(unittest.TestCase):
 
         opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
         logs = []
-        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
-             mock.patch.object(core, "SUBDRAG_PATCHES", self.table), \
-             mock.patch.object(core, "XDELTA3_PATH", "/nonexistent/xdelta3"), \
-             mock.patch.object(core, "check_tools", lambda: {
-                 "u64aap": False, "rn64crc": False, "xdelta3": False,
-                 "xdelta_native": True, "hires_patches": True,
-                 "crc_native": True}):
+        with (
+            mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir),
+            mock.patch.object(core, "SUBDRAG_PATCHES", self.table),
+            mock.patch.object(core, "XDELTA3_PATH", "/nonexistent/xdelta3"),
+            mock.patch.object(
+                core,
+                "check_tools",
+                lambda: {
+                    "u64aap": False,
+                    "rn64crc": False,
+                    "xdelta3": False,
+                    "xdelta_native": True,
+                    "hires_patches": True,
+                    "crc_native": True,
+                },
+            ),
+        ):
             res = core.patch_rom(src, opts, log=logs.append)
 
         self.assertEqual(res["status"], "patched")
@@ -677,12 +710,22 @@ class TestHiresSupportGate(unittest.TestCase):
             shutil.copyfile(source, output)
             return True, "SUCCESS"
 
-        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
-             mock.patch.object(core, "SUBDRAG_PATCHES", self.table), \
-             mock.patch.object(core, "check_tools", lambda: {
-                 "u64aap": False, "rn64crc": False, "xdelta3": True,
-                 "hires_patches": True, "crc_native": True}), \
-             mock.patch.object(core, "try_subdrag_xdelta", fake_xdelta):
+        with (
+            mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir),
+            mock.patch.object(core, "SUBDRAG_PATCHES", self.table),
+            mock.patch.object(
+                core,
+                "check_tools",
+                lambda: {
+                    "u64aap": False,
+                    "rn64crc": False,
+                    "xdelta3": True,
+                    "hires_patches": True,
+                    "crc_native": True,
+                },
+            ),
+            mock.patch.object(core, "try_subdrag_xdelta", fake_xdelta),
+        ):
             res = core.patch_rom(src, opts, log=logs.append)
         self.assertIn("HR", res["applied"])
         self.assertNotIn("NOT SUPPORTED", " ".join(logs))
@@ -731,10 +774,15 @@ class TestGameFixStage(unittest.TestCase):
 
     @staticmethod
     def _ips(offset, payload):
-        return (b"PATCH" + offset.to_bytes(3, "big")
-                + len(payload).to_bytes(2, "big") + payload + b"EOF")
+        return (
+            b"PATCH"
+            + offset.to_bytes(3, "big")
+            + len(payload).to_bytes(2, "big")
+            + payload
+            + b"EOF"
+        )
 
-    def _write_fix(self, name, offset=0x1500, payload=b"\xAA\xBB", user=False):
+    def _write_fix(self, name, offset=0x1500, payload=b"\xaa\xbb", user=False):
         path = os.path.join(self.user_fixes if user else self.fixes, name)
         with open(path, "wb") as f:
             f.write(self._ips(offset, payload))
@@ -746,11 +794,13 @@ class TestGameFixStage(unittest.TestCase):
             f.write(self.rom)
         opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True)
         logs = []
-        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir), \
-             mock.patch.object(core, "SUBDRAG_PATCHES", self.table), \
-             mock.patch.object(core, "GAME_FIXES_DIR", self.fixes), \
-             mock.patch.object(core, "USER_GAME_FIXES_DIR", self.user_fixes), \
-             mock.patch.object(core, "XDELTA3_PATH", "/nonexistent/xdelta3"):
+        with (
+            mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir),
+            mock.patch.object(core, "SUBDRAG_PATCHES", self.table),
+            mock.patch.object(core, "GAME_FIXES_DIR", self.fixes),
+            mock.patch.object(core, "USER_GAME_FIXES_DIR", self.user_fixes),
+            mock.patch.object(core, "XDELTA3_PATH", "/nonexistent/xdelta3"),
+        ):
             res = core.patch_rom(src, opts, log=logs.append)
         return res, logs
 
@@ -764,7 +814,7 @@ class TestGameFixStage(unittest.TestCase):
         with open(res["output"], "rb") as f:
             out = f.read()
         self.assertEqual(out[0x1000:0x1004], core.WIDTH_640_DATA)  # delta
-        self.assertEqual(out[0x1500:0x1502], b"\xAA\xBB")          # fix
+        self.assertEqual(out[0x1500:0x1502], b"\xaa\xbb")  # fix
 
     def test_fix_for_another_dump_is_never_applied(self):
         """The decoy is a perfectly good IPS on purpose. If the CRC1 filter
@@ -779,15 +829,18 @@ class TestGameFixStage(unittest.TestCase):
         self.assertFalse(any("Game fix: applied" in line for line in logs))
         with open(res["output"], "rb") as f:
             out = f.read()
-        self.assertEqual(out[0x1500:0x1502], self.rom[0x1500:0x1502],
-                         "a fix built for another dump was applied")
+        self.assertEqual(
+            out[0x1500:0x1502], self.rom[0x1500:0x1502], "a fix built for another dump was applied"
+        )
 
     def test_no_fix_present_is_silent(self):
         res, logs = self._run()
         self.assertEqual(res["status"], "patched")
         self.assertNotIn("GAMEFIX", res["applied"])
-        self.assertFalse(any("Game fix" in line for line in logs),
-                         "the stage announces itself when it has nothing to do")
+        self.assertFalse(
+            any("Game fix" in line for line in logs),
+            "the stage announces itself when it has nothing to do",
+        )
 
     def test_user_directory_overrides_the_bundled_fix(self):
         self._write_fix("635A2BFF_menu.ips", payload=b"\x11\x22")
@@ -802,15 +855,20 @@ class TestGameFixStage(unittest.TestCase):
         string; callers reading the header have an int. Both must key the
         same file, and neither may degrade into 'match anything'."""
         target = self._write_fix("635A2BFF_menu.ips")
-        with mock.patch.object(core, "GAME_FIXES_DIR", self.fixes), \
-             mock.patch.object(core, "USER_GAME_FIXES_DIR", self.user_fixes):
-            for spelling in (0x635A2BFF, "635A2BFF", "635a2bff", "0x635A2BFF",
-                             " 635A2BFF "):
-                self.assertEqual(core.get_game_fix_for_rom(spelling), target,
-                                 f"CRC1 spelling {spelling!r} missed the fix")
+        with (
+            mock.patch.object(core, "GAME_FIXES_DIR", self.fixes),
+            mock.patch.object(core, "USER_GAME_FIXES_DIR", self.user_fixes),
+        ):
+            for spelling in (0x635A2BFF, "635A2BFF", "635a2bff", "0x635A2BFF", " 635A2BFF "):
+                self.assertEqual(
+                    core.get_game_fix_for_rom(spelling),
+                    target,
+                    f"CRC1 spelling {spelling!r} missed the fix",
+                )
             for junk in (None, "Unknown", "", "635A2BF", "ZZZZZZZZ", 1.0, True):
-                self.assertIsNone(core.get_game_fix_for_rom(junk),
-                                  f"CRC1 value {junk!r} matched a foreign fix")
+                self.assertIsNone(
+                    core.get_game_fix_for_rom(junk), f"CRC1 value {junk!r} matched a foreign fix"
+                )
 
 
 class TestPlatformPaths(unittest.TestCase):
@@ -818,8 +876,10 @@ class TestPlatformPaths(unittest.TestCase):
     never write next to the executable (read-only for installed bundles)."""
 
     def _log_dir(self, platform, env):
-        with mock.patch.object(sys, "platform", platform), \
-             mock.patch.dict(os.environ, env, clear=False):
+        with (
+            mock.patch.object(sys, "platform", platform),
+            mock.patch.dict(os.environ, env, clear=False),
+        ):
             return core.get_log_dir()
 
     def test_windows_uses_appdata(self):
@@ -846,9 +906,9 @@ class TestPlatformPaths(unittest.TestCase):
             got = self._log_dir("linux", {"XDG_DATA_HOME": value})
             self.assertEqual(
                 got,
-                os.path.join(os.path.expanduser("~"), ".local", "share",
-                             "n64-smart-patcher"),
-                f"XDG_DATA_HOME={value!r}")
+                os.path.join(os.path.expanduser("~"), ".local", "share", "n64-smart-patcher"),
+                f"XDG_DATA_HOME={value!r}",
+            )
 
     def test_install_hint_is_platform_specific(self):
         hints = {}
@@ -881,7 +941,10 @@ class TestSubdragCrcMatching(unittest.TestCase):
         self.table = {self.SM64: ("sm64.xdelta", "Super Mario 64 (USA)")}
 
     def _lookup(self, crc1, crc2):
-        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir),              mock.patch.object(core, "SUBDRAG_PATCHES", self.table):
+        with (
+            mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir),
+            mock.patch.object(core, "SUBDRAG_PATCHES", self.table),
+        ):
             return core.get_subdrag_patch(crc1, crc2)
 
     def test_exact_dump_is_offered(self):
@@ -935,7 +998,10 @@ class TestSubdragCrcMatching(unittest.TestCase):
         p = os.path.join(self.tmp.name, "sm64.z64")
         with open(p, "wb") as f:
             f.write(bytes(rom))
-        with mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir),              mock.patch.object(core, "SUBDRAG_PATCHES", self.table):
+        with (
+            mock.patch.object(core, "HIRES_PATCHES_DIR", self.patch_dir),
+            mock.patch.object(core, "SUBDRAG_PATCHES", self.table),
+        ):
             self.assertTrue(core.inspect_rom_details(p)["has_subdrag_patch"])
 
 
@@ -948,12 +1014,12 @@ class TestMixedResolutionReporting(unittest.TestCase):
         rom = bytearray(make_synthetic_rom(vi_tables=0, size=0x4000))
         off = 0x1000
         for _ in range(n320):
-            rom[off:off + 4] = core.WIDTH_320_DATA
-            rom[off + 4:off + 8] = core.NTSC_BURST
+            rom[off : off + 4] = core.WIDTH_320_DATA
+            rom[off + 4 : off + 8] = core.NTSC_BURST
             off += 0x40
         for _ in range(n640):
-            rom[off:off + 4] = core.WIDTH_640_DATA
-            rom[off + 4:off + 8] = core.NTSC_BURST
+            rom[off : off + 4] = core.WIDTH_640_DATA
+            rom[off + 4 : off + 8] = core.NTSC_BURST
             off += 0x40
         p = os.path.join(self.tmp.name, f"m{n320}_{n640}.z64")
         with open(p, "wb") as f:
@@ -995,7 +1061,7 @@ class TestAaDitherFlagsAreIndependent(unittest.TestCase):
         rom = bytearray(make_synthetic_rom(vi_tables=0, size=0x4000))
         off = 0x1400
         for pat in patterns:
-            rom[off:off + 4] = pat
+            rom[off : off + 4] = pat
             off += 0x40
         p = os.path.join(self.tmp.name, f"f{len(patterns)}{off}.z64")
         with open(p, "wb") as f:
@@ -1023,7 +1089,7 @@ class TestAaDitherFlagsAreIndependent(unittest.TestCase):
         site was left alone with no error shown."""
         rom = bytearray(make_synthetic_rom(vi_tables=1, size=0x4000))
         rom[0x1400:0x1404] = core.DITHER_REPLACEMENT  # dither already done
-        rom[0x1440:0x1444] = core.AA_PATTERN          # AA still unpatched
+        rom[0x1440:0x1444] = core.AA_PATTERN  # AA still unpatched
         src = os.path.join(self.tmp.name, "dither_only.z64")
         with open(src, "wb") as f:
             f.write(bytes(rom))
@@ -1060,7 +1126,7 @@ class TestVerifyOutput(unittest.TestCase):
     def test_wrong_checksums_fail_strictly(self):
         """The black-screen case: header CRCs that do not match the data."""
         rom = bytearray(make_cic6102_rom())
-        rom[0x10:0x18] = b"\xDE\xAD\xBE\xEF\x12\x34\x56\x78"
+        rom[0x10:0x18] = b"\xde\xad\xbe\xef\x12\x34\x56\x78"
         p = self._write("bad.z64", bytes(rom))
         verdict = core.verify_output(p)
         self.assertFalse(verdict["ok"])
@@ -1073,7 +1139,7 @@ class TestVerifyOutput(unittest.TestCase):
         self.assertFalse(verdict["ok"])
 
     def test_non_rom_fails(self):
-        p = self._write("junk.z64", b"\xFF" * 4096)
+        p = self._write("junk.z64", b"\xff" * 4096)
         self.assertFalse(core.verify_output(p)["ok"])
 
     def test_filter_expectations_are_advisory_not_fatal(self):
@@ -1092,8 +1158,7 @@ class TestVerifyOutput(unittest.TestCase):
         src = self._write("in.z64", make_cic6102_rom())
         out = self._write("out.z64", make_cic6102_rom())
         core.fix_rom_crc_native(out)
-        rows = core.verify_report_rows(
-            [{"input": src, "output": out, "applied": {"HR"}}])
+        rows = core.verify_report_rows([{"input": src, "output": out, "applied": {"HR"}}])
         self.assertEqual(len(rows), 1)
         row = rows[0]
         self.assertTrue(row["verified"])
@@ -1143,8 +1208,8 @@ class TestCrcHeaderValidity(unittest.TestCase):
         rom = bytearray(make_cic6102_rom(size=0x4000))
         for i in range(2):
             off = 0x2000 + i * 0x40
-            rom[off:off + 4] = core.WIDTH_320_DATA
-            rom[off + 4:off + 8] = core.NTSC_BURST
+            rom[off : off + 4] = core.WIDTH_320_DATA
+            rom[off + 4 : off + 8] = core.NTSC_BURST
         src = self._write("game.z64", bytes(rom))
 
         class FakeResult:
@@ -1152,18 +1217,28 @@ class TestCrcHeaderValidity(unittest.TestCase):
             stdout = "Unable to calculate!"
             stderr = ""
 
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
-                                 force_hires=True)  # synthetic fixture: no verified dump
+        opts = core.PatchOptions(
+            no_aa=False, no_dither=False, hires=True, force_hires=True
+        )  # synthetic fixture: no verified dump
         logs = []
-        fake_tools = {"rn64crc": True, "u64aap": False, "xdelta3": False,
-                      "hires_patches": False, "crc_native": True}
-        with mock.patch.object(core, "check_tools", lambda: fake_tools), \
-             mock.patch.object(core, "_run_tool", lambda *a, **k: FakeResult()):
+        fake_tools = {
+            "rn64crc": True,
+            "u64aap": False,
+            "xdelta3": False,
+            "hires_patches": False,
+            "crc_native": True,
+        }
+        with (
+            mock.patch.object(core, "check_tools", lambda: fake_tools),
+            mock.patch.object(core, "_run_tool", lambda *a, **k: FakeResult()),
+        ):
             res = core.patch_rom(src, opts, log=logs.append)
 
         self.assertEqual(res["status"], "patched", res)
-        self.assertTrue(core.crc_header_is_valid(res["output"]),
-                        "native engine did not run after the tool no-op")
+        self.assertTrue(
+            core.crc_header_is_valid(res["output"]),
+            "native engine did not run after the tool no-op",
+        )
         self.assertTrue(any("falling back to native" in m for m in logs), logs)
         self.assertTrue(core.verify_output(res["output"], res["applied"])["ok"])
 
@@ -1184,15 +1259,13 @@ class TestTempFilePlacement(unittest.TestCase):
 
     def test_falls_back_to_input_dir_when_no_output_dir(self):
         rom = os.path.join(self.tmp.name, "rom.z64")
-        self.assertEqual(os.path.abspath(core._temp_dir_for(rom)),
-                         os.path.abspath(self.tmp.name))
+        self.assertEqual(os.path.abspath(core._temp_dir_for(rom)), os.path.abspath(self.tmp.name))
 
     def test_falls_back_to_system_temp_when_nothing_is_writable(self):
         rom = os.path.join(self.tmp.name, "rom.z64")
         with mock.patch("os.access", return_value=False):
             chosen = core._temp_dir_for(rom, os.path.join(self.tmp.name, "out"))
-        self.assertEqual(os.path.abspath(chosen),
-                         os.path.abspath(tempfile.gettempdir()))
+        self.assertEqual(os.path.abspath(chosen), os.path.abspath(tempfile.gettempdir()))
 
     def test_read_only_source_dir_still_patches(self):
         """The end-to-end case: input directory not writable, output
@@ -1212,8 +1285,9 @@ class TestTempFilePlacement(unittest.TestCase):
                 return False
             return real_access(path, mode, *a, **kw)
 
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
-                                 force_hires=True)  # synthetic fixture: no verified dump
+        opts = core.PatchOptions(
+            no_aa=False, no_dither=False, hires=True, force_hires=True
+        )  # synthetic fixture: no verified dump
         with mock.patch("os.access", no_write_to_src):
             res = core.patch_rom(src, opts, log=lambda m: None, output_dir=out_dir)
         self.assertEqual(res["status"], "patched", res)
@@ -1241,8 +1315,9 @@ class TestPatchPipeline(unittest.TestCase):
     def test_hires_pipeline_creates_tagged_output_and_preserves_original(self):
         rom = make_synthetic_rom(vi_tables=2)
         src = self._write("game.z64", rom)
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
-                                 force_hires=True)  # synthetic fixture: no verified dump
+        opts = core.PatchOptions(
+            no_aa=False, no_dither=False, hires=True, force_hires=True
+        )  # synthetic fixture: no verified dump
         logs = []
         res = core.patch_rom(src, opts, log=logs.append)
         self.assertEqual(res["status"], "patched")
@@ -1263,25 +1338,29 @@ class TestPatchPipeline(unittest.TestCase):
     def test_skip_when_nothing_patchable(self):
         rom = make_synthetic_rom(vi_tables=0)
         src = self._write("bare.z64", rom)
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
-                                 force_hires=True)  # synthetic fixture: no verified dump
+        opts = core.PatchOptions(
+            no_aa=False, no_dither=False, hires=True, force_hires=True
+        )  # synthetic fixture: no verified dump
         res = core.patch_rom(src, opts, log=lambda m: None)
         self.assertEqual(res["status"], "skipped")
 
     def test_cancel_aborts_run(self):
         rom = make_synthetic_rom(vi_tables=1)
         src = self._write("cancelme.z64", rom)
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
-                                 force_hires=True)  # synthetic fixture: no verified dump
+        opts = core.PatchOptions(
+            no_aa=False, no_dither=False, hires=True, force_hires=True
+        )  # synthetic fixture: no verified dump
         res = core.patch_rom(src, opts, log=lambda m: None, should_cancel=lambda: True)
         self.assertEqual(res["status"], "cancelled")
         # No temp files left behind
         leftovers = [f for f in os.listdir(self.tmp.name) if f != "cancelme.z64"]
         self.assertEqual(leftovers, [])
 
-    @unittest.skipUnless(core._is_runnable(core.XDELTA3_PATH),
-                         "no runnable xdelta3 available (bundled exe not "
-                         "executable on this platform, no system xdelta3)")
+    @unittest.skipUnless(
+        core._is_runnable(core.XDELTA3_PATH),
+        "no runnable xdelta3 available (bundled exe not "
+        "executable on this platform, no system xdelta3)",
+    )
     def test_subdrag_xdelta_applies_to_clean_source_first(self):
         import subprocess
         from unittest import mock
@@ -1299,23 +1378,32 @@ class TestPatchPipeline(unittest.TestCase):
         target_path = self._write("target.bin", bytes(target))
 
         delta = os.path.join(self.tmp.name, "sm64_hires.xdelta")
-        mk = subprocess.run([core.XDELTA3_PATH, "-e", "-s", src, target_path, delta],
-                            capture_output=True, creationflags=core.CREATE_NO_WINDOW)
+        mk = subprocess.run(
+            [core.XDELTA3_PATH, "-e", "-s", src, target_path, delta],
+            capture_output=True,
+            creationflags=core.CREATE_NO_WINDOW,
+        )
         self.assertEqual(mk.returncode, 0, mk.stderr.decode(errors="replace"))
 
         fake_dir = os.path.join(self.tmp.name, "fake_patches")
         os.mkdir(fake_dir)
         import shutil
+
         fake_delta = os.path.join(fake_dir, "sm64 NoAA hires.xdelta")
         shutil.copy(delta, fake_delta)
 
-        opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
-                                 force_hires=True)  # synthetic fixture: no verified dump
+        opts = core.PatchOptions(
+            no_aa=False, no_dither=False, hires=True, force_hires=True
+        )  # synthetic fixture: no verified dump
         logs = []
-        with mock.patch.object(core, "HIRES_PATCHES_DIR", fake_dir), \
-             mock.patch.object(core, "SUBDRAG_PATCHES",
-                               {(0xDEADBEEF, 0x12345678):
-                                ("sm64 NoAA hires.xdelta", "SM64 fixture")}):
+        with (
+            mock.patch.object(core, "HIRES_PATCHES_DIR", fake_dir),
+            mock.patch.object(
+                core,
+                "SUBDRAG_PATCHES",
+                {(0xDEADBEEF, 0x12345678): ("sm64 NoAA hires.xdelta", "SM64 fixture")},
+            ),
+        ):
             res = core.patch_rom(src, opts, log=logs.append)
 
         self.assertEqual(res["status"], "patched")
@@ -1346,7 +1434,7 @@ def reference_crc_6102(data):
     t1 = t2 = t3 = t4 = t5 = t6 = seed
 
     def word(off):
-        chunk = data[off:off + 4]
+        chunk = data[off : off + 4]
         if len(chunk) < 4:
             chunk = bytes(chunk) + b"\x00" * (4 - len(chunk))
         return int.from_bytes(chunk, "big")
@@ -1381,9 +1469,8 @@ class TestCrcEngine(unittest.TestCase):
         state = 0x13579BDF
         for off in range(0x1000, 0x8000, 4):
             state = (state * 1103515245 + 12345) & 0xFFFFFFFF
-            rom[off:off + 4] = state.to_bytes(4, "big")
-        self.assertEqual(core.calculate_n64_crc(bytes(rom), "6102"),
-                         reference_crc_6102(bytes(rom)))
+            rom[off : off + 4] = state.to_bytes(4, "big")
+        self.assertEqual(core.calculate_n64_crc(bytes(rom), "6102"), reference_crc_6102(bytes(rom)))
 
     def test_equal_accumulator_and_word_takes_sum_branch(self):
         """Regression: the reference compares `t2 > d`, so d == t2 must take
@@ -1393,8 +1480,7 @@ class TestCrcEngine(unittest.TestCase):
         rom = bytearray(make_cic6102_rom())
         rom[0x1000:0x1004] = (0xF8CA4DDC).to_bytes(4, "big")  # == seed == a2
         rom = bytes(rom)
-        self.assertEqual(core.calculate_n64_crc(rom, "6102"),
-                         reference_crc_6102(rom))
+        self.assertEqual(core.calculate_n64_crc(rom, "6102"), reference_crc_6102(rom))
 
     def test_detect_cic_6102(self):
         self.assertEqual(core.detect_cic_chip(self._make_cic6102_rom()), "6102")
@@ -1449,7 +1535,7 @@ class TestCrcEngine(unittest.TestCase):
         'Not a big-endian .z64 image' instead of just converting."""
         original = byteswap_halfwords(self._make_cic6102_rom())
         out = self._fix_swapped(original, "v64", "v64")
-        self.assertEqual(out[:0x10], original[:0x10])   # only 0x10..0x18 changed
+        self.assertEqual(out[:0x10], original[:0x10])  # only 0x10..0x18 changed
         self.assertEqual(out[0x18:], original[0x18:])
 
     def test_fix_native_handles_n64(self):
@@ -1459,7 +1545,7 @@ class TestCrcEngine(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             p = os.path.join(tmp, "junk.z64")
             with open(p, "wb") as f:
-                f.write(b"\xFF" * 4096)
+                f.write(b"\xff" * 4096)
             ok, msg = core.fix_rom_crc_native(p)
             self.assertFalse(ok)
             self.assertIn("recognizable", msg)
@@ -1487,8 +1573,9 @@ class TestOutputDirAndTags(unittest.TestCase):
             with open(src, "wb") as f:
                 f.write(rom)
             outdir = os.path.join(tmp, "out", "nested")
-            opts = core.PatchOptions(no_aa=False, no_dither=False, hires=True,
-                                 force_hires=True)  # synthetic fixture: no verified dump
+            opts = core.PatchOptions(
+                no_aa=False, no_dither=False, hires=True, force_hires=True
+            )  # synthetic fixture: no verified dump
             res = core.patch_rom(src, opts, log=lambda m: None, output_dir=outdir)
             self.assertEqual(res["status"], "patched")
             self.assertEqual(os.path.dirname(res["output"]), outdir)

@@ -9,6 +9,7 @@ The support scan itself runs on a background thread; these tests call
 update_hires_availability(sync=True) so the final state is observable
 without an event loop.
 """
+
 import importlib.util
 import os
 import tempfile
@@ -55,8 +56,8 @@ class TestGuiHiresGate(unittest.TestCase):
         width = core.WIDTH_640_DATA if hires else core.WIDTH_320_DATA
         for i in range(2):
             off = 0x1000 + i * 0x40
-            rom[off:off + 4] = width
-            rom[off + 4:off + 8] = core.NTSC_BURST
+            rom[off : off + 4] = width
+            rom[off + 4 : off + 8] = core.NTSC_BURST
         p = os.path.join(self.tmp.name, name)
         with open(p, "wb") as f:
             f.write(bytes(rom))
@@ -133,13 +134,13 @@ class TestStartButton(unittest.TestCase):
 
     def test_is_a_real_button_with_an_accessible_name(self):
         from PyQt6.QtWidgets import QPushButton
+
         self.assertIsInstance(self.gui.btn_patch, QPushButton)
         self.assertEqual(self.gui.btn_patch.accessibleName(), "Start patching")
         self.assertTrue(self.gui.btn_patch.toolTip())
 
     def test_click_is_connected(self):
-        self.assertGreater(
-            self.gui.btn_patch.receivers(self.gui.btn_patch.clicked), 0)
+        self.assertGreater(self.gui.btn_patch.receivers(self.gui.btn_patch.clicked), 0)
 
     def test_round_key_stays_square_so_the_radius_reads_as_a_circle(self):
         b = self.gui.btn_patch
@@ -149,10 +150,12 @@ class TestStartButton(unittest.TestCase):
         """QMessageBox is modal and would block a headless run forever, so
         the dialog is stubbed and only the fact that it fired is checked."""
         from n64patcher import gui as gui_mod
+
         self.gui.rom_list = []
         seen = []
-        with mock.patch.object(gui_mod.QMessageBox, "warning",
-                               side_effect=lambda *a, **k: seen.append(a)):
+        with mock.patch.object(
+            gui_mod.QMessageBox, "warning", side_effect=lambda *a, **k: seen.append(a)
+        ):
             self.gui.btn_patch.click()
         self.assertTrue(seen, "no warning shown for an empty ROM list")
         self.assertIsNone(self.gui.worker)

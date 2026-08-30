@@ -100,9 +100,9 @@ def kinds_for_extension(path: str) -> list[SaveKind]:
 # Byte order
 # ---------------------------------------------------------------------------
 
-ORDER_RAW = "raw"        # chip order: what hardware and flashcarts expect
-ORDER_WORD = "word"      # 32-bit words byte-reversed
-ORDER_HALF = "half"      # 16-bit halfwords byte-reversed
+ORDER_RAW = "raw"  # chip order: what hardware and flashcarts expect
+ORDER_WORD = "word"  # 32-bit words byte-reversed
+ORDER_HALF = "half"  # 16-bit halfwords byte-reversed
 
 ORDERS = (ORDER_RAW, ORDER_WORD, ORDER_HALF)
 
@@ -124,7 +124,11 @@ def swap_words(data: bytes) -> bytes:
     n = len(data) - (len(data) % 4)
     out = bytearray(data)
     out[0:n:4], out[1:n:4], out[2:n:4], out[3:n:4] = (
-        bytes(out[3:n:4]), bytes(out[2:n:4]), bytes(out[1:n:4]), bytes(out[0:n:4]))
+        bytes(out[3:n:4]),
+        bytes(out[2:n:4]),
+        bytes(out[1:n:4]),
+        bytes(out[0:n:4]),
+    )
     return bytes(out)
 
 
@@ -224,8 +228,8 @@ def structure_score(data: bytes) -> int:
     """
     score = 0
     for i in range(0, len(data) - 3, 4):
-        group = data[i:i + 4]
-        if group == b"\x00\x00\x00\x00" or group == b"\xFF\xFF\xFF\xFF":
+        group = data[i : i + 4]
+        if group == b"\x00\x00\x00\x00" or group == b"\xff\xff\xff\xff":
             continue
         leading = 0
         for byte in group:
@@ -248,6 +252,7 @@ class OrderGuess:
     `order` is None when the evidence does not decide it. Callers must not
     treat None as "raw" - they have to ask, or be told by the user.
     """
+
     order: str | None
     scores: dict[str, int]
     reason: str
@@ -270,15 +275,19 @@ def detect_order(data: bytes) -> OrderGuess:
     runner_up = ranked[1][1]
 
     if best_score <= 0:
-        return OrderGuess(None, scores,
-                          "no arrangement looks like big-endian data - this "
-                          "save carries no signal to detect the order from")
+        return OrderGuess(
+            None,
+            scores,
+            "no arrangement looks like big-endian data - this "
+            "save carries no signal to detect the order from",
+        )
     if best_score - runner_up < _DECISION_MARGIN:
-        return OrderGuess(None, scores,
-                          "several arrangements score alike; the source has "
-                          "to be stated rather than guessed")
-    return OrderGuess(best, scores,
-                      f"reads as big-endian data in {ORDER_LABELS[best]}")
+        return OrderGuess(
+            None,
+            scores,
+            "several arrangements score alike; the source has to be stated rather than guessed",
+        )
+    return OrderGuess(best, scores, f"reads as big-endian data in {ORDER_LABELS[best]}")
 
 
 # ---------------------------------------------------------------------------
@@ -313,16 +322,23 @@ class SaveSource:
 
 SOURCES: tuple[SaveSource, ...] = (
     SaveSource(
-        "sc64", "SummerCart64 / N64FlashcartMenu",
+        "sc64",
+        "SummerCart64 / N64FlashcartMenu",
         dict.fromkeys(ALL_KINDS, ORDER_RAW),
         "Measured on a 132-save card: the Ocarina of Time save carries its "
         "'ZELDAZ' marker unscrambled at 0x3c, with the backup copy at "
         "0x3d2c, so the file is in chip order. Saves of all five chip types "
-        "were present and none showed a differing arrangement"),
+        "were present and none showed a differing arrangement",
+    ),
     SaveSource(
-        "mupen64plus", "mupen64plus",
-        {EEPROM_4K: ORDER_RAW, EEPROM_16K: ORDER_RAW,
-         SRAM_256K: ORDER_WORD, FLASHRAM_1M: ORDER_WORD},
+        "mupen64plus",
+        "mupen64plus",
+        {
+            EEPROM_4K: ORDER_RAW,
+            EEPROM_16K: ORDER_RAW,
+            SRAM_256K: ORDER_WORD,
+            FLASHRAM_1M: ORDER_WORD,
+        },
         "Two measurements, and they disagree with each other. Its Super "
         "Mario 64 EEPROM save passes the game's own checksum exactly as "
         "stored and fails under either swap, so EEPROM is chip order. Its "
@@ -337,11 +353,14 @@ SOURCES: tuple[SaveSource, ...] = (
         "hardware is reached - it hangs off the serial controller port "
         "while SRAM and FlashRAM sit on the 32-bit cartridge bus - though "
         "that is an explanation for the pattern, not something measured. "
-        "Controller Pak and 768 Kbit SRAM remain unmeasured"),
+        "Controller Pak and 768 Kbit SRAM remain unmeasured",
+    ),
     SaveSource(
-        "hardware", "Real cartridge / chip dump",
+        "hardware",
+        "Real cartridge / chip dump",
         dict.fromkeys(ALL_KINDS, ORDER_RAW),
-        "Chip order by definition - this is what the save chip holds"),
+        "Chip order by definition - this is what the save chip holds",
+    ),
 )
 
 SOURCES_BY_KEY = {s.key: s for s in SOURCES}
@@ -356,9 +375,12 @@ SOURCE_EXTENSIONS: dict[str, dict[str, str] | str] = {
     "sc64": ".sav",
     "hardware": ".sav",
     "mupen64plus": {
-        EEPROM_4K: ".eep", EEPROM_16K: ".eep",
-        SRAM_256K: ".sra", SRAM_768K: ".sra",
-        FLASHRAM_1M: ".fla", CONTROLLER_PAK: ".mpk",
+        EEPROM_4K: ".eep",
+        EEPROM_16K: ".eep",
+        SRAM_256K: ".sra",
+        SRAM_768K: ".sra",
+        FLASHRAM_1M: ".fla",
+        CONTROLLER_PAK: ".mpk",
     },
 }
 
@@ -387,7 +409,8 @@ def order_for_source(key: str, kind: SaveKind) -> str:
         raise SaveError(
             f"no measured byte order for source {key!r}. Known: {known}. "
             f"Add an entry only once it has been verified against a real "
-            f"file from that tool") from None
+            f"file from that tool"
+        ) from None
 
     try:
         return source.orders[kind.key]
@@ -397,12 +420,14 @@ def order_for_source(key: str, kind: SaveKind) -> str:
             f"{source.label} has only been measured for: {covered}. Its "
             f"byte order for {kind.label} is unknown, and guessing it would "
             f"risk scrambling the save - this tool writes EEPROM and SRAM "
-            f"differently, so the other types cannot be inferred") from None
+            f"differently, so the other types cannot be inferred"
+        ) from None
 
 
 # ---------------------------------------------------------------------------
 # Size normalisation
 # ---------------------------------------------------------------------------
+
 
 def normalize_size(data: bytes, kind: SaveKind) -> bytes:
     """Pad or trim *data* to the exact chip size of *kind*.
@@ -417,13 +442,14 @@ def normalize_size(data: bytes, kind: SaveKind) -> bytes:
     if len(data) < kind.size:
         return bytes(data) + bytes([kind.erased]) * (kind.size - len(data))
 
-    tail = data[kind.size:]
+    tail = data[kind.size :]
     if any(b != kind.erased for b in tail):
         raise SaveError(
             f"file is {len(data)} bytes, {kind.label} holds {kind.size}, and "
             f"the extra {len(tail)} bytes are not empty - refusing to discard "
-            f"them. Check that this really is a {kind.label} save")
-    return bytes(data[:kind.size])
+            f"them. Check that this really is a {kind.label} save"
+        )
+    return bytes(data[: kind.size])
 
 
 # ---------------------------------------------------------------------------
@@ -434,6 +460,7 @@ def normalize_size(data: bytes, kind: SaveKind) -> bytes:
 # time, each derived from real files rather than from a description.
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class SaveCheck:
     """Result of validating a save against what the game itself wrote.
@@ -443,6 +470,7 @@ class SaveCheck:
     overstate it. A checksum covers the contents; a marker only proves
     the save is laid out the way the game writes it.
     """
+
     valid: int
     invalid: int
     unused: int
@@ -457,8 +485,10 @@ class SaveCheck:
             return "empty save - nothing has been written to this chip yet"
         if self.ok:
             return f"all {self.valid} checked places match the game's {self.basis}"
-        return (f"{self.invalid} of {self.valid + self.invalid} checked "
-                f"places do not match the game's {self.basis}")
+        return (
+            f"{self.invalid} of {self.valid + self.invalid} checked "
+            f"places do not match the game's {self.basis}"
+        )
 
 
 #: Super Mario 64, EEPROM 4 Kbit. Four save slots held twice at 56 bytes
@@ -478,14 +508,14 @@ SM64_MENU_SIZE = 32
 def check_sm64(data: bytes) -> SaveCheck:
     """Validate a Super Mario 64 EEPROM save."""
     if len(data) != 512:
-        raise SaveError(
-            f"a Super Mario 64 save is 512 bytes, this one is {len(data)}")
+        raise SaveError(f"a Super Mario 64 save is 512 bytes, this one is {len(data)}")
 
     valid = invalid = unused = 0
-    blocks = ([(off, SM64_SLOT_SIZE) for off in SM64_SLOT_BLOCKS]
-              + [(off, SM64_MENU_SIZE) for off in SM64_MENU_BLOCKS])
+    blocks = [(off, SM64_SLOT_SIZE) for off in SM64_SLOT_BLOCKS] + [
+        (off, SM64_MENU_SIZE) for off in SM64_MENU_BLOCKS
+    ]
     for off, size in blocks:
-        block = data[off:off + size]
+        block = data[off : off + size]
         # An erased or never-written block has nothing to verify. Both
         # fills occur in practice: 0xFF on an untouched chip, 0x00 where
         # the game cleared a slot.
@@ -525,22 +555,21 @@ def check_oot(data: bytes) -> SaveCheck:
     the weaker claim is the only honest one.
     """
     if len(data) != 32 * 1024:
-        raise SaveError(
-            f"an Ocarina of Time save is 32768 bytes, this one is {len(data)}")
+        raise SaveError(f"an Ocarina of Time save is 32768 bytes, this one is {len(data)}")
     if len(set(data)) <= 1:
         return SaveCheck(0, 0, 1 + len(OOT_MARKER_OFFSETS), basis="marker")
 
-    if data[:len(OOT_HEADER)] != OOT_HEADER:
+    if data[: len(OOT_HEADER)] != OOT_HEADER:
         return SaveCheck(0, 1, 0, basis="marker")
 
-    used = sum(1 for off in OOT_MARKER_OFFSETS
-               if data[off:off + len(OOT_MARKER)] == OOT_MARKER)
+    used = sum(1 for off in OOT_MARKER_OFFSETS if data[off : off + len(OOT_MARKER)] == OOT_MARKER)
     return SaveCheck(1 + used, 0, len(OOT_MARKER_OFFSETS) - used, basis="marker")
 
 
 @dataclass(frozen=True)
 class GameProfile:
     """What is known about one game's save."""
+
     name: str
     kind: str
     check: Callable[[bytes], SaveCheck]
@@ -562,8 +591,9 @@ PM_MARKER = b"Mario Story 006"
 PM_MARKER_OFFSETS = (0x00,)
 
 
-def _marker_check(data: bytes, size: int, label: str, marker: bytes,
-                  offsets: tuple[int, ...]) -> SaveCheck:
+def _marker_check(
+    data: bytes, size: int, label: str, marker: bytes, offsets: tuple[int, ...]
+) -> SaveCheck:
     """Validate a save by markers the game writes at fixed offsets.
 
     Placement, not integrity: a match proves the layout - and so the byte
@@ -576,8 +606,7 @@ def _marker_check(data: bytes, size: int, label: str, marker: bytes,
     if len(set(data)) <= 1:
         return SaveCheck(0, 0, len(offsets), basis="marker")
 
-    valid = sum(1 for off in offsets
-                if data[off:off + len(marker)] == marker)
+    valid = sum(1 for off in offsets if data[off : off + len(marker)] == marker)
     # Any match proves the layout; the copies a game keeps are not all
     # populated at every moment, so a missing one is unused, not wrong.
     if valid:
@@ -587,25 +616,24 @@ def _marker_check(data: bytes, size: int, label: str, marker: bytes,
 
 def check_mm(data: bytes) -> SaveCheck:
     """Validate a Majora's Mask FlashRAM save."""
-    return _marker_check(data, 128 * 1024, "Majora's Mask",
-                         MM_MARKER, MM_MARKER_OFFSETS)
+    return _marker_check(data, 128 * 1024, "Majora's Mask", MM_MARKER, MM_MARKER_OFFSETS)
 
 
 def check_paper_mario(data: bytes) -> SaveCheck:
     """Validate a Paper Mario FlashRAM save."""
-    return _marker_check(data, 128 * 1024, "Paper Mario",
-                         PM_MARKER, PM_MARKER_OFFSETS)
+    return _marker_check(data, 128 * 1024, "Paper Mario", PM_MARKER, PM_MARKER_OFFSETS)
 
 
 GAMES: tuple[GameProfile, ...] = (
-    GameProfile("Super Mario 64", EEPROM_4K, check_sm64,
-                ("super mario 64",)),
-    GameProfile("The Legend of Zelda: Ocarina of Time", SRAM_256K, check_oot,
-                ("legend of zelda", "ocarina of time")),
-    GameProfile("The Legend of Zelda: Majora's Mask", FLASHRAM_1M, check_mm,
-                ("majora", "mujura")),
-    GameProfile("Paper Mario", FLASHRAM_1M, check_paper_mario,
-                ("paper mario", "mario story")),
+    GameProfile("Super Mario 64", EEPROM_4K, check_sm64, ("super mario 64",)),
+    GameProfile(
+        "The Legend of Zelda: Ocarina of Time",
+        SRAM_256K,
+        check_oot,
+        ("legend of zelda", "ocarina of time"),
+    ),
+    GameProfile("The Legend of Zelda: Majora's Mask", FLASHRAM_1M, check_mm, ("majora", "mujura")),
+    GameProfile("Paper Mario", FLASHRAM_1M, check_paper_mario, ("paper mario", "mario story")),
 )
 
 #: Games whose save can be validated. Keyed by the name used in reports.
@@ -622,6 +650,7 @@ CHECKERS = {g.name: g.check for g in GAMES}
 # follow). But a name survives only until someone copies the file, so it
 # is the fallback and the contents come first.
 # ---------------------------------------------------------------------------
+
 
 def identify_game(path: str, kind: SaveKind, data: bytes | None = None) -> str | None:
     """Which game a save belongs to, or None when it cannot be told.
@@ -669,9 +698,11 @@ def identify_game(path: str, kind: SaveKind, data: bytes | None = None) -> str |
 # The conversion itself
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class Conversion:
     """What a conversion did, in terms a user can check."""
+
     data: bytes
     kind: SaveKind
     source_order: str
@@ -684,9 +715,11 @@ class Conversion:
         return self.source_order != self.target_order or self.resized_from is not None
 
     def describe(self) -> str:
-        lines = [f"{self.kind.label}, "
-                 f"{ORDER_LABELS[self.source_order]} -> "
-                 f"{ORDER_LABELS[self.target_order]}"]
+        lines = [
+            f"{self.kind.label}, "
+            f"{ORDER_LABELS[self.source_order]} -> "
+            f"{ORDER_LABELS[self.target_order]}"
+        ]
         if self.source_order == self.target_order:
             lines.append("  byte order identical - no bytes changed")
         if self.resized_from is not None:
@@ -696,8 +729,9 @@ class Conversion:
         return "\n".join(lines)
 
 
-def convert_save(data: bytes, kind: SaveKind, source: str, target: str,
-                 game: str | None = None) -> Conversion:
+def convert_save(
+    data: bytes, kind: SaveKind, source: str, target: str, game: str | None = None
+) -> Conversion:
     """Rewrite a save from one tool's conventions into another's.
 
     Both ends are named, never inferred: the byte order belongs to the
@@ -726,7 +760,8 @@ def convert_save(data: bytes, kind: SaveKind, source: str, target: str,
                     f"{check.basis} ({check.describe()}). Refusing to hand "
                     f"back a file "
                     f"that the game would reject - check that the source "
-                    f"and target really are what they were named as")
+                    f"and target really are what they were named as"
+                )
 
     return Conversion(
         data=out,
@@ -741,6 +776,7 @@ def convert_save(data: bytes, kind: SaveKind, source: str, target: str,
 # ---------------------------------------------------------------------------
 # Working with files
 # ---------------------------------------------------------------------------
+
 
 def kind_for_file(path: str, data: bytes, requested: str | None = None) -> SaveKind:
     """Decide which chip a save file holds.
@@ -761,19 +797,18 @@ def kind_for_file(path: str, data: bytes, requested: str | None = None) -> SaveK
         # later step reason from that.
         if len(data) != kind.size:
             fits = kinds_for_size(len(data))
-            suggestion = (f" - {len(data)} bytes is "
-                          + " or ".join(k.label for k in fits)) if fits else ""
+            suggestion = (
+                (f" - {len(data)} bytes is " + " or ".join(k.label for k in fits)) if fits else ""
+            )
             raise SaveError(
-                f"{kind.label} holds {kind.size} bytes, but this file is "
-                f"{len(data)}{suggestion}")
+                f"{kind.label} holds {kind.size} bytes, but this file is {len(data)}{suggestion}"
+            )
         return kind
 
     by_size = kinds_for_size(len(data))
     if not by_size:
         sizes = ", ".join(f"{k.size} ({k.label})" for k in SAVE_KINDS)
-        raise SaveError(
-            f"{len(data)} bytes matches no N64 save chip. Expected one of: "
-            f"{sizes}")
+        raise SaveError(f"{len(data)} bytes matches no N64 save chip. Expected one of: {sizes}")
     if len(by_size) == 1:
         return by_size[0]
 
@@ -792,7 +827,8 @@ def kind_for_file(path: str, data: bytes, requested: str | None = None) -> SaveK
     options = ", ".join(f"{k.key} ({k.label})" for k in by_size)
     raise SaveError(
         f"{len(data)} bytes fits more than one chip and neither the name nor "
-        f"the extension settles it. Say which with --save-type: {options}")
+        f"the extension settles it. Say which with --save-type: {options}"
+    )
 
 
 def describe_file(path: str, data: bytes, requested: str | None = None) -> str:
@@ -822,23 +858,32 @@ def describe_file(path: str, data: bytes, requested: str | None = None) -> str:
                 if order == ORDER_RAW:
                     continue
                 if CHECKERS[game](reorder(data, order)).ok:
-                    lines.append(f"  but valid as {ORDER_LABELS[order]} - the file "
-                                 f"is in that arrangement")
+                    lines.append(
+                        f"  but valid as {ORDER_LABELS[order]} - the file is in that arrangement"
+                    )
                     break
     else:
         lines.append("  game      : not recognised - no validation available")
 
     guess = detect_order(data)
     verdict = ORDER_LABELS[guess.order] if guess.order else "undecided"
-    lines.append(f"  hint      : looks like {verdict} (unreliable - one save in "
-                 f"five is called wrongly; go by the source instead)")
+    lines.append(
+        f"  hint      : looks like {verdict} (unreliable - one save in "
+        f"five is called wrongly; go by the source instead)"
+    )
     return "\n".join(lines)
 
 
-def convert_file(path: str, source: str, target: str, *,
-                 out_path: str | None = None, out_dir: str | None = None,
-                 requested_kind: str | None = None,
-                 force: bool = False) -> dict[str, object]:
+def convert_file(
+    path: str,
+    source: str,
+    target: str,
+    *,
+    out_path: str | None = None,
+    out_dir: str | None = None,
+    requested_kind: str | None = None,
+    force: bool = False,
+) -> dict[str, object]:
     """Convert one save file on disk. Returns a result dict.
 
     The single place where the file-level rules live, so the CLI and the
@@ -847,8 +892,12 @@ def convert_file(path: str, source: str, target: str, *,
     fails the game's own check is not written at all.
     """
     result: dict[str, object] = {
-        "status": "error", "input": path, "output": None, "message": "",
-        "game": None, "changed": False,
+        "status": "error",
+        "input": path,
+        "output": None,
+        "message": "",
+        "game": None,
+        "changed": False,
     }
     try:
         with open(path, "rb") as f:
@@ -867,8 +916,7 @@ def convert_file(path: str, source: str, target: str, *,
     if out_path is None:
         base = os.path.splitext(os.path.basename(path))[0]
         directory = out_dir or os.path.dirname(os.path.abspath(path))
-        out_path = os.path.join(directory,
-                                f"{base} [{target}]{extension_for(target, kind)}")
+        out_path = os.path.join(directory, f"{base} [{target}]{extension_for(target, kind)}")
 
     if os.path.abspath(out_path) == os.path.abspath(path):
         result["message"] = "that would overwrite the input file"
@@ -878,7 +926,8 @@ def convert_file(path: str, source: str, target: str, *,
         result["output"] = out_path
         result["message"] = (
             f"{os.path.basename(out_path)} already exists. A save cannot be "
-            f"recovered once it is overwritten")
+            f"recovered once it is overwritten"
+        )
         return result
 
     try:
@@ -897,8 +946,7 @@ def convert_file(path: str, source: str, target: str, *,
 
 #: What a save file can be called. The flashcart uses .sav for every chip,
 #: emulators use the chip's own extension, and some tools use .srm.
-SAVE_EXTENSIONS = (".sav", ".eep", ".sra", ".srm", ".fla", ".flash", ".mpk",
-                   ".pak")
+SAVE_EXTENSIONS = (".sav", ".eep", ".sra", ".srm", ".fla", ".flash", ".mpk", ".pak")
 
 
 def is_save_file(path: str) -> bool:
@@ -910,11 +958,13 @@ def collect_saves(paths: list[str], recursive: bool = False) -> list[str]:
     found: list[str] = []
     for entry in paths:
         if os.path.isdir(entry):
-            walker = (os.walk(entry) if recursive
-                      else [(entry, [], os.listdir(entry))])
+            walker = os.walk(entry) if recursive else [(entry, [], os.listdir(entry))]
             for root, _dirs, files in walker:
-                found.extend(os.path.join(root, f) for f in sorted(files)
-                             if is_save_file(os.path.join(root, f)))
+                found.extend(
+                    os.path.join(root, f)
+                    for f in sorted(files)
+                    if is_save_file(os.path.join(root, f))
+                )
         elif is_save_file(entry):
             found.append(entry)
     return found
@@ -923,6 +973,7 @@ def collect_saves(paths: list[str], recursive: bool = False) -> list[str]:
 # ---------------------------------------------------------------------------
 # Region
 # ---------------------------------------------------------------------------
+
 
 def region_note(_game_key: str | None = None) -> str:
     """What can be said about moving this save between PAL and NTSC.
@@ -939,7 +990,9 @@ def region_note(_game_key: str | None = None) -> str:
     structure, the same markers and the same checksum rule validate the
     European save and every American one, 10 blocks of 10.
     """
-    return ("No region-specific difference is recorded for this game. The "
-            "save layout is written by the game's own code and is normally "
-            "identical across PAL and NTSC, so the file should be used "
-            "unchanged apart from the byte order.")
+    return (
+        "No region-specific difference is recorded for this game. The "
+        "save layout is written by the game's own code and is normally "
+        "identical across PAL and NTSC, so the file should be used "
+        "unchanged apart from the byte order."
+    )

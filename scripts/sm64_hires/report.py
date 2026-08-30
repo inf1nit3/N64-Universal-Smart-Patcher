@@ -5,6 +5,7 @@ region in the main code segment interpreted three ways: as a 16-bit value,
 as the immediate field of the enclosing MIPS instruction, and as raw bytes.
 The point is to see which constants SubDrag doubled and which he did not.
 """
+
 import os
 import struct
 import sys
@@ -36,7 +37,7 @@ def runs_of(a, b):
 
 def word_at(buf, off):
     w = off & ~3
-    return w, struct.unpack(">I", buf[w:w + 4])[0]
+    return w, struct.unpack(">I", buf[w : w + 4])[0]
 
 
 def imm(word):
@@ -46,11 +47,26 @@ def imm(word):
 
 
 OPC = {
-    0x08: "addi", 0x09: "addiu", 0x0A: "slti", 0x0B: "sltiu",
-    0x0C: "andi", 0x0D: "ori", 0x0E: "xori", 0x0F: "lui",
-    0x20: "lb", 0x21: "lh", 0x23: "lw", 0x24: "lbu", 0x25: "lhu",
-    0x28: "sb", 0x29: "sh", 0x2B: "sw",
-    0x31: "lwc1", 0x39: "swc1", 0x35: "ldc1", 0x3D: "sdc1",
+    0x08: "addi",
+    0x09: "addiu",
+    0x0A: "slti",
+    0x0B: "sltiu",
+    0x0C: "andi",
+    0x0D: "ori",
+    0x0E: "xori",
+    0x0F: "lui",
+    0x20: "lb",
+    0x21: "lh",
+    0x23: "lw",
+    0x24: "lbu",
+    0x25: "lhu",
+    0x28: "sb",
+    0x29: "sh",
+    0x2B: "sw",
+    0x31: "lwc1",
+    0x39: "swc1",
+    0x35: "ldc1",
+    0x3D: "sdc1",
 }
 
 
@@ -91,8 +107,10 @@ def main():
         ia, ib = imm(wa), imm(wb)
         if ia and ib:
             ratio = ib / ia
-            line.append(f"imm {ia} -> {ib}" +
-                        (f" (x{ratio:.3g})" if abs(ratio - round(ratio, 3)) < 1e-9 else ""))
+            line.append(
+                f"imm {ia} -> {ib}"
+                + (f" (x{ratio:.3g})" if abs(ratio - round(ratio, 3)) < 1e-9 else "")
+            )
         d = describe(wa)
         if d:
             line.append(d)

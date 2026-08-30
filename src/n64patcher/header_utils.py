@@ -6,6 +6,7 @@ checksums. Both matter for flashcart compatibility and for xdelta patches
 to line up, since a delta built against a headerless dump will not apply
 to one carrying a 512-byte intro.
 """
+
 import shutil
 import subprocess
 import sys
@@ -26,15 +27,17 @@ _CHUNK = 1024 * 1024
 
 def detect_scene_header(input_path: str) -> int:
     """Size of the scene header in bytes, or 0 when there is none."""
-    with open(input_path, 'rb') as f:
+    with open(input_path, "rb") as f:
         header_data = f.read(2048)
 
     if header_data[:4] in ALL_MAGICS:
         return 0
 
     for header_size in HEADER_SIZES:
-        if (len(header_data) > header_size + 4
-                and header_data[header_size:header_size + 4] in ALL_MAGICS):
+        if (
+            len(header_data) > header_size + 4
+            and header_data[header_size : header_size + 4] in ALL_MAGICS
+        ):
             return header_size
 
     return 0
@@ -43,7 +46,7 @@ def detect_scene_header(input_path: str) -> int:
 def detect_format_magic(input_path: str):
     """Read the first 4 bytes and return the core format key, or None."""
     try:
-        with open(input_path, 'rb') as f:
+        with open(input_path, "rb") as f:
             head = f.read(4)
     except OSError:
         return None
@@ -64,20 +67,18 @@ def detect_and_strip_scene_header(input_path: str, output_path: str) -> dict:
 
     if header_size == 0:
         if detect_format_magic(input_path) is None:
-            return {"stripped": False, "header_size": 0,
-                    "message": "Unknown ROM format"}
-        return {"stripped": False, "header_size": 0,
-                "message": "No scene header detected"}
+            return {"stripped": False, "header_size": 0, "message": "Unknown ROM format"}
+        return {"stripped": False, "header_size": 0, "message": "No scene header detected"}
 
     # Header found: copy the ROM without it to output_path, in chunks
-    with open(input_path, 'rb') as src, open(output_path, 'wb') as dst:
+    with open(input_path, "rb") as src, open(output_path, "wb") as dst:
         src.seek(header_size)
         shutil.copyfileobj(src, dst, _CHUNK)
 
     return {
         "stripped": True,
         "header_size": header_size,
-        "message": f"Scene header ({header_size} bytes) removed"
+        "message": f"Scene header ({header_size} bytes) removed",
     }
 
 
@@ -101,7 +102,7 @@ def fix_rom_crc(rom_path: str, rn64crc_path: str | None = None) -> dict:
                 text=True,
                 errors="replace",
                 creationflags=CREATE_NO_WINDOW,
-                timeout=30
+                timeout=30,
             )
 
             # rn64crc exits 0 even when it cannot identify the boot chip and
@@ -132,25 +133,18 @@ def get_rom_info_from_header(rom_path: str) -> dict:
     characters here, so the CSV export and the GUI reported different
     values for the same ROM.
     """
-    info = {
-        "title": "",
-        "game_code": "",
-        "region": "",
-        "crc1": "",
-        "crc2": "",
-        "version": 0
-    }
+    info = {"title": "", "game_code": "", "region": "", "crc1": "", "crc2": "", "version": 0}
 
     header_size = detect_scene_header(rom_path)
-    with open(rom_path, 'rb') as f:
+    with open(rom_path, "rb") as f:
         f.seek(header_size)
         header = f.read(64)
 
     if len(header) < 64:
         return info
 
-    info["title"] = header[0x20:0x34].decode('ascii', errors='ignore').strip()
-    info["game_code"] = header[0x3B:0x3F].decode('ascii', errors='ignore').strip()
+    info["title"] = header[0x20:0x34].decode("ascii", errors="ignore").strip()
+    info["game_code"] = header[0x3B:0x3F].decode("ascii", errors="ignore").strip()
     info["crc1"] = header[0x10:0x14].hex().upper()
     info["crc2"] = header[0x14:0x18].hex().upper()
     info["version"] = header[0x3F]

@@ -5,6 +5,7 @@ a code change, so these cover both halves of that promise: a well-formed
 community file is picked up, and a malformed one is rejected loudly without
 taking the rest of the database down.
 """
+
 import json
 import os
 import tempfile
@@ -66,24 +67,23 @@ class TestValidateEntry(unittest.TestCase):
     def test_unknown_operation_rejects_whole_entry(self):
         """Half-applying a recipe would leave a corrupt ROM, so an unknown
         step invalidates the entry rather than being skipped."""
-        msg = self._invalid(operations=[{"type": "xdelta", "file": "a.xdelta"},
-                                        {"type": "reticulate_splines"}])
+        msg = self._invalid(
+            operations=[{"type": "xdelta", "file": "a.xdelta"}, {"type": "reticulate_splines"}]
+        )
         self.assertIn("unknown type", msg)
 
     def test_xdelta_without_file_rejected(self):
         self.assertIn("file", self._invalid(operations=[{"type": "xdelta"}]))
 
     def test_poke_requires_offset_and_hex_bytes(self):
-        self.assertIn("offset", self._invalid(
-            operations=[{"type": "poke", "bytes": "00"}]))
-        self.assertIn("hex", self._invalid(
-            operations=[{"type": "poke", "offset": 0, "bytes": "nothex"}]))
+        self.assertIn("offset", self._invalid(operations=[{"type": "poke", "bytes": "00"}]))
+        self.assertIn(
+            "hex", self._invalid(operations=[{"type": "poke", "offset": 0, "bytes": "nothex"}])
+        )
 
     def test_poke_accepted_when_wellformed(self):
-        entry = dict(VALID, operations=[
-            {"type": "poke", "offset": 0x1000, "bytes": "30422000"}])
-        self.assertEqual(patchdb.validate_entry(entry)["operations"][0]["offset"],
-                         0x1000)
+        entry = dict(VALID, operations=[{"type": "poke", "offset": 0x1000, "bytes": "30422000"}])
+        self.assertEqual(patchdb.validate_entry(entry)["operations"][0]["offset"], 0x1000)
 
     def test_unknown_capability_rejected(self):
         self.assertIn("unknown capability", self._invalid(provides=["raytracing"]))
@@ -102,8 +102,7 @@ class TestLoadPatchDb(unittest.TestCase):
     def test_bad_entry_skipped_good_one_kept(self):
         """A broken community file must not stop the tool from patching
         the dumps it already understands."""
-        bad = dict(VALID, id="bad", match={"crc1": "1", "crc2": "2"},
-                   operations=[{"type": "nope"}])
+        bad = dict(VALID, id="bad", match={"crc1": "1", "crc2": "2"}, operations=[{"type": "nope"}])
         write_db(self.tmp.name, "a.json", [VALID, bad])
         problems = []
         db = patchdb.load_patch_db([self.tmp.name], on_error=problems.append)
@@ -118,8 +117,7 @@ class TestLoadPatchDb(unittest.TestCase):
         self.assertTrue(any("schema_version" in p for p in problems), problems)
 
     def test_malformed_json_reported_not_raised(self):
-        with open(os.path.join(self.tmp.name, "broken.json"), "w",
-                  encoding="utf-8") as f:
+        with open(os.path.join(self.tmp.name, "broken.json"), "w", encoding="utf-8") as f:
             f.write("{not json")
         problems = []
         db = patchdb.load_patch_db([self.tmp.name], on_error=problems.append)
@@ -147,14 +145,18 @@ class TestLoadPatchDb(unittest.TestCase):
         self.assertEqual(problems, [])
 
     def test_entries_providing_filters_by_capability(self):
-        write_db(self.tmp.name, "a.json", [
-            VALID,
-            dict(VALID, id="other", match={"crc1": "1", "crc2": "2"},
-                 provides=["noaa"]),
-        ])
+        write_db(
+            self.tmp.name,
+            "a.json",
+            [
+                VALID,
+                dict(VALID, id="other", match={"crc1": "1", "crc2": "2"}, provides=["noaa"]),
+            ],
+        )
         db = patchdb.load_patch_db([self.tmp.name])
-        self.assertEqual([e["id"] for e in patchdb.entries_providing(db, "hires")],
-                         ["example-640x480"])
+        self.assertEqual(
+            [e["id"] for e in patchdb.entries_providing(db, "hires")], ["example-640x480"]
+        )
 
 
 class TestShippedDatabase(unittest.TestCase):
@@ -162,8 +164,7 @@ class TestShippedDatabase(unittest.TestCase):
 
     def test_bundled_db_loads_clean(self):
         problems = []
-        db = patchdb.load_patch_db([patchdb._bundled_patch_dir()],
-                                   on_error=problems.append)
+        db = patchdb.load_patch_db([patchdb._bundled_patch_dir()], on_error=problems.append)
         self.assertEqual(problems, [])
         self.assertEqual(len(db), 8)
 
@@ -201,10 +202,12 @@ class TestShippedDatabase(unittest.TestCase):
         the shipped EXE loaded zero recipes and reported every verified
         dump as unsupported."""
         import sys
-        with mock.patch.object(sys, "frozen", True, create=True),              mock.patch.object(sys, "_MEIPASS", os.path.join("X", "bundle"),
-                               create=True):
-            self.assertEqual(patchdb._bundled_patch_dir(),
-                             os.path.join("X", "bundle", "patches"))
+
+        with (
+            mock.patch.object(sys, "frozen", True, create=True),
+            mock.patch.object(sys, "_MEIPASS", os.path.join("X", "bundle"), create=True),
+        ):
+            self.assertEqual(patchdb._bundled_patch_dir(), os.path.join("X", "bundle", "patches"))
 
     def test_bundled_dir_uses_the_package_when_not_frozen(self):
         self.assertTrue(patchdb._bundled_patch_dir().endswith("patches"))
