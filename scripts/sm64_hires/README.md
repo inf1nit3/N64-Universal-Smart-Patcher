@@ -1,14 +1,24 @@
-# SM64 640x480 2D fix — work in progress
+# SM64 640x480 2D fix — menus shipped, HUD open
 
-Research tooling for the open task described in
+Research tooling for the task described in
 [`docs/sm64_hires_patch_analysis.md`](../../docs/sm64_hires_patch_analysis.md):
 making Super Mario 64's menus and HUD render correctly on top of the
 verified SubDrag 640x480 delta.
 
-**Nothing here is shipped.** `635A2BFF_sm64_hud_textrect_2x.bps.wip` is the
-current build, deliberately carrying a `.wip` extension and living outside
-`src/n64patcher/game_fixes/` so the Stage 1b lookup cannot pick it up. It
-breaks the in-game HUD (see *State* below) and must not reach a release.
+**Shipped:** `src/n64patcher/game_fixes/635A2BFF_sm64_menu_2x.ips` carries
+the four hardware-confirmed menu emitters (sites 1-4 below). Stage 1b
+applies it automatically on top of the SubDrag delta; a normal `--hires`
+run logs `Game fix: applied 635A2BFF_sm64_menu_2x.ips`. It is rebuilt
+from `635A2BFF_sm64_hud_textrect_2x.bps.wip` by `make_ips.py`, which
+refuses to write anything if the .wip and the site table disagree.
+
+**Still open:** the three HUD sites. With all seven enabled the in-game
+HUD loses its numbers, so the shipped fix deliberately excludes them.
+
+**Note for this machine:** a user-level fix in
+`~/.n64patcher/game_fixes/` overrides the shipped one. A test build left
+there during the hardware runs (all seven sites) shadows the menu fix -
+remove or rename it for normal use.
 
 ## The approach
 
@@ -40,17 +50,33 @@ Verified on real hardware (SummerCart64, 2026-08-11):
 
 Sites 1–4 were confirmed by photographing the file-select screen and the
 Peach letter: labels, titles and dialog text all land at the right size and
-position, where before the fix they sat half-size in the upper left.
+position, where before the fix they sat half-size in the upper left. Those
+four are what ships.
 
 With all seven enabled the in-game HUD loses its **numbers** — the icons
-render, the digits do not. One of sites 0, 5, 6 is responsible. Three
-bisect builds were prepared for the next hardware run:
+render, the digits do not. One of sites 0, 5, 6 is responsible. The bisect
+runs through the normal pipeline - each variant is an installable game fix:
 
 ```bash
-python scripts/sm64_hires/makefix.py t3a.z64 1,2,3,4       # menus only
-python scripts/sm64_hires/makefix.py t3b.z64 0,1,2,3,4     # + HUD font
-python scripts/sm64_hires/makefix.py t3c.z64 1,2,3,4,5,6   # + HUD LUT
+python scripts/sm64_hires/make_ips.py --bisect
+# writes scripts/sm64_hires/bisect/ :
+#   635A2BFF_bisect_A_menus.ips          sites 1-4   (the shipped set)
+#   635A2BFF_bisect_B_plus_hud_font.ips  sites 0-4   (+ HUD font)
+#   635A2BFF_bisect_C_plus_hud_lut.ips   sites 1-6   (+ HUD LUT)
+
+# install one variant at a time, replacing the shipped fix:
+cp scripts/sm64_hires/bisect/635A2BFF_bisect_B_plus_hud_font.ips \
+   ~/.n64patcher/game_fixes/
+rm ~/.n64patcher/game_fixes/635A2BFF_sm64_hud_test.bps   # the old 7-site shadow
+
+# then patch and flash as usual; the log line names the fix that ran:
+n64patcher clean.z64 --hires -o outdir
 ```
+
+Read A first (numbers still gone = baseline matches the shipped state),
+then B and C: whichever addition brings the numbers back clears its
+sites; whichever does not leaves the suspect set halved. Raw image builds
+via `makefix.py t3a.z64 1,2,3,4` remain available for direct flashing.
 
 The leading hypothesis for the failure is the 12-bit coordinate field. A
 value is masked with `andi rX, rd, 0xFFF` after the shift, so `x << 3`
@@ -100,6 +126,11 @@ working directory or copy the ROM in.
 - `makefix.py` — applies the edits and stamps the boot CRC. Every edit
   states the word it expects; a mismatch aborts the build rather than
   writing into whatever happens to be at that offset.
+- `make_ips.py` — builds the shippable IPS (sites 1-4) and the bisect
+  variants straight from the verified .wip, no ROM required: the project
+  BPS encoder emits every changed byte as a literal, and the IPS carries
+  exactly those bytes. A structural check aborts the build unless the
+  .wip is precisely makefix's 42-word edit plus the CRC restamp.
 
 ## Shipping it, once it works
 

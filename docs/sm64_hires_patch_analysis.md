@@ -85,17 +85,18 @@ Six word edits per emitter. The whole ROM contains **seven** texture-
 rectangle emitters, found by signature rather than by search: a `sll rd, rt,
 2` whose result feeds an `andi rX, rd, 0xFFF`. 42 words in total.
 
-Sites 1–4 (the menu glyph renderers) are confirmed correct on hardware. The
-three HUD sites are not yet: with all seven enabled the in-game HUD renders
-its icons but loses its numbers. Working notes, the bisect builds and the
-leading hypothesis — 12-bit field overflow on coordinates derived from an
-already-doubled screen width — are in
+Sites 1–4 (the menu glyph renderers) are confirmed correct on hardware and
+**ship** as `game_fixes/635A2BFF_sm64_menu_2x.ips`, applied automatically
+by Stage 1b after the SubDrag delta. The three HUD sites are not yet: with
+all seven enabled the in-game HUD renders its icons but loses its numbers.
+Working notes, the bisect variants and the leading hypothesis — 12-bit
+field overflow on coordinates derived from an already-doubled screen
+width — are in
 [`scripts/sm64_hires/README.md`](../scripts/sm64_hires/README.md).
 
 The delivery mechanism is Stage 1b in `n64_core.py`
 (`get_game_fix_for_rom`), which applies an IPS/BPS keyed on the clean ROM's
-CRC1 on top of a delta that applied. That stage is finished and tested; what
-it is waiting for is a fix that survives a hardware run.
+CRC1 on top of a delta that applied. That stage is finished and tested.
 
 ## 4. Tooling
 

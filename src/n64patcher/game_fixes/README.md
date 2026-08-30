@@ -49,7 +49,13 @@ exists, and only after the `.xdelta` stage actually applied.
 
 ## Known fixes
 
-None yet — the SM64 menu fix is an open reverse-engineering task, described
-in `docs/sm64_hires_patch_analysis.md`. This folder and the pipeline stage
-(`get_game_fix_for_rom` / Stage 1b in `n64_core.py`) are the mechanism
-waiting for it.
+- `635A2BFF_sm64_menu_2x.ips` — Super Mario 64 (USA), menu glyph scaling
+  for the SubDrag 640x480 delta. Four texture-rectangle emitters (the
+  file-select labels and dialog text): each coordinate shift `x << 2`
+  becomes `x << 3` and each texture step is halved, 24 changed bytes in
+  total. Confirmed on a SummerCart64 (file-select and the Peach letter
+  land at full size and position). The three HUD emitters are NOT
+  included: with them enabled the HUD loses its numbers, and the bisect
+  that decides which site is responsible is still open — see
+  `scripts/sm64_hires/README.md`. Rebuilt from the verified working
+  patch by `scripts/sm64_hires/make_ips.py`.
