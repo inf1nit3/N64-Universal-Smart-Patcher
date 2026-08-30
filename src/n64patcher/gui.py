@@ -56,8 +56,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from . import datdb, savegame, theme
+from . import manifest as manifest_mod
 from . import n64_core as core
-from . import savegame, theme
 from .header_utils import detect_and_strip_scene_header, fix_rom_crc
 from .presets import apply_preset, get_preset_warnings, list_presets
 from .zip_handler import (
@@ -178,16 +179,19 @@ class InspectWorker(QThread):
     item_ready = pyqtSignal(dict)
     done = pyqtSignal(list)
 
-    def __init__(self, roms: list[str], with_hashes: bool = True) -> None:
+    def __init__(
+        self, roms: list[str], with_hashes: bool = True, dat: datdb.DatIndex | None = None
+    ) -> None:
         super().__init__()
         self.roms = roms
         self.with_hashes = with_hashes
+        self.dat = dat
 
     def run(self) -> None:
         infos = []
         for rom in self.roms:
             try:
-                info = core.inspect_rom_details(rom, with_hashes=self.with_hashes)
+                info = core.inspect_rom_details(rom, with_hashes=self.with_hashes, dat=self.dat)
             except Exception as e:
                 info = {
                     "filename": os.path.basename(rom),
@@ -319,6 +323,7 @@ class N64PatcherGUI(QMainWindow):
         # listed ROM never changes under the cache's feet.
         self._hires_cache: dict[str, bool] = {}
         self._hires_scan_worker: HiresScanWorker | None = None
+        self._dat_index: datdb.DatIndex | None = None
         self.save_worker: SaveBatchWorker | None = None
 
         self.init_ui()
@@ -387,6 +392,10 @@ class N64PatcherGUI(QMainWindow):
         self.act_cancel.setEnabled(False)
         self.act_cancel.triggered.connect(self.cancel_patching)
         action_menu.addAction(self.act_cancel)
+        action_menu.addSeparator()
+        act = QAction("&Revert a patch…", self)
+        act.triggered.connect(self.revert_patch)
+        action_menu.addAction(act)
 
         view_menu = bar.addMenu("&View")
         assert view_menu is not None
@@ -520,8 +529,15 @@ class N64PatcherGUI(QMainWindow):
         flashcart_layout = QVBoxLayout()
         self.cb_strip_header = QCheckBox("Strip scene header (iN0000 etc.)")
         self.cb_fix_crc = QCheckBox("Repair CRC1/CRC2 (EverDrive compatible)")
+        self.cb_manifest = QCheckBox("Write undo manifest next to each output")
+        self.cb_manifest.setToolTip(
+            "Records every byte run a run changed, as a .n64patch.json "
+            "sidecar. Needed to undo a patch later; the input ROM is never "
+            "relied on for that."
+        )
         flashcart_layout.addWidget(self.cb_strip_header)
         flashcart_layout.addWidget(self.cb_fix_crc)
+        flashcart_layout.addWidget(self.cb_manifest)
         flashcart_group.setLayout(flashcart_layout)
         patch_layout.addWidget(flashcart_group)
 
@@ -616,6 +632,22 @@ class N64PatcherGUI(QMainWindow):
         inspect_ctrl = QHBoxLayout()
         self.cb_hashes = QCheckBox("Compute MD5/SHA-1 (slow)")
         self.cb_hashes.setChecked(True)
+        self.cb_dats = QCheckBox("Identify against No-Intro/Redump DATs")
+        self.cb_dats.setChecked(True)
+        self.cb_dats.setToolTip(
+            "Matches each ROM's hashes against DAT files in "
+            "~/.n64patcher/dats/ (or the folder chosen via Browse).\n\n"
+            "A hit proves the dump is byte-exact and names the game; "
+            "without a DAT the inspector can only read the header."
+        )
+        self.btn_dat_browse = QPushButton("📂 DAT folder…")
+        self.btn_dat_browse.clicked.connect(self.choose_dat_dir)
+        self.btn_revert = QPushButton("↩️ Revert a patch…")
+        self.btn_revert.clicked.connect(self.revert_patch)
+        self.btn_revert.setToolTip(
+            "Undo a patched ROM using its .n64patch.json sidecar, "
+            "recovering the exact original bytes."
+        )
         self.btn_export_csv = QPushButton("💾 Export CSV")
         self.btn_export_json = QPushButton("💾 Export JSON")
         self.btn_export_csv.clicked.connect(lambda: self.export_report("csv"))
@@ -623,7 +655,10 @@ class N64PatcherGUI(QMainWindow):
         self.btn_export_csv.setEnabled(False)
         self.btn_export_json.setEnabled(False)
         inspect_ctrl.addWidget(self.cb_hashes)
+        inspect_ctrl.addWidget(self.cb_dats)
+        inspect_ctrl.addWidget(self.btn_dat_browse)
         inspect_ctrl.addStretch(1)
+        inspect_ctrl.addWidget(self.btn_revert)
         inspect_ctrl.addWidget(self.btn_export_csv)
         inspect_ctrl.addWidget(self.btn_export_json)
         inspect_layout.addLayout(inspect_ctrl)
@@ -633,7 +668,7 @@ class N64PatcherGUI(QMainWindow):
         inspect_layout.addWidget(self.inspect_progress)
 
         self.tree = QTreeWidget()
-        # setHeaderLabels below fixes the count at the 14 labels it is given.
+        # setHeaderLabels below fixes the count at the 16 labels it is given.
         self.tree.setHeaderLabels(
             [
                 "File",
@@ -650,6 +685,8 @@ class N64PatcherGUI(QMainWindow):
                 "SubDrag patch",
                 "MD5",
                 "SHA1",
+                "DAT match",
+                "Dump",
             ]
         )
         self.tree.setAlternatingRowColors(True)
@@ -878,6 +915,92 @@ class N64PatcherGUI(QMainWindow):
     def _patch_output_dir(self) -> str | None:
         """The chosen output directory, or None for 'next to each ROM'."""
         return self.output_dir_edit.text().strip() or None
+
+    def choose_dat_dir(self) -> None:
+        folder = QFileDialog.getExistingDirectory(self, "Folder holding No-Intro/Redump .dat files")
+        if folder:
+            self.settings.setValue("dat_dir", folder)
+            self._dat_index = None  # force a reload with the new folder
+            self.log(f"📚 DAT folder set to {folder}")
+
+    def _load_dat_index(self) -> datdb.DatIndex | None:
+        """The DAT index for this run, loaded once and cached.
+
+        Returns None when no DAT resolves, so the inspector falls back to
+        reading headers alone - the same degradation the CLI has.
+        """
+        if self._dat_index is None:
+            problems: list[str] = []
+            explicit: list[str] | None = None
+            folder = self.settings.value("dat_dir", "", type=str)
+            if folder and os.path.isdir(folder):
+                explicit = [folder]
+            try:
+                index = datdb.load_dats(explicit, on_error=problems.append)
+            except Exception as e:  # a broken DAT must not kill inspection
+                self.log(f"⚠️ DAT lookup disabled: {e}")
+                return None
+            for problem in problems:
+                self.log(f"⚠️ {problem}")
+            if not index:
+                return None
+            self.log(f"📚 {datdb.describe(index).splitlines()[0]}")
+            self._dat_index = index
+        return self._dat_index or None
+
+    def revert_patch(self) -> None:
+        """Undo one patched ROM through its .n64patch.json sidecar."""
+        target, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select a patched ROM (needs its .n64patch.json sidecar)",
+            "",
+            "N64 ROMs (*.z64 *.v64 *.n64);;All files (*)",
+        )
+        if not target:
+            return
+        sidecar = manifest_mod.manifest_path_for(target)
+        if not os.path.isfile(sidecar):
+            QMessageBox.warning(
+                self,
+                "No manifest",
+                f"{os.path.basename(target)} has no .n64patch.json sidecar.\n\n"
+                "Either it was patched without manifests, or the sidecar "
+                "was moved. The input ROM was never modified - it is the "
+                "original.",
+            )
+            return
+        try:
+            man = manifest_mod.load_manifest(sidecar)
+        except (OSError, ValueError) as e:
+            QMessageBox.critical(self, "Manifest unreadable", str(e))
+            return
+
+        self.log(f"\n↩️ Manifest for {os.path.basename(target)}:")
+        for line in manifest_mod.describe(man).splitlines():
+            self.log(f"   {line}")
+        if not man.get("revertible"):
+            QMessageBox.warning(
+                self,
+                "Cannot revert",
+                man.get("revert_note") or "The manifest holds no original bytes.",
+            )
+            return
+
+        base = os.path.basename(target)
+        stem = os.path.splitext(base)[0]
+        suggested = os.path.join(os.path.dirname(target), f"{stem} [REVERTED].z64")
+        out_path, _ = QFileDialog.getSaveFileName(
+            self, "Write the recovered original as", suggested, "N64 ROMs (*.z64);;All files (*)"
+        )
+        if not out_path:
+            return
+        ok, message = manifest_mod.revert(target, man, out_path)
+        if ok:
+            self.log(f"✅ {message}")
+            QMessageBox.information(self, "Reverted", message)
+        else:
+            self.log(f"❌ Revert refused: {message}")
+            QMessageBox.critical(self, "Revert refused", message)
 
     def clear_list(self) -> None:
         self.rom_list.clear()
@@ -1219,8 +1342,15 @@ class N64PatcherGUI(QMainWindow):
         self.inspect_progress.setMaximum(len(self.rom_list))
         self.inspect_progress.setValue(0)
 
+        dat_index = None
+        if self.cb_dats.isChecked():
+            dat_index = self._load_dat_index()
+
         self.log("\n🔍 Inspecting ROMs in the background...")
-        self.inspect_worker = InspectWorker(self.rom_list, with_hashes=self.cb_hashes.isChecked())
+        # A DAT match needs the ROM's hashes, so asking for one implies
+        # the (slower) hashing pass.
+        with_hashes = self.cb_hashes.isChecked() or dat_index is not None
+        self.inspect_worker = InspectWorker(self.rom_list, with_hashes=with_hashes, dat=dat_index)
         self.inspect_worker.item_ready.connect(self.on_inspect_item)
         self.inspect_worker.done.connect(self.on_inspection_done)
         self.inspect_worker.start()
@@ -1259,6 +1389,9 @@ class N64PatcherGUI(QMainWindow):
         )
 
     def on_inspection_done(self, infos: list) -> None:
+        worker, self.inspect_worker = self.inspect_worker, None
+        if worker is not None:
+            worker.wait(2000)
         self.btn_inspect.setEnabled(True)
         self.act_inspect.setEnabled(True)
         self.btn_export_csv.setEnabled(bool(infos))
@@ -1301,6 +1434,7 @@ class N64PatcherGUI(QMainWindow):
             no_divot=self.cb_no_divot.isChecked(),
             no_gamma=self.cb_no_gamma.isChecked(),
             hires=self.cb_hires.isChecked(),
+            write_manifest=self.cb_manifest.isChecked(),
         )
 
         self.btn_patch.setEnabled(False)
@@ -1388,6 +1522,8 @@ class N64PatcherGUI(QMainWindow):
         self.cb_hires.setChecked(self.settings.value("hires", False, type=bool))
         self.cb_strip_header.setChecked(self.settings.value("strip_header", False, type=bool))
         self.cb_fix_crc.setChecked(self.settings.value("fix_crc", False, type=bool))
+        self.cb_manifest.setChecked(self.settings.value("write_manifest", False, type=bool))
+        self.cb_dats.setChecked(self.settings.value("use_dats", True, type=bool))
         output_dir = self.settings.value("output_dir", "", type=str)
         if output_dir and os.path.isdir(output_dir):
             self.output_dir_edit.setText(output_dir)
@@ -1403,6 +1539,8 @@ class N64PatcherGUI(QMainWindow):
         self.settings.setValue("hires", self.cb_hires.isChecked())
         self.settings.setValue("strip_header", self.cb_strip_header.isChecked())
         self.settings.setValue("fix_crc", self.cb_fix_crc.isChecked())
+        self.settings.setValue("write_manifest", self.cb_manifest.isChecked())
+        self.settings.setValue("use_dats", self.cb_dats.isChecked())
         self.settings.setValue("preset_index", self.preset_combo.currentIndex())
         self.settings.setValue("output_dir", self.output_dir_edit.text().strip())
 

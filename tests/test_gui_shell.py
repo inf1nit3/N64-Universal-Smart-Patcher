@@ -13,6 +13,7 @@ import time
 import unittest
 from unittest import mock
 
+from n64patcher import datdb
 from n64patcher import n64_core as core
 
 try:
@@ -201,9 +202,11 @@ class TestAsyncHiresScan(unittest.TestCase):
     def test_inspector_table_has_a_column_per_header(self):
         tree = self.win.tree
         headers = [tree.headerItem().text(i) for i in range(tree.columnCount())]
-        self.assertEqual(len(headers), 14)
+        self.assertEqual(len(headers), 16)
         self.assertIn("SHA1", headers)
         self.assertIn("SubDrag patch", headers)
+        self.assertIn("DAT match", headers)
+        self.assertIn("Dump", headers)
 
 
 @unittest.skipUnless(HAVE_QT, "PyQt6 not installed")
@@ -231,3 +234,101 @@ class TestFolderOfSaves(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipUnless(HAVE_QT, "PyQt6 not installed")
+class TestManifestAndDatParity(unittest.TestCase):
+    """The two CLI powers the GUI now shares: undo manifests and DAT
+    identification."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.ini = os.path.join(self.tmp.name, "settings.ini")
+
+        def factory(*a, **k):
+            return QSettings(self.ini, QSettings.Format.IniFormat)
+
+        with mock.patch.object(gui, "QSettings", side_effect=factory):
+            self.win = gui.N64PatcherGUI()
+        self.addCleanup(self.win.close)
+
+    def test_manifest_flag_reaches_the_patch_options(self):
+        self.win.cb_manifest.setChecked(True)
+        rom = make_rom(self.tmp.name, "plain.z64", (0xDEADBEEF, 0x12345678))
+        self.win.rom_list = [rom]
+        with mock.patch.object(gui.QMessageBox, "information"):
+            self.win.start_patching()
+            options = self.win.worker.options
+            self.win.worker.cancel()
+            self.win.worker.wait(5000)
+            QApplication.processEvents()
+        self.assertTrue(options.write_manifest)
+
+    def test_revert_recovers_the_original_bytes(self):
+        from n64patcher import manifest as manifest_mod
+
+        src = os.path.join(self.tmp.name, "orig.z64")
+        patched = os.path.join(self.tmp.name, "out [NoAA].z64")
+        original = b"\x80\x37\x12\x40" + bytes(range(256))
+        changed = bytearray(original)
+        changed[0x40] ^= 0xFF
+        with open(src, "wb") as f:
+            f.write(original)
+        with open(patched, "wb") as f:
+            f.write(bytes(changed))
+        man = manifest_mod.build_manifest(src, patched, applied=["NoAA"])
+        manifest_mod.write_manifest(man, patched)
+
+        recovered = os.path.join(self.tmp.name, "recovered.z64")
+        with (
+            mock.patch.object(gui.QFileDialog, "getOpenFileName", return_value=(patched, "")),
+            mock.patch.object(gui.QFileDialog, "getSaveFileName", return_value=(recovered, "")),
+            mock.patch.object(gui.QMessageBox, "information"),
+        ):
+            self.win.revert_patch()
+
+        with open(recovered, "rb") as f:
+            self.assertEqual(f.read(), original)
+        self.assertIn("Reverted", self.win.log_widget.toPlainText())
+
+    def test_revert_without_a_sidecar_warns_and_writes_nothing(self):
+        patched = os.path.join(self.tmp.name, "lonely.z64")
+        with open(patched, "wb") as f:
+            f.write(b"\x00" * 64)
+        warned = []
+        with (
+            mock.patch.object(gui.QFileDialog, "getOpenFileName", return_value=(patched, "")),
+            mock.patch.object(
+                gui.QMessageBox, "warning", side_effect=lambda *a, **k: warned.append(a)
+            ),
+        ):
+            self.win.revert_patch()
+        self.assertTrue(warned)
+
+    def test_dat_checkbox_gives_the_worker_an_index(self):
+        self.win.cb_dats.setChecked(True)
+        self.win.rom_list = [make_rom(self.tmp.name, "r.z64", (0xDEADBEEF, 0x12345678))]
+        index = datdb.DatIndex()
+        index.by_sha1["0123456789ABCDEF"] = {"game": "Fake (test)", "name": "Fake"}
+        index.sources = ["fake (test)"]
+        with mock.patch.object(gui.datdb, "load_dats", return_value=index):
+            self.win.start_inspection()
+            worker = self.win.inspect_worker
+            self.assertIsNotNone(worker)
+            self.assertIs(worker.dat, index)
+            worker.wait(5000)
+            QApplication.processEvents()
+        self.assertIsNone(self.win.inspect_worker or None)
+
+    def test_no_dat_files_means_no_index_and_plain_inspection(self):
+        self.win.cb_dats.setChecked(True)
+        self.win.rom_list = [make_rom(self.tmp.name, "r.z64", (0xDEADBEEF, 0x12345678))]
+        empty = datdb.DatIndex()
+        with mock.patch.object(gui.datdb, "load_dats", return_value=empty):
+            self.win.start_inspection()
+            worker = self.win.inspect_worker
+            worker.wait(5000)
+            QApplication.processEvents()
+            self.assertIsNone(worker.dat)
+        self.assertIsNone(self.win.inspect_worker or None)
