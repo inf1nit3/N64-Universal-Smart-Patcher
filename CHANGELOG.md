@@ -9,7 +9,11 @@
 - Dropping a folder on the window now routes its save files to the Saves tab, closing a parity gap with the CLI batch, which always walked folders for saves.
 - CI's gui-import job now runs every GUI test file - `test_gui_saves.py` had never run in CI, so the Saves tab shipped untested there.
 - `pytest` works from a checkout without installing (`pythonpath = ["src"]`), and the last stale paths and comments are gone: `.gitignore` whitelists pointed at a root `N64noAAPatcher/` that no longer exists, and the last German comments in `cli.py`/`gui.py` predate the English UI.
-- Tests: 430 with every optional dependency installed, up from 410.
+- **Strict mypy now covers the whole package.** gui.py and cli.py get the same `disallow_untyped_defs` bar as the engine: full annotations, typed worker slots, None-safe Qt overrides, and a str/dict shadowing in the CLI's inspection mode renamed. `ruff format` is enforced in CI too, now that the one-time adoption landed.
+- **The GUI can undo its own patches.** A "Write undo manifest" checkbox produces the same .n64patch.json sidecars the CLI writes, and "Revert a patch…" (Inspector tab, Action menu) recovers the exact original bytes through one, showing what it changed first and refusing when the sidecar does not describe the file offered.
+- **DAT identification in the Inspector.** With No-Intro/Redump DATs present (default folder or a chosen one), two new columns report the matched dump name and status; the index loads once per run and asking for it implies the hashing pass a match needs.
+- **hires2d: the per-game 2D fix toolkit, GoldenEye analysed.** The SM64 analysis method, lifted from one engine to a survey any game can run: `diffreport` (delta classification), `find2d` (coordinate-packer and static-rectangle survey of a hi-res image) and `makefix2d` (expected-word-checked fix builds and IPS emission from a per-game site table). Applied to the real GoldenEye Enhanced delta: the delta restructures the ROM, yet its 33 coordinate packers are byte-identical to the clean dump - the 2D layer stays in 320-space exactly as SM64's did, and the glyph blitter is located with its step constants. Four bisect variants are specified for the hardware run; nothing ships for GoldenEye until that decides.
+- Tests: 435 with every optional dependency installed, up from 410.
 
 ## v3.5.0 - Save Tools and Built-in Deltas
 
