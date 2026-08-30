@@ -6,19 +6,23 @@ Design notes:
   - PatchWorker emits 'done' rather than shadowing QThread's own
     'finished' signal; the worker is stopped cleanly on close.
   - Inspection runs on a background thread and fills a QTreeWidget table
-    (title, region, CRC1/CRC2, hashes, ...).
-  - Drag & drop accepts files, folders and archives.
+    (title, region, CRC1/CRC2, hashes, ...). The verified-hi-res scan and
+    the Saves tab run on their own workers for the same reason.
+  - Drag & drop accepts files, folders and archives; save files and
+    folders containing them are routed to the Saves tab.
   - The status bar shows tool availability; log lines are additionally
     written to the persistent log file (core.append_log).
   - Extraction temp directories live in the system temp area and are
     cleaned up on close even when no patch run happened.
+  - A menu bar and keyboard shortcuts drive the same slots as the
+    buttons; nothing is reachable only by mouse.
 """
 import os
 import sys
 from datetime import datetime
 
 from PyQt6.QtCore import QSettings, Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QAction, QFont, QIcon, QKeySequence
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -28,6 +32,7 @@ from PyQt6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QListWidget,
     QMainWindow,
     QMessageBox,
@@ -58,12 +63,14 @@ class PatchWorker(QThread):
     done = pyqtSignal(dict)  # deliberately NOT 'finished' (collides with QThread's)
     log_message = pyqtSignal(str)
 
-    def __init__(self, roms, options, strip_header=False, fix_crc=False):
+    def __init__(self, roms, options, strip_header=False, fix_crc=False,
+                 output_dir=None):
         super().__init__()
         self.roms = roms
         self.options = options
         self.strip_header = strip_header
         self.fix_crc = fix_crc
+        self.output_dir = output_dir or None
         self.should_cancel = False
         self.log_lines = []
 
@@ -102,7 +109,8 @@ class PatchWorker(QThread):
                     working_rom,
                     self.options,
                     log=lambda m: self._log(f"   {m}"),
-                    should_cancel=lambda: self.should_cancel
+                    should_cancel=lambda: self.should_cancel,
+                    output_dir=self.output_dir
                 )
 
                 if not isinstance(result, dict):
@@ -172,6 +180,84 @@ class InspectWorker(QThread):
         self.done.emit(infos)
 
 
+class HiresScanWorker(QThread):
+    """Checks ROMs for a verified 640x480 patch off the UI thread.
+
+    inspect_rom_details reads a megabyte per ROM for the boot checksum, so
+    re-checking a whole library on every add froze the window for as long
+    as the disk took. Results are cached by the caller; this worker only
+    ever sees paths that were not scanned yet.
+    """
+    done = pyqtSignal(list)  # list of (path, supported) pairs
+
+    def __init__(self, roms):
+        super().__init__()
+        self.roms = list(roms)
+
+    def run(self):
+        results = []
+        for rom in self.roms:
+            supported = False
+            try:
+                info = core.inspect_rom_details(rom)
+                supported = info.get("hires_support") == core.HIRES_VERIFIED
+            except Exception:
+                supported = False
+            results.append((rom, supported))
+        self.done.emit(results)
+
+
+class SaveBatchWorker(QThread):
+    """Runs a Saves-tab job (inspect or convert) off the UI thread.
+
+    A dropped folder can hold hundreds of saves; reading them on the UI
+    thread froze the window for the whole batch. Conversions that hit an
+    existing output file are NOT handled here: overwriting somebody's
+    progress is a question, and questions belong to the UI thread. The
+    worker reports them as conflicts and the caller asks.
+    """
+    line = pyqtSignal(str)
+    done = pyqtSignal(dict)
+
+    def __init__(self, job, paths, source=None, target=None, out_dir=None):
+        super().__init__()
+        self.job = job
+        self.paths = list(paths)
+        self.source = source
+        self.target = target
+        self.out_dir = out_dir
+
+    def run(self):
+        results = {"job": self.job, "converted": 0, "failed": 0,
+                   "conflicts": []}
+        for path in self.paths:
+            name = os.path.basename(path)
+            try:
+                if self.job == "inspect":
+                    with open(path, "rb") as f:
+                        data = f.read()
+                    self.line.emit(savegame.describe_file(path, data))
+                    self.line.emit("")
+                else:
+                    res = savegame.convert_file(path, self.source, self.target,
+                                                out_dir=self.out_dir)
+                    if res["status"] == "converted":
+                        results["converted"] += 1
+                        note = "" if res["changed"] else \
+                            "  (identical - only renamed)"
+                        self.line.emit(f"✅ {name}{note}")
+                        self.line.emit(f"   -> {res['output']}")
+                    elif res["status"] == "exists":
+                        results["conflicts"].append((path, str(res["output"])))
+                    else:
+                        results["failed"] += 1
+                        self.line.emit(f"❌ {name}: {res['message']}")
+            except OSError as exc:
+                results["failed"] += 1
+                self.line.emit(f"❌ {name}: {exc}")
+        self.done.emit(results)
+
+
 class N64PatcherGUI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -192,10 +278,104 @@ class N64PatcherGUI(QMainWindow):
         self.worker = None
         self.inspect_worker = None
         self.last_infos = []
+        # Verified-hi-res support per ROM path, filled by HiresScanWorker.
+        # Keyed by path for the session: outputs are separate files, so a
+        # listed ROM never changes under the cache's feet.
+        self._hires_cache = {}
+        self._hires_scan_worker = None
+        self.save_worker = None
 
         self.init_ui()
+        self._build_menus()
         self.load_settings()
         self.update_status_bar()
+
+    # ------------------------------------------------------------------ Menus
+
+    def _cmd_key(self, sequence):
+        """Map a 'Ctrl+X' shortcut to Cmd on macOS, Ctrl elsewhere."""
+        if sys.platform == "darwin":
+            sequence = sequence.replace("Ctrl+", "Meta+")
+        return QKeySequence(sequence)
+
+    def _build_menus(self):
+        """Menu bar and keyboard shortcuts.
+
+        Every control that drives a run is reachable from the keyboard:
+        adding, inspecting, starting and cancelling. The bar carries the
+        console theme like every other chrome, and its Quit/About entries
+        use standard roles so macOS places them where its users expect.
+        """
+        bar = self.menuBar()
+
+        file_menu = bar.addMenu("&File")
+        act = QAction("Add &ROMs…", self)
+        act.setShortcut(self._cmd_key("Ctrl+O"))
+        act.triggered.connect(self.add_files)
+        file_menu.addAction(act)
+        act = QAction("Add ROM &folder…", self)
+        act.setShortcut(self._cmd_key("Ctrl+Shift+O"))
+        act.triggered.connect(self.add_folder)
+        file_menu.addAction(act)
+        act = QAction("Add save files…", self)
+        act.setShortcut(self._cmd_key("Ctrl+Alt+O"))
+        act.triggered.connect(self.add_save_files)
+        file_menu.addAction(act)
+        file_menu.addSeparator()
+        act = QAction("Clear ROM list", self)
+        act.triggered.connect(self.clear_list)
+        file_menu.addAction(act)
+        act = QAction("Clear save list", self)
+        act.triggered.connect(self.clear_saves)
+        file_menu.addAction(act)
+        file_menu.addSeparator()
+        act = QAction("&Quit", self)
+        act.setShortcut(QKeySequence.StandardKey.Quit)
+        act.triggered.connect(self.close)
+        file_menu.addAction(act)
+
+        action_menu = bar.addMenu("&Action")
+        self.act_inspect = QAction("&Inspect ROMs", self)
+        self.act_inspect.setShortcut(self._cmd_key("Ctrl+I"))
+        self.act_inspect.triggered.connect(self.start_inspection)
+        action_menu.addAction(self.act_inspect)
+        self.act_start = QAction("&Start patching", self)
+        self.act_start.setShortcut(self._cmd_key("Ctrl+Return"))
+        self.act_start.triggered.connect(self.start_patching)
+        action_menu.addAction(self.act_start)
+        self.act_cancel = QAction("Cancel", self)
+        self.act_cancel.setShortcut(QKeySequence(Qt.Key.Key_Escape))
+        self.act_cancel.setEnabled(False)
+        self.act_cancel.triggered.connect(self.cancel_patching)
+        action_menu.addAction(self.act_cancel)
+
+        view_menu = bar.addMenu("&View")
+        self._tab_actions = []
+        for i, label in enumerate(("Patching", "Inspector", "Saves", "Log")):
+            act = QAction(f"{label} tab", self)
+            act.setShortcut(self._cmd_key(f"Ctrl+{i + 1}"))
+            # bind the index, not the loop variable
+            act.triggered.connect(
+                lambda _=False, idx=i: self.tabs.setCurrentIndex(idx))
+            view_menu.addAction(act)
+            self._tab_actions.append(act)
+
+        help_menu = bar.addMenu("&Help")
+        act = QAction("&About", self)
+        act.setShortcut(self._cmd_key("Ctrl+?"))
+        act.triggered.connect(self._show_about)
+        help_menu.addAction(act)
+
+    def _show_about(self):
+        QMessageBox.about(
+            self, "About N64 Smart Patcher",
+            f"Universal N64 ROM Inspector & Smart Patcher\n"
+            f"v{core.VERSION}\n\n"
+            "Patches VI filters and verified 640x480 hi-res deltas, "
+            "converts save files between emulators and flashcarts, and "
+            "inspects ROM headers.\n\n"
+            "The console-look theme is an original design in the idiom of "
+            "mid-90s hardware; it is not affiliated with any console maker.")
 
     # ------------------------------------------------------------------ UI
 
@@ -246,13 +426,13 @@ class N64PatcherGUI(QMainWindow):
 
         layout.addWidget(self._build_faceplate())
 
-        tabs = QTabWidget()
-        layout.addWidget(tabs)
+        self.tabs = QTabWidget()
+        layout.addWidget(self.tabs)
 
         # Tab 1: Patching
         patch_tab = QWidget()
         patch_layout = QVBoxLayout(patch_tab)
-        tabs.addTab(patch_tab, "🎮 Patching")
+        self.tabs.addTab(patch_tab, "🎮 Patching")
 
         preset_group = QGroupBox("📋 Choose a preset profile")
         self._accent_group(preset_group, 0)
@@ -298,6 +478,28 @@ class N64PatcherGUI(QMainWindow):
         flashcart_layout.addWidget(self.cb_fix_crc)
         flashcart_group.setLayout(flashcart_layout)
         patch_layout.addWidget(flashcart_group)
+
+        output_group = QGroupBox("📤 Output location")
+        self._accent_group(output_group, 4)
+        output_layout = QHBoxLayout()
+        self.output_dir_edit = QLineEdit()
+        self.output_dir_edit.setReadOnly(True)
+        self.output_dir_edit.setPlaceholderText(
+            "Default: next to each ROM (tagged, never over the input)")
+        self.output_dir_edit.setToolTip(
+            "Where patched ROMs are written.\n\n"
+            "Empty means next to each input ROM; the output name always "
+            "carries a tag like [NoAA] or [640x480] so the input is never "
+            "overwritten.")
+        self.btn_output_browse = QPushButton("📂 Browse…")
+        self.btn_output_reset = QPushButton("↩️ Default")
+        self.btn_output_browse.clicked.connect(self.choose_output_dir)
+        self.btn_output_reset.clicked.connect(self.reset_output_dir)
+        output_layout.addWidget(self.output_dir_edit, 1)
+        output_layout.addWidget(self.btn_output_browse)
+        output_layout.addWidget(self.btn_output_reset)
+        output_group.setLayout(output_layout)
+        patch_layout.addWidget(output_group)
 
         # No bare "&" in a QGroupBox title: Qt reads it as a mnemonic marker
         # and renders "drag & drop" as "drag _drop".
@@ -361,7 +563,7 @@ class N64PatcherGUI(QMainWindow):
         # Tab 2: Inspector
         inspect_tab = QWidget()
         inspect_layout = QVBoxLayout(inspect_tab)
-        tabs.addTab(inspect_tab, "🔍 Inspector")
+        self.tabs.addTab(inspect_tab, "🔍 Inspector")
 
         inspect_ctrl = QHBoxLayout()
         self.cb_hashes = QCheckBox("Compute MD5/SHA-1 (slow)")
@@ -383,7 +585,7 @@ class N64PatcherGUI(QMainWindow):
         inspect_layout.addWidget(self.inspect_progress)
 
         self.tree = QTreeWidget()
-        self.tree.setColumnCount(13)
+        # setHeaderLabels below fixes the count at the 14 labels it is given.
         self.tree.setHeaderLabels([
             "File", "Title", "Region", "Format", "Size (MB)", "Resolution",
             "AA", "VI tables", "640x480", "CRC1", "CRC2", "SubDrag patch",
@@ -394,12 +596,12 @@ class N64PatcherGUI(QMainWindow):
         inspect_layout.addWidget(self.tree)
 
         # Tab 3: Saves
-        tabs.addTab(self._build_save_tab(), "💾 Saves")
+        self.tabs.addTab(self._build_save_tab(), "💾 Saves")
 
         # Tab 4: Log
         log_tab = QWidget()
         log_layout = QVBoxLayout(log_tab)
-        tabs.addTab(log_tab, "📜 Log")
+        self.tabs.addTab(log_tab, "📜 Log")
 
         self.log_widget = QPlainTextEdit()
         self.log_widget.setReadOnly(True)
@@ -477,8 +679,10 @@ class N64PatcherGUI(QMainWindow):
 
             warnings = list(get_preset_warnings(preset_key))
             # A preset asking for hi-res on ROMs that cannot take it would
-            # otherwise show a ticked box that quietly does nothing.
-            if options.hires and self.rom_list and not self._any_hires_supported():
+            # otherwise show a ticked box that quietly does nothing. While
+            # a scan is still running the answer is not known yet, so the
+            # warning waits rather than guessing.
+            if options.hires and self.rom_list and not self._hires_scan_pending():
                 warnings.append(
                     "640x480 will be skipped: none of the loaded ROMs has a "
                     "verified patch (widening alone breaks rendering).")
@@ -498,14 +702,14 @@ class N64PatcherGUI(QMainWindow):
                  if url.isLocalFile()]
         self.add_paths(paths)
 
-    # ------------------------------------------------- ROM-Verwaltung
+    # ------------------------------------------------- ROM management
 
     def add_paths(self, paths):
         saves = 0
         for path in paths:
             try:
                 if os.path.isdir(path):
-                    self._add_folder_contents(path)
+                    saves += self._add_folder_contents(path)
                 elif is_archive(path):
                     self._add_archive(path)
                 elif core.is_rom_file(path) and not core.is_tool_output(path):
@@ -542,6 +746,10 @@ class N64PatcherGUI(QMainWindow):
         self.log(f"   ✓ {len(extracted)} ROM(s) extracted")
 
     def _add_folder_contents(self, folder):
+        """Add everything recognisable below *folder*; returns the number
+        of save files routed to the Saves tab. The CLI batch already walks
+        folders for saves, so the GUI dropping them was a parity gap."""
+        saves = 0
         for root, _, files in os.walk(folder):
             for file in files:
                 full_path = os.path.join(root, file)
@@ -550,8 +758,11 @@ class N64PatcherGUI(QMainWindow):
                         self._add_archive(full_path)
                     elif core.is_rom_file(file) and not core.is_tool_output(full_path):
                         self._add_rom(full_path)
+                    elif savegame.is_save_file(full_path):
+                        saves += self.add_saves([full_path])
                 except Exception as e:
                     self.log(f"⚠️ Error on file {file}: {e}")
+        return saves
 
     def add_files(self):
         files, _ = QFileDialog.getOpenFileNames(
@@ -567,6 +778,23 @@ class N64PatcherGUI(QMainWindow):
             self.add_paths([folder])
             self.log(f"📊 {len(self.rom_list)} ROM(s) in the list")
 
+    def choose_output_dir(self):
+        folder = QFileDialog.getExistingDirectory(
+            self, "Where should patched ROMs go?")
+        if folder:
+            self.output_dir_edit.setText(folder)
+            self.settings.setValue("output_dir", folder)
+            self.log(f"📤 Patched ROMs will be written to {folder}")
+
+    def reset_output_dir(self):
+        self.output_dir_edit.clear()
+        self.settings.remove("output_dir")
+        self.log("📤 Output location back to default (next to each ROM)")
+
+    def _patch_output_dir(self):
+        """The chosen output directory, or None for 'next to each ROM'."""
+        return self.output_dir_edit.text().strip() or None
+
     def clear_list(self):
         self.rom_list.clear()
         self.rom_list_widget.clear()
@@ -579,29 +807,66 @@ class N64PatcherGUI(QMainWindow):
 
     # ------------------------------------------------------- Helpers
 
-    def _hires_supported_names(self):
-        """Basenames of loaded ROMs that have a verified 640x480 patch."""
+    def _hires_supported_names(self, _roms=None):
+        """Basenames of loaded ROMs that have a verified 640x480 patch.
+
+        Reads only the cache filled by HiresScanWorker - the check reads a
+        megabyte per ROM, so it must never run on the UI thread. The
+        argument is accepted (and ignored) because older call sites passed
+        a ROM list; the loaded list is the only one that matters.
+        """
         names = []
         for rom in self.rom_list:
-            try:
-                info = core.inspect_rom_details(rom)
-            except Exception:
-                continue
-            if info.get("hires_support") == core.HIRES_VERIFIED:
+            if self._hires_cache.get(rom):
                 names.append(os.path.basename(rom))
         return names
 
     def _any_hires_supported(self):
         return bool(self._hires_supported_names())
 
-    def update_hires_availability(self):
+    def _hires_scan_pending(self):
+        if self._hires_scan_worker is not None and \
+                self._hires_scan_worker.isRunning():
+            return True
+        return any(rom not in self._hires_cache for rom in self.rom_list)
+
+    def _scan_hires_inline(self, roms):
+        """Fill the cache synchronously - test hook and fallback, not the
+        normal path (see update_hires_availability)."""
+        for rom in roms:
+            try:
+                info = core.inspect_rom_details(rom)
+                supported = info.get("hires_support") == core.HIRES_VERIFIED
+            except Exception:
+                supported = False
+            self._hires_cache[rom] = supported
+
+    def update_hires_availability(self, sync=False):
         """Enable the 640x480 checkbox only when a loaded ROM can take it.
 
         The generic VI-table widening renders incorrectly on hardware, so
         offering it for arbitrary ROMs produced broken output. Verified
         dumps and ROMs that are already hi-res are the only cases where the
         box does anything useful.
+
+        The support scan runs on a background thread; this applies whatever
+        the cache knows and starts a scan for the rest. Pass sync=True to
+        scan inline first - that is for tests, which must observe the final
+        state without an event loop.
         """
+        uncached = [rom for rom in self.rom_list
+                    if rom not in self._hires_cache]
+        if uncached and sync:
+            self._scan_hires_inline(uncached)
+            uncached = []
+
+        if uncached and self._hires_scan_worker is None:
+            self._hires_scan_worker = HiresScanWorker(uncached)
+            self._hires_scan_worker.done.connect(self._on_hires_scan_done)
+            self._hires_scan_worker.start()
+        # A scan already running? Its done-handler re-runs this method,
+        # which picks up whatever was added meanwhile.
+
         if not self.rom_list:
             self.cb_hires.setEnabled(True)
             self.cb_hires.setToolTip(
@@ -609,19 +874,34 @@ class N64PatcherGUI(QMainWindow):
             return
 
         supported = self._hires_supported_names()
+        pending = len(self.rom_list) - len(supported) - \
+            sum(1 for rom in self.rom_list
+                if rom in self._hires_cache and not self._hires_cache[rom])
 
         if supported:
             self.cb_hires.setEnabled(True)
             shown = "\n".join(f"  • {n}" for n in supported[:5])
             more = (f"\n  … and {len(supported) - 5} more"
                     if len(supported) > 5 else "")
+            checking = ("\n\n"
+                        f"(checking {pending} recently added ROM(s)…)"
+                        if pending else "")
             self.cb_hires.setToolTip(
                 f"Verified 640x480 patch available for {len(supported)} of "
-                f"{len(self.rom_list)} ROM(s):\n{shown}{more}\n\n"
+                f"{len(self.rom_list)} ROM(s):\n{shown}{more}{checking}\n\n"
                 "ROMs without a verified patch are skipped, not broken.")
             self.cb_hires.setText(
                 f"High-Res 640x480 — verified for {len(supported)} "
                 f"of {len(self.rom_list)} ROM(s)")
+        elif pending:
+            # Nothing verified yet, but not everything has been scanned:
+            # stay neutral rather than declaring the feature unavailable.
+            self.cb_hires.setEnabled(False)
+            self.cb_hires.setText("High-Res 640x480 — checking loaded ROMs…")
+            self.cb_hires.setToolTip(
+                "Reading the loaded ROMs to see whether any has a verified "
+                "640x480 patch. The box becomes available the moment one "
+                "does.")
         else:
             self.cb_hires.setChecked(False)
             self.cb_hires.setEnabled(False)
@@ -635,6 +915,13 @@ class N64PatcherGUI(QMainWindow):
                 "Quake II, Golden Nugget 64).")
             self.cb_hires.setText(
                 "High-Res 640x480 — not available for these ROMs")
+
+    def _on_hires_scan_done(self, results):
+        self._hires_cache.update(results)
+        worker, self._hires_scan_worker = self._hires_scan_worker, None
+        if worker is not None:
+            worker.wait(2000)
+        self.update_hires_availability()
 
     # ---------------------------------------------------- Saves tab
 
@@ -726,14 +1013,11 @@ class N64PatcherGUI(QMainWindow):
         if not self._require_saves():
             return
         self.save_output.clear()
-        for path in self.save_list:
-            try:
-                with open(path, "rb") as f:
-                    data = f.read()
-                self._save_log(savegame.describe_file(path, data))
-            except OSError as exc:
-                self._save_log(f"{os.path.basename(path)}: {exc}")
-            self._save_log("")
+        self._set_save_busy(True)
+        self.save_worker = SaveBatchWorker("inspect", self.save_list)
+        self.save_worker.line.connect(self._save_log)
+        self.save_worker.done.connect(self._on_save_job_done)
+        self.save_worker.start()
 
     def convert_saves(self):
         if not self._require_saves():
@@ -746,37 +1030,53 @@ class N64PatcherGUI(QMainWindow):
             return
 
         self.save_output.clear()
-        converted = skipped = failed = 0
-        for path in self.save_list:
-            res = savegame.convert_file(path, source, target, out_dir=out_dir)
+        self._set_save_busy(True)
+        self.save_worker = SaveBatchWorker(
+            "convert", self.save_list, source=source, target=target,
+            out_dir=out_dir)
+        self.save_worker.line.connect(self._save_log)
+        self.save_worker.done.connect(self._on_save_job_done)
+        self.save_worker.start()
+
+    def _on_save_job_done(self, results):
+        worker, self.save_worker = self.save_worker, None
+        if worker is not None:
+            worker.wait(2000)
+        if results.get("job") == "inspect":
+            self._set_save_busy(False)
+            return
+
+        converted = results.get("converted", 0)
+        skipped = failed = results.get("failed", 0)
+        # A conversion that would overwrite an existing save was held back
+        # by the worker. Ask about each one here on the UI thread - a save
+        # cannot be recovered once it is overwritten.
+        for path, existing in results["conflicts"]:
             name = os.path.basename(path)
-            if res["status"] == "converted":
-                converted += 1
-                note = "" if res["changed"] else "  (identical - only renamed)"
-                self._save_log(f"✅ {name}{note}")
-                self._save_log(f"   -> {res['output']}")
-            elif res["status"] == "exists":
-                # Never silently replace somebody's progress; ask per file.
-                if self._confirm_replace(str(res["output"])):
-                    again = savegame.convert_file(path, source, target,
-                                                  out_dir=out_dir, force=True)
-                    if again["status"] == "converted":
-                        converted += 1
-                        self._save_log(f"✅ {name}  (replaced)")
-                        continue
+            if self._confirm_replace(existing):
+                again = savegame.convert_file(
+                    path, self.save_from.currentData(),
+                    self.save_to.currentData(),
+                    out_dir=os.path.dirname(existing), force=True)
+                if again["status"] == "converted":
+                    converted += 1
+                    self._save_log(f"✅ {name}  (replaced)")
+                else:
                     failed += 1
                     self._save_log(f"❌ {name}: {again['message']}")
-                else:
-                    skipped += 1
-                    self._save_log(f"⏭️  {name}: kept the existing file")
             else:
-                failed += 1
-                self._save_log(f"❌ {name}: {res['message']}")
+                skipped += 1
+                self._save_log(f"⏭️  {name}: kept the existing file")
 
+        self._set_save_busy(False)
         self._save_log(f"\n{converted} converted, {skipped} skipped, "
                        f"{failed} failed")
         self.log(f"Saves: {converted} converted, {skipped} skipped, "
                  f"{failed} failed")
+
+    def _set_save_busy(self, busy):
+        self.btn_save_info.setEnabled(not busy)
+        self.btn_save_convert.setEnabled(not busy)
 
     def _confirm_replace(self, path):
         answer = QMessageBox.question(
@@ -823,6 +1123,7 @@ class N64PatcherGUI(QMainWindow):
         self.btn_inspect.setEnabled(False)
         self.btn_export_csv.setEnabled(False)
         self.btn_export_json.setEnabled(False)
+        self.act_inspect.setEnabled(False)
         self.inspect_progress.setVisible(True)
         self.inspect_progress.setMaximum(len(self.rom_list))
         self.inspect_progress.setValue(0)
@@ -864,6 +1165,7 @@ class N64PatcherGUI(QMainWindow):
 
     def on_inspection_done(self, infos):
         self.btn_inspect.setEnabled(True)
+        self.act_inspect.setEnabled(True)
         self.btn_export_csv.setEnabled(bool(infos))
         self.btn_export_json.setEnabled(bool(infos))
         self.inspect_progress.setVisible(False)
@@ -909,18 +1211,25 @@ class N64PatcherGUI(QMainWindow):
         self.btn_patch.setEnabled(False)
         self.btn_inspect.setEnabled(False)
         self.btn_cancel.setEnabled(True)
+        self.act_start.setEnabled(False)
+        self.act_inspect.setEnabled(False)
+        self.act_cancel.setEnabled(True)
         self._set_led("busy")
         self.progress_bar.setVisible(True)
         self.progress_bar.setMaximum(len(self.rom_list))
         self.progress_bar.setValue(0)
 
+        output_dir = self._patch_output_dir()
+        if output_dir:
+            self.log(f"📤 Output directory: {output_dir}")
         self.log(f"\n🚀 Patching {len(self.rom_list)} ROM(s)...")
 
         self.worker = PatchWorker(
             self.rom_list,
             options,
             strip_header=self.cb_strip_header.isChecked(),
-            fix_crc=self.cb_fix_crc.isChecked()
+            fix_crc=self.cb_fix_crc.isChecked(),
+            output_dir=output_dir
         )
         self.worker.progress.connect(self.update_progress)
         self.worker.done.connect(self.on_finished)
@@ -941,6 +1250,9 @@ class N64PatcherGUI(QMainWindow):
         self.btn_patch.setEnabled(True)
         self.btn_inspect.setEnabled(True)
         self.btn_cancel.setEnabled(False)
+        self.act_start.setEnabled(True)
+        self.act_inspect.setEnabled(True)
+        self.act_cancel.setEnabled(False)
         self.progress_bar.setVisible(False)
         self.progress_label.setText("")
         self._set_led("error" if results.get("errors") else "ok")
@@ -950,7 +1262,7 @@ class N64PatcherGUI(QMainWindow):
                  f"Skipped: {results['skipped']}, Errors: {results['errors']}")
         self.log(f"{'='*60}\n")
 
-        # Persistente Logdatei beschreiben
+        # Append the run's lines to the persistent log file.
         if self.worker is not None and getattr(self.worker, "log_lines", None):
             try:
                 core.append_log(self.worker.log_lines)
@@ -978,6 +1290,9 @@ class N64PatcherGUI(QMainWindow):
         self.cb_hires.setChecked(self.settings.value("hires", False, type=bool))
         self.cb_strip_header.setChecked(self.settings.value("strip_header", False, type=bool))
         self.cb_fix_crc.setChecked(self.settings.value("fix_crc", False, type=bool))
+        output_dir = self.settings.value("output_dir", "", type=str)
+        if output_dir and os.path.isdir(output_dir):
+            self.output_dir_edit.setText(output_dir)
         preset_index = self.settings.value("preset_index", 0, type=int)
         if 0 <= preset_index < self.preset_combo.count():
             self.preset_combo.setCurrentIndex(preset_index)
@@ -991,16 +1306,22 @@ class N64PatcherGUI(QMainWindow):
         self.settings.setValue("strip_header", self.cb_strip_header.isChecked())
         self.settings.setValue("fix_crc", self.cb_fix_crc.isChecked())
         self.settings.setValue("preset_index", self.preset_combo.currentIndex())
+        self.settings.setValue("output_dir", self.output_dir_edit.text().strip())
 
     def closeEvent(self, event):
-        # Sauberer Shutdown: laufende Worker stoppen, Temp-Verzeichnisse
-        # clean up, persist settings.
+        # Clean shutdown: stop running workers, clean up temp directories,
+        # persist settings.
         self.save_settings()
         if self.worker is not None and self.worker.isRunning():
             self.worker.cancel()
             self.worker.wait(5000)
         if self.inspect_worker is not None and self.inspect_worker.isRunning():
             self.inspect_worker.wait(5000)
+        if self._hires_scan_worker is not None and \
+                self._hires_scan_worker.isRunning():
+            self._hires_scan_worker.wait(5000)
+        if self.save_worker is not None and self.save_worker.isRunning():
+            self.save_worker.wait(5000)
         for temp_dir in self.temp_dirs:
             cleanup_temp_dir(temp_dir)
         self.temp_dirs.clear()

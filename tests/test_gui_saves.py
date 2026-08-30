@@ -4,10 +4,15 @@ Run offscreen; skipped where PyQt6 is not installed, as the other GUI
 tests are. The point of interest is not the widgets but the rules they
 have to keep: an existing save is never replaced without being asked
 about, and the byte order is chosen, never detected.
+
+Inspect and convert run on a background worker (a dropped folder can hold
+hundreds of saves); _drain pumps the event loop until the worker is done,
+so the tests still observe the final state synchronously.
 """
 
 import os
 import tempfile
+import time
 import unittest
 
 from n64patcher import savegame as sg
@@ -28,6 +33,16 @@ def setUpModule():
     if HAVE_QT:
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         _app = QApplication.instance() or QApplication([])
+
+
+def drain(win):
+    """Run the event loop until the Saves worker has reported back."""
+    deadline = time.monotonic() + 10
+    while win.save_worker is not None and time.monotonic() < deadline:
+        QApplication.processEvents()
+        time.sleep(0.005)
+    QApplication.processEvents()
+    assert win.save_worker is None, "save worker did not finish in time"
 
 
 def oot_chip_order():
@@ -85,6 +100,7 @@ class TestSaveTab(unittest.TestCase):
     def test_inspect_reports_the_game_and_the_arrangement(self):
         self.win.add_saves([self.src])
         self.win.inspect_saves()
+        drain(self.win)
         text = self.win.save_output.toPlainText()
         self.assertIn("SRAM 256 Kbit", text)
         self.assertIn("Ocarina of Time", text)
@@ -98,6 +114,7 @@ class TestSaveTab(unittest.TestCase):
             lambda *a, **k: out_dir)
 
         self.win.convert_saves()
+        drain(self.win)
 
         written = os.listdir(out_dir)
         self.assertEqual(len(written), 1, written)
@@ -122,6 +139,7 @@ class TestSaveTab(unittest.TestCase):
             lambda *a, **k: QMessageBox.StandardButton.No)
 
         self.win.convert_saves()
+        drain(self.win)
 
         self.assertEqual(self._read(existing), b"someone's actual progress")
         self.assertIn("kept the existing file",
@@ -143,6 +161,7 @@ class TestSaveTab(unittest.TestCase):
             lambda *a, **k: QMessageBox.StandardButton.Yes)
 
         self.win.convert_saves()
+        drain(self.win)
 
         self.assertEqual(self._read(existing), oot_chip_order())
 

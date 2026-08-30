@@ -303,6 +303,44 @@ def stylesheet() -> str:
             min-width: 28px;
         }}
 
+        /* Menu bar: the same moulded plastic as the rest of the chrome.
+           On macOS the bar is native and draws itself; these rules then
+           apply to the drop-down menus and on all other platforms. */
+        QMenuBar {{
+            background-color: {PLASTIC_DARK};
+            border-bottom: 2px solid {BEVEL_DARK};
+            color: {LABEL_DIM};
+            font-family: {MONO_STACK};
+            font-weight: bold;
+        }}
+        QMenuBar::item {{
+            background: transparent;
+            padding: 6px 12px;
+        }}
+        QMenuBar::item:selected {{ color: {LABEL}; background-color: {PLASTIC_LIGHT}; }}
+        QMenu {{
+            background-color: {PLASTIC_DARK};
+            border: 2px solid {BEVEL_DARK};
+            border-top-color: {BEVEL_LIGHT};
+            border-left-color: {BEVEL_LIGHT};
+            padding: 4px;
+            font-family: {MONO_STACK};
+        }}
+        QMenu::item {{
+            padding: 6px 26px 6px 14px;
+            color: {LABEL};
+        }}
+        QMenu::item:disabled {{ color: {DISABLED}; }}
+        QMenu::item:selected {{
+            background-color: {PLASTIC_LIGHT};
+            border-left: 4px solid {ACCENT_BLUE};
+        }}
+        QMenu::separator {{
+            height: 2px;
+            background-color: {BEVEL_DARK};
+            margin: 4px 8px;
+        }}
+
         /* Front panel: monospaced readout on a recessed strip. */
         QStatusBar {{
             background-color: {PLASTIC_DARK};

@@ -4,6 +4,10 @@ Regression: the 640x480 checkbox was always clickable, so users could ask
 for the generic VI-table widening on any ROM. That renders incorrectly on
 hardware (doubled image, misplaced UI), confirmed on a SummerCart64. The
 box must be disabled unless a loaded ROM has a verified per-dump patch.
+
+The support scan itself runs on a background thread; these tests call
+update_hires_availability(sync=True) so the final state is observable
+without an event loop.
 """
 import importlib.util
 import os
@@ -59,7 +63,7 @@ class TestGuiHiresGate(unittest.TestCase):
         return p
 
     def test_empty_list_leaves_box_usable(self):
-        self.gui.update_hires_availability()
+        self.gui.update_hires_availability(sync=True)
         self.assertTrue(self.gui.cb_hires.isEnabled())
         self.assertIn("Load ROMs", self.gui.cb_hires.toolTip())
 
@@ -67,7 +71,7 @@ class TestGuiHiresGate(unittest.TestCase):
         """The fix: an ordinary ROM must not be able to request 640x480."""
         self.gui.cb_hires.setChecked(True)
         self.gui.rom_list = [self._rom("plain.z64")]
-        self.gui.update_hires_availability()
+        self.gui.update_hires_availability(sync=True)
 
         self.assertFalse(self.gui.cb_hires.isEnabled())
         self.assertFalse(self.gui.cb_hires.isChecked())
@@ -79,7 +83,7 @@ class TestGuiHiresGate(unittest.TestCase):
     def test_verified_rom_enables_box(self):
         verified = next(iter(core.SUBDRAG_PATCHES))
         self.gui.rom_list = [self._rom("sm64.z64", crc=verified)]
-        self.gui.update_hires_availability()
+        self.gui.update_hires_availability(sync=True)
         self.assertTrue(self.gui.cb_hires.isEnabled())
         self.assertIn("verified for 1", self.gui.cb_hires.text())
 
@@ -90,14 +94,14 @@ class TestGuiHiresGate(unittest.TestCase):
             self._rom("plain1.z64"),
             self._rom("plain2.z64"),
         ]
-        self.gui.update_hires_availability()
+        self.gui.update_hires_availability(sync=True)
         self.assertTrue(self.gui.cb_hires.isEnabled())
         self.assertIn("verified for 1 of 3", self.gui.cb_hires.text())
 
     def test_native_hires_rom_does_not_enable_the_box(self):
         """Already 640x480: nothing to apply, so the box stays off."""
         self.gui.rom_list = [self._rom("native.z64", hires=True)]
-        self.gui.update_hires_availability()
+        self.gui.update_hires_availability(sync=True)
         self.assertFalse(self.gui.cb_hires.isEnabled())
 
     def test_gui_never_sets_force_hires(self):
