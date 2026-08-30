@@ -44,6 +44,9 @@ _n64_temp_extract/
 rel/
 # Regenerable: scripts/sm64_hires/make_ips.py --bisect
 scripts/sm64_hires/bisect/
+scripts/hires2d/bisect/
+# Local RE working area (hi-res images, bisect builds, logs)
+work/
 # Local working copies of user-supplied dumps - never tracked, any format.
 roms/
 *.7z
