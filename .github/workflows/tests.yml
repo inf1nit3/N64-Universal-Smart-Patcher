@@ -111,9 +111,10 @@ jobs:
         run: pip install -e ".[archive]" ruff mypy
       - name: ruff
         run: python -m ruff check .
-      # `ruff format` is deliberately NOT enforced: adopting it rewrites
-      # ~1000 lines across the tree and should land as its own commit
-      # rather than mixed into functional changes.
+      # Enforced since the one-time adoption commit; without a check the
+      # tree drifts back and the next adoption costs the same churn again.
+      - name: ruff format
+        run: python -m ruff format --check .
       - name: mypy
         run: python -m mypy
 
