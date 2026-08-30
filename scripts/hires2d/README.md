@@ -54,6 +54,28 @@ right; the shipped fix is then rebuilt from that group selection, and
 the SM64 route (`make_ips.py`-style byte-exact checks + tests) turns it
 into a database entry.
 
+## Survey across the verified recipes (2026-08-30)
+
+Every verified dump analysed with the same flow (`analyze.py` on the
+user-supplied clean dumps):
+
+| Game | Packers | Left 320-space by the delta | Verdict |
+|---|---|---|---|
+| Super Mario 64 (USA) | 7 | all 7 | menu fix **shipped** (sites 1-4); end-to-end validated: the local pipeline reproduces the hardware-tested base image byte-exactly (.wip source CRC32 `D85A1129`) and the shipped IPS reproduces all 24 verified bytes |
+| GoldenEye 007 (USA) | 33 | all 33 | bisect variants ready (below) |
+| F-Zero X (USA) | 169 | all 169 | bisect variants ready; `r_00Cxxx` (88 sites) is the presumed shared blitter |
+| Quake II (USA) | 25 | all 25 | bisect variants ready (`A_all`, `B_all_steps`) |
+| Forsaken 64 (USA) | 1 | the one | single site on record; HUD likely uses another idiom |
+| Golden Nugget 64 (USA) | 0 | - | the delta covers the 2D layer differently; nothing for this method |
+| Banjo-Kazooie (USA Rev A) | - | - | blocked: the available dump is v1.0 (`A4BF9306`), the recipe needs Rev A (`CD7559AC`) |
+| Pokemon Snap (USA) | - | - | no retail dump in the collection |
+
+Flashable images live under `work/<key>/bisect/`; the same edits as
+Stage 1b IPS files (install into `~/.n64patcher/game_fixes/`) are in
+`bisect/`. Protocol as below - per game, in order, watching for text
+scale on menus/HUD and for texture corruption (which means the group
+contains texture-space sites and must be re-cut).
+
 ## Rebuilding for another game
 
 1. `n64patcher <clean dump> --hires -o outdir` (or apply the recipe's
