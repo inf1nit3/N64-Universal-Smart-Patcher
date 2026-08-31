@@ -148,6 +148,17 @@ def main() -> int:
         )
         check(proc.stdout.count("\n") > 5, "--list-patches lists more than a couple of entries")
 
+        # The shipped game-fix database must survive packaging: this check
+        # runs against frozen binaries in the build job, where a missing
+        # game_fixes/ data glob would otherwise only show up when a user's
+        # SM64 dump quietly misses its menu fix.
+        proc = run("--list-game-fixes")
+        check(
+            proc.returncode == 0 and "635A2BFF_sm64_menu_2x.ips" in proc.stdout,
+            "--list-game-fixes finds the shipped SM64 menu fix",
+            proc.stdout[:300],
+        )
+
         proc = run("--list-presets")
         check(proc.stdout.strip() != "", "--list-presets prints the presets")
 

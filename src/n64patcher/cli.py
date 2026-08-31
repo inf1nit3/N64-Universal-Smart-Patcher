@@ -426,6 +426,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Show which DAT files are loaded and how many dumps they index",
     )
     parser.add_argument(
+        "--list-game-fixes",
+        action="store_true",
+        help="List the installed per-game menu/HUD fixes and which directories they load from",
+    )
+    parser.add_argument(
         "--dry-run", action="store_true", help="Show what would be done without writing any files"
     )
     parser.add_argument(
@@ -559,6 +564,21 @@ def main(argv: list[str] | None = None) -> int:
         for problem in problems:
             log(f"⚠️  {problem}")
         return 1 if problems else 0
+
+    if args.list_game_fixes:
+        fixes = core.list_game_fixes()
+        log(
+            "Per-game menu/HUD fixes installed "
+            "(applied automatically after a verified hi-res delta; "
+            "a user fix overrides the shipped one):\n"
+        )
+        if not fixes:
+            log("  none")
+        for crc1, name, _path, source in fixes:
+            marker = "  <- wins" if source == "user" else ""
+            log(f"  {crc1}  {name}  [{source}]{marker}")
+        log("")
+        return 0
 
     if args.list_patches:
         log(patchdb.describe(core.PATCH_DB))

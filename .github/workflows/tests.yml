@@ -26,7 +26,12 @@ jobs:
       - name: Install package with the archive extra
         run: pip install -e ".[archive]" pytest pytest-cov
       - name: Run test suite (synthetic ROMs, no game files needed)
-        run: python -m pytest --cov=n64patcher --cov-report=term-missing
+        # The GUI modules import nothing under the archive-only install,
+        # so they sit at 0% here by design; the gate catches bulk
+        # regressions, not percentage cosmetics.
+        run: >-
+          python -m pytest --cov=n64patcher --cov-report=term-missing
+          --cov-fail-under=55
 
   # A clean install must not pull in PyQt6 or py7zr - the engine is stdlib only.
   no-optional-deps:

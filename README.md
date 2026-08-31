@@ -402,6 +402,7 @@ Patch recipes are data, not code. To add a dump, drop a JSON file in
 
 ```bash
 n64patcher --list-patches      # what is loaded, and from where
+n64patcher --list-game-fixes   # installed per-game menu/HUD fixes
 ```
 
 Full format in [docs/PATCH_DB.md](docs/PATCH_DB.md).

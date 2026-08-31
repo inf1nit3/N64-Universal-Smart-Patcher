@@ -23,10 +23,11 @@ import sys
 from datetime import datetime
 from typing import Any
 
-from PyQt6.QtCore import QSettings, Qt, QThread, pyqtSignal
+from PyQt6.QtCore import QPoint, QSettings, Qt, QThread, QUrl, pyqtSignal
 from PyQt6.QtGui import (
     QAction,
     QCloseEvent,
+    QDesktopServices,
     QDragEnterEvent,
     QDropEvent,
     QFont,
@@ -45,6 +46,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QMainWindow,
+    QMenu,
     QMessageBox,
     QPlainTextEdit,
     QProgressBar,
@@ -192,6 +194,14 @@ class InspectWorker(QThread):
         for rom in self.roms:
             try:
                 info = core.inspect_rom_details(rom, with_hashes=self.with_hashes, dat=self.dat)
+                fix = core.get_game_fix_for_rom(info.get("crc1"))
+                if fix is not None:
+                    source = core.game_fix_source(fix)
+                    info["game_fix"] = os.path.basename(fix) + (
+                        " [user]" if source == "user" else ""
+                    )
+                else:
+                    info["game_fix"] = ""
             except Exception as e:
                 info = {
                     "filename": os.path.basename(rom),
@@ -206,6 +216,7 @@ class InspectWorker(QThread):
                     "crc1": "",
                     "crc2": "",
                     "has_subdrag_patch": False,
+                    "game_fix": "",
                 }
             infos.append(info)
             self.item_ready.emit(info)
@@ -298,6 +309,40 @@ class SaveBatchWorker(QThread):
         self.done.emit(results)
 
 
+class VerifyWorker(QThread):
+    """Re-checks the outputs of the last patch run off the UI thread -
+    the same strict checks the CLI's --verify performs."""
+
+    line = pyqtSignal(str)
+    done = pyqtSignal(dict)
+
+    def __init__(self, outputs: list[tuple[str, set | None]]) -> None:
+        super().__init__()
+        self.outputs = outputs
+
+    def run(self) -> None:
+        summary = {"ok": 0, "failed": 0}
+        for path, applied in self.outputs:
+            try:
+                verdict = core.verify_output(path, applied)
+            except Exception as e:  # a single bad file must not stop the rest
+                summary["failed"] += 1
+                self.line.emit(f"❌ {os.path.basename(path)}: {e}")
+                continue
+            name = os.path.basename(path)
+            if verdict.get("ok"):
+                summary["ok"] += 1
+                self.line.emit(f"   ✓ {name}")
+            else:
+                summary["failed"] += 1
+                for check in verdict.get("checks", []):
+                    if check.get("strict") and not check.get("ok"):
+                        self.line.emit(
+                            f"   ❌ {name}: {check.get('name')} - {check.get('detail', '')}"
+                        )
+        self.done.emit(summary)
+
+
 class N64PatcherGUI(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
@@ -324,6 +369,8 @@ class N64PatcherGUI(QMainWindow):
         self._hires_cache: dict[str, bool] = {}
         self._hires_scan_worker: HiresScanWorker | None = None
         self._dat_index: datdb.DatIndex | None = None
+        self.last_outputs: list[tuple[str, set | None]] = []
+        self.verify_worker: VerifyWorker | None = None
         self.save_worker: SaveBatchWorker | None = None
 
         self.init_ui()
@@ -571,6 +618,8 @@ class N64PatcherGUI(QMainWindow):
         self._accent_group(list_group, 3)
         list_layout = QVBoxLayout()
         self.rom_list_widget = QListWidget()
+        self.rom_list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.rom_list_widget.customContextMenuRequested.connect(self._rom_list_menu)
         list_layout.addWidget(self.rom_list_widget)
 
         btn_layout = QHBoxLayout()
@@ -624,6 +673,19 @@ class N64PatcherGUI(QMainWindow):
         action_layout.addWidget(self.btn_cancel)
         patch_layout.addLayout(action_layout)
 
+        post_layout = QHBoxLayout()
+        self.btn_verify = QPushButton("🔎 Verify outputs")
+        self.btn_verify.setEnabled(False)
+        self.btn_verify.setToolTip(
+            "Independently re-check every output of the last run: format, "
+            "CIC, boot checksums, expected VI state - the same checks the "
+            "command line's --verify performs."
+        )
+        self.btn_verify.clicked.connect(self.start_verification)
+        post_layout.addStretch(1)
+        post_layout.addWidget(self.btn_verify)
+        patch_layout.addLayout(post_layout)
+
         # Tab 2: Inspector
         inspect_tab = QWidget()
         inspect_layout = QVBoxLayout(inspect_tab)
@@ -658,6 +720,12 @@ class N64PatcherGUI(QMainWindow):
         inspect_ctrl.addWidget(self.cb_dats)
         inspect_ctrl.addWidget(self.btn_dat_browse)
         inspect_ctrl.addStretch(1)
+        self.filter_edit = QLineEdit()
+        self.filter_edit.setPlaceholderText("Filter rows…")
+        self.filter_edit.setClearButtonEnabled(True)
+        self.filter_edit.setToolTip("Show only rows where any column contains this text.")
+        self.filter_edit.textChanged.connect(self._apply_inspector_filter)
+        inspect_ctrl.addWidget(self.filter_edit)
         inspect_ctrl.addWidget(self.btn_revert)
         inspect_ctrl.addWidget(self.btn_export_csv)
         inspect_ctrl.addWidget(self.btn_export_json)
@@ -668,7 +736,7 @@ class N64PatcherGUI(QMainWindow):
         inspect_layout.addWidget(self.inspect_progress)
 
         self.tree = QTreeWidget()
-        # setHeaderLabels below fixes the count at the 16 labels it is given.
+        # setHeaderLabels below fixes the count at the 17 labels it is given.
         self.tree.setHeaderLabels(
             [
                 "File",
@@ -687,6 +755,7 @@ class N64PatcherGUI(QMainWindow):
                 "SHA1",
                 "DAT match",
                 "Dump",
+                "Game fix",
             ]
         )
         self.tree.setAlternatingRowColors(True)
@@ -1002,6 +1071,65 @@ class N64PatcherGUI(QMainWindow):
             self.log(f"❌ Revert refused: {message}")
             QMessageBox.critical(self, "Revert refused", message)
 
+    def _run_list_menu(self, list_widget: QListWidget, kind: str, global_pos: QPoint) -> None:
+        """Shared context menu for the ROM and save lists: remove the
+        selection, or show it in the file manager. Items map back to
+        their paths by basename - one ROM per basename is a rule the
+        add paths already enforce."""
+        selected = [item.text() for item in list_widget.selectedItems()]
+        menu = QMenu(self)
+        remove = menu.addAction("➖ Remove selected")
+        assert remove is not None
+        remove.setEnabled(bool(selected))
+        reveal = menu.addAction("📂 Show in folder")
+        assert reveal is not None
+        reveal.setEnabled(bool(selected))
+        chosen = menu.exec(global_pos)
+        if chosen is None or not selected:
+            return
+        names = set(selected)
+        source = self.rom_list if kind == "rom" else self.save_list
+        paths = [p for p in source if os.path.basename(p) in names]
+        if chosen == remove:
+            (self._remove_roms if kind == "rom" else self._remove_saves)(paths)
+        elif paths:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.dirname(paths[0])))
+
+    def _rom_list_menu(self, pos: QPoint) -> None:
+        self._run_list_menu(self.rom_list_widget, "rom", self.rom_list_widget.mapToGlobal(pos))
+
+    def _save_list_menu(self, pos: QPoint) -> None:
+        self._run_list_menu(self.save_list_widget, "save", self.save_list_widget.mapToGlobal(pos))
+
+    def _remove_roms(self, paths: list[str]) -> None:
+        gone = set(paths)
+        self.rom_list = [p for p in self.rom_list if p not in gone]
+        for p in gone:
+            self._hires_cache.pop(p, None)
+        self._refresh_list_widgets()
+        self.update_status_bar()
+        self.update_hires_availability()
+        self.log(f"➖ {len(gone)} ROM(s) removed from the list")
+
+    def _remove_saves(self, paths: list[str]) -> None:
+        gone = set(paths)
+        self.save_list = [p for p in self.save_list if p not in gone]
+        self._refresh_list_widgets()
+        self.log(f"➖ {len(gone)} save(s) removed from the list")
+
+    def _refresh_list_widgets(self) -> None:
+        """Rebuild both list widgets from their backing lists - removal
+        by item would fight the basename/path mapping otherwise."""
+        current = self.rom_list_widget.currentRow()
+        self.rom_list_widget.clear()
+        for path in self.rom_list:
+            self.rom_list_widget.addItem(os.path.basename(path))
+        if 0 <= current < self.rom_list_widget.count():
+            self.rom_list_widget.setCurrentRow(current)
+        self.save_list_widget.clear()
+        for path in self.save_list:
+            self.save_list_widget.addItem(os.path.basename(path))
+
     def clear_list(self) -> None:
         self.rom_list.clear()
         self.rom_list_widget.clear()
@@ -1170,6 +1298,8 @@ class N64PatcherGUI(QMainWindow):
         layout.addLayout(picker)
 
         self.save_list_widget = QListWidget()
+        self.save_list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.save_list_widget.customContextMenuRequested.connect(self._save_list_menu)
         self.save_list_widget.setToolTip("Save files to convert. Drag them in, or use Add.")
         layout.addWidget(self.save_list_widget)
 
@@ -1379,6 +1509,9 @@ class N64PatcherGUI(QMainWindow):
                 "✓" if info.get("has_subdrag_patch") else "",
                 info.get("md5", ""),
                 info.get("sha1", ""),
+                info.get("dump_name", ""),
+                info.get("dump_status", ""),
+                info.get("game_fix", ""),
             ]
         )
         self.tree.addTopLevelItem(item)
@@ -1398,9 +1531,25 @@ class N64PatcherGUI(QMainWindow):
         self.btn_export_json.setEnabled(bool(infos))
         self.inspect_progress.setVisible(False)
         self.tree.setSortingEnabled(True)
+        self._apply_inspector_filter()
         for i in range(self.tree.columnCount()):
             self.tree.resizeColumnToContents(i)
         self.log(f"\n✅ Inspection complete ({len(infos)} ROM(s))")
+
+    def _apply_inspector_filter(self) -> None:
+        """Hide inspector rows where no column contains the filter text."""
+        needle = self.filter_edit.text().strip().lower()
+        for i in range(self.tree.topLevelItemCount()):
+            item = self.tree.topLevelItem(i)
+            if item is None:
+                continue
+            if not needle:
+                item.setHidden(False)
+                continue
+            hit = any(
+                needle in (item.text(col) or "").lower() for col in range(self.tree.columnCount())
+            )
+            item.setHidden(not hit)
 
     def export_report(self, fmt: str) -> None:
         if not self.last_infos:
@@ -1443,6 +1592,7 @@ class N64PatcherGUI(QMainWindow):
         self.act_start.setEnabled(False)
         self.act_inspect.setEnabled(False)
         self.act_cancel.setEnabled(True)
+        self.btn_verify.setEnabled(False)
         self._set_led("busy")
         self.progress_bar.setVisible(True)
         self.progress_bar.setMaximum(len(self.rom_list))
@@ -1475,6 +1625,28 @@ class N64PatcherGUI(QMainWindow):
             self.worker.cancel()
             self.log("⛔ Cancellation requested...")
 
+    def start_verification(self) -> None:
+        if not self.last_outputs:
+            QMessageBox.warning(
+                self,
+                "Nothing to verify",
+                "Patch some ROMs first; verification re-checks the outputs of the last run.",
+            )
+            return
+        self.btn_verify.setEnabled(False)
+        self.log(f"\n🔎 Verifying {len(self.last_outputs)} output(s)...")
+        self.verify_worker = VerifyWorker(self.last_outputs)
+        self.verify_worker.line.connect(self.log)
+        self.verify_worker.done.connect(self.on_verification_done)
+        self.verify_worker.start()
+
+    def on_verification_done(self, summary: dict) -> None:
+        worker, self.verify_worker = self.verify_worker, None
+        if worker is not None:
+            worker.wait(2000)
+        self.btn_verify.setEnabled(bool(self.last_outputs))
+        self.log(f"✅ Verified: {summary.get('ok', 0)} OK, {summary.get('failed', 0)} failed")
+
     def on_finished(self, results: dict) -> None:
         self.btn_patch.setEnabled(True)
         self.btn_inspect.setEnabled(True)
@@ -1484,6 +1656,14 @@ class N64PatcherGUI(QMainWindow):
         self.act_cancel.setEnabled(False)
         self.progress_bar.setVisible(False)
         self.progress_label.setText("")
+        self.btn_verify.setEnabled(bool(results.get("details")))
+        self.last_outputs = [
+            (d["output"], d.get("applied"))
+            for d in results.get("details", [])
+            if d.get("output") and os.path.isfile(d["output"])
+        ]
+        if self.last_outputs:
+            self.log(f"🔎 {len(self.last_outputs)} output(s) ready to verify.")
         self._set_led("error" if results.get("errors") else "ok")
 
         self.log(f"\n{'=' * 60}")
@@ -1523,6 +1703,9 @@ class N64PatcherGUI(QMainWindow):
         self.cb_strip_header.setChecked(self.settings.value("strip_header", False, type=bool))
         self.cb_fix_crc.setChecked(self.settings.value("fix_crc", False, type=bool))
         self.cb_manifest.setChecked(self.settings.value("write_manifest", False, type=bool))
+        geometry = self.settings.value("geometry")
+        if geometry is not None:
+            self.restoreGeometry(geometry)
         self.cb_dats.setChecked(self.settings.value("use_dats", True, type=bool))
         output_dir = self.settings.value("output_dir", "", type=str)
         if output_dir and os.path.isdir(output_dir):
@@ -1540,6 +1723,7 @@ class N64PatcherGUI(QMainWindow):
         self.settings.setValue("strip_header", self.cb_strip_header.isChecked())
         self.settings.setValue("fix_crc", self.cb_fix_crc.isChecked())
         self.settings.setValue("write_manifest", self.cb_manifest.isChecked())
+        self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("use_dats", self.cb_dats.isChecked())
         self.settings.setValue("preset_index", self.preset_combo.currentIndex())
         self.settings.setValue("output_dir", self.output_dir_edit.text().strip())

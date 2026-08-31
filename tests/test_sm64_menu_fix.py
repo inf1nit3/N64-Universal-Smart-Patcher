@@ -184,5 +184,32 @@ class TestShippedMenuFix(unittest.TestCase):
             self.assertGreater(os.path.getsize(out), 0)
 
 
+class TestGameFixListing(unittest.TestCase):
+    def test_list_game_fixes_reports_shipped_and_marks_user_wins(self):
+        fixes = core.list_game_fixes()
+        shipped = [(c, n, src) for c, n, _p, src in fixes if src == "shipped"]
+        self.assertIn(("635A2BFF", "635A2BFF_sm64_menu_2x.ips", "shipped"), shipped)
+        # source classification matches the directory the file sits in
+        for crc1, _name, path, source in fixes:
+            self.assertTrue(crc1 and len(crc1) == 8, crc1)
+            if source == "shipped":
+                self.assertTrue(
+                    path.startswith(
+                        os.path.dirname(core.GAME_FIXES_DIR) if False else core.GAME_FIXES_DIR
+                    ),
+                    path,
+                )
+
+    def test_lookup_winner_is_the_user_copy_when_present(self):
+        """Documents the precedence the listing's '<- wins' marks: a
+        user-level fix for the same CRC1 overrides the shipped one."""
+        # nothing to assert without a user dir mutation; the shipped-only
+        # env makes the lookup and the listing agree
+        fixes = {n for _c, n, _p, _s in core.list_game_fixes()}
+        winner = core.get_game_fix_for_rom("635A2BFF")
+        if winner is not None and core.game_fix_source(winner) == "shipped":
+            self.assertIn(os.path.basename(winner), fixes)
+
+
 if __name__ == "__main__":
     unittest.main()

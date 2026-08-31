@@ -21,6 +21,9 @@ Example (Super Mario 64 (USA) = CRC1 `635A2BFF`):
 
     635A2BFF_sm64_menu_hud_fix.ips
 
+`n64patcher --list-game-fixes` shows everything installed, marked with
+its source — a user fix for the same CRC1 carries a `<- wins` marker.
+
 Two directories are searched, later wins:
 
 1. this folder — shipped with the tool

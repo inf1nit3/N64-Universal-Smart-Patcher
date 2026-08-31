@@ -202,11 +202,12 @@ class TestAsyncHiresScan(unittest.TestCase):
     def test_inspector_table_has_a_column_per_header(self):
         tree = self.win.tree
         headers = [tree.headerItem().text(i) for i in range(tree.columnCount())]
-        self.assertEqual(len(headers), 16)
+        self.assertEqual(len(headers), 17)
         self.assertIn("SHA1", headers)
         self.assertIn("SubDrag patch", headers)
         self.assertIn("DAT match", headers)
         self.assertIn("Dump", headers)
+        self.assertIn("Game fix", headers)
 
 
 @unittest.skipUnless(HAVE_QT, "PyQt6 not installed")
@@ -230,6 +231,142 @@ class TestFolderOfSaves(unittest.TestCase):
 
         self.assertEqual(self.win.save_list, [src])
         self.assertEqual(self.win.rom_list, [])
+
+
+@unittest.skipUnless(HAVE_QT, "PyQt6 not installed")
+class TestGameFixColumnVerifyAndLists(unittest.TestCase):
+    """(a) which fix will apply per ROM, (b) verifying the last run's
+    outputs, (c) removing single list entries."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.ini = os.path.join(self.tmp.name, "settings.ini")
+
+        def factory(*a, **k):
+            return QSettings(self.ini, QSettings.Format.IniFormat)
+
+        with mock.patch.object(gui, "QSettings", side_effect=factory):
+            self.win = gui.N64PatcherGUI()
+        self.addCleanup(self.win.close)
+
+    def _inspect_one(self, crc):
+        rom = make_rom(self.tmp.name, "sm64.z64", crc)
+        self.win.rom_list = [rom]
+        self.win.start_inspection()
+        worker = self.win.inspect_worker
+        assert worker is not None
+        worker.wait(5000)
+        QApplication.processEvents()
+
+    def test_inspector_reports_which_game_fix_will_apply(self):
+        # pin the lookup to the shipped fix: the machine's user-level
+        # bisect file legitimately wins, but the column logic is the same
+        shipped = os.path.join(core.GAME_FIXES_DIR, "635A2BFF_sm64_menu_2x.ips")
+        self._inspect_one((0x635A2BFF, 0x8B022326))  # primed the row shape
+        with mock.patch.object(gui.core, "get_game_fix_for_rom", return_value=shipped):
+            self._inspect_one((0x635A2BFF, 0x8B022326))
+        tree = self.win.tree
+        item = tree.topLevelItem(0)
+        assert item is not None
+        fix_col = [tree.headerItem().text(i) for i in range(tree.columnCount())].index("Game fix")
+        text = item.text(fix_col)
+        self.assertIn("635A2BFF_sm64_menu_2x", text)
+        self.assertNotIn("[user]", text)
+
+    def test_inspector_shows_nothing_when_no_fix_matches(self):
+        self._inspect_one((0xDEADBEEF, 0x12345678))
+        tree = self.win.tree
+        item = tree.topLevelItem(0)
+        assert item is not None
+        fix_col = [tree.headerItem().text(i) for i in range(tree.columnCount())].index("Game fix")
+        self.assertEqual(item.text(fix_col), "")
+
+    def test_verify_checks_the_outputs_of_the_last_run(self):
+        src = os.path.join(self.tmp.name, "in.z64")
+        out = os.path.join(self.tmp.name, "out [NoAA].z64")
+        with open(src, "wb") as f:
+            f.write(b"\x80\x37\x12\x40" + bytes(252))
+        with open(out, "wb") as f:
+            f.write(b"\x80\x37\x12\x40" + b"\x01" + bytes(251))
+        self.win.last_outputs = [(out, {"NoAA"})]
+        with mock.patch.object(gui.core, "verify_output", return_value={"ok": True, "checks": []}):
+            self.win.start_verification()
+            worker = self.win.verify_worker
+            assert worker is not None
+            worker.wait(5000)
+            QApplication.processEvents()
+        log = self.win.log_widget.toPlainText()
+        self.assertIn("✓ out [NoAA].z64", log)
+        self.assertIn("1 OK, 0 failed", log)
+        self.assertTrue(self.win.btn_verify.isEnabled())
+
+    def test_verify_reports_failing_checks(self):
+        src_out = os.path.join(self.tmp.name, "bad [NoAA].z64")
+        with open(src_out, "wb") as f:
+            f.write(b"broken")
+        self.win.last_outputs = [(src_out, set())]
+        verdict = {
+            "ok": False,
+            "checks": [{"name": "boot checksums", "ok": False, "strict": True, "detail": "stale"}],
+        }
+        with mock.patch.object(gui.core, "verify_output", return_value=verdict):
+            self.win.start_verification()
+            worker = self.win.verify_worker
+            assert worker is not None
+            worker.wait(5000)
+            QApplication.processEvents()
+        self.assertIn(
+            "❌ bad [NoAA].z64: boot checksums - stale", self.win.log_widget.toPlainText()
+        )
+
+    def test_a_single_rom_can_be_removed_from_the_list(self):
+        keep = make_rom(self.tmp.name, "keep.z64", (0x11111111, 0x22222222))
+        drop = make_rom(self.tmp.name, "drop.z64", (0x33333333, 0x44444444))
+        self.win.rom_list = [keep, drop]
+        self.win._hires_cache[drop] = False
+        self.win._refresh_list_widgets()
+        self.assertEqual(self.win.rom_list_widget.count(), 2)
+        self.win._remove_roms([drop])
+        self.assertEqual(self.win.rom_list, [keep])
+        self.assertNotIn(drop, self.win._hires_cache)
+        self.assertEqual(self.win.rom_list_widget.count(), 1)
+        self.assertIn("1 ROM(s) removed", self.win.log_widget.toPlainText())
+
+    def test_inspector_filter_hides_non_matching_rows(self):
+        for i, title in enumerate(("MARIO", "ZELDA", "MARIO KART")):
+            self.win.on_inspect_item(
+                {
+                    "filename": f"rom{i}.z64",
+                    "title": title,
+                    "region": "",
+                    "format": "",
+                    "size_mb": 1,
+                    "no_aa": False,
+                    "is_hires_640x480": False,
+                    "vi_table_count": 0,
+                    "crc1": "",
+                    "crc2": "",
+                    "has_subdrag_patch": False,
+                }
+            )
+        self.win.filter_edit.setText("mario")
+        visible = [
+            self.win.tree.topLevelItem(i).isHidden()
+            for i in range(self.win.tree.topLevelItemCount())
+        ]
+        self.assertEqual(visible, [False, True, False])
+        self.win.filter_edit.setText("")
+        visible = [
+            self.win.tree.topLevelItem(i).isHidden()
+            for i in range(self.win.tree.topLevelItemCount())
+        ]
+        self.assertEqual(visible, [False, False, False])
+
+    def test_geometry_is_persisted_and_restored(self):
+        self.win.save_settings()
+        stored = QSettings(self.ini, QSettings.Format.IniFormat)
+        self.assertTrue(bytes(stored.value("geometry")))
 
 
 if __name__ == "__main__":

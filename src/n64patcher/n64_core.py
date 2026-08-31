@@ -902,6 +902,34 @@ def apply_game_fix(rom_path, crc1, output_path):
     return False, f"game fix failed: {res.get('message', 'unknown error')}"
 
 
+def game_fix_source(path):
+    """Where a fix file lives: 'shipped' (bundled) or 'user'
+    (~/.n64patcher). The user copy wins the lookup - see
+    game_fix_dirs for the precedence."""
+    if os.path.dirname(os.path.abspath(path)) == os.path.abspath(USER_GAME_FIXES_DIR):
+        return "user"
+    return "shipped"
+
+
+def list_game_fixes():
+    """Every installed game fix as (crc1, name, path, source), grouped by
+    CRC1 with shipped before user. Distinct from get_game_fix_for_rom:
+    that answers 'which single file would apply', this answers 'what is
+    installed' - including the overridden copies a listing should show."""
+    found = []
+    for directory, source in zip(game_fix_dirs(), ("shipped", "user"), strict=False):
+        if not os.path.isdir(directory):
+            continue
+        for name in sorted(os.listdir(directory)):
+            if not name.lower().endswith(GAME_FIX_EXTENSIONS):
+                continue
+            candidate = os.path.join(directory, name)
+            if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
+                crc1 = name.split("_", 1)[0].upper()
+                found.append((crc1, name, candidate, source))
+    return sorted(found, key=lambda f: (f[0], 0 if f[3] == "shipped" else 1, f[1]))
+
+
 # ---------------------------------------------------------------------------
 # ROM inspection
 # ---------------------------------------------------------------------------
