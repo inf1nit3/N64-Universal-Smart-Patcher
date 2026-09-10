@@ -1782,6 +1782,40 @@ class TestH2xFlavor(unittest.TestCase):
         with open(result["output"], "rb") as f:
             self.assertEqual(f.read(), bytes(target))
 
+    def test_default_flavor_bps_never_triggers_the_game_fix(self):
+        """A Stage 1b game fix is built against the SubDrag xdelta's image;
+        a default-flavor BPS build is a different image, so the fix must
+        not fire on it even when one is registered for the same CRC."""
+        calls = []
+        fake_db = {
+            self.SM64: [
+                {
+                    "id": "oot-exp",
+                    "name": "EXPERIMENTAL",
+                    "source": "test",
+                    "crc1": self.SM64[0],
+                    "crc2": self.SM64[1],
+                    "flavor": "640x480",
+                    "provides": ["hires"],
+                    "operations": [{"type": "bps", "file": "h2x.bps"}],
+                    "outputs": {},
+                    "origin_dir": self.tmp.name,
+                }
+            ]
+        }
+        with (
+            mock.patch.object(core, "PATCH_DB", fake_db),
+            mock.patch.object(core, "SUBDRAG_PATCHES", {}),
+            mock.patch.object(core, "apply_game_fix", side_effect=lambda *a: calls.append(a)),
+        ):
+            options = core.PatchOptions(
+                no_aa=False, no_dither=False, no_divot=False, no_gamma=False,
+                hires=True, hires_flavor="640x480")
+            lines = []
+            result = core.patch_rom(self.clean, options, log=lines.append)
+        self.assertEqual(result["status"], "patched", "\n".join(lines))
+        self.assertEqual(calls, [])
+
 
 if __name__ == "__main__":
     unittest.main()

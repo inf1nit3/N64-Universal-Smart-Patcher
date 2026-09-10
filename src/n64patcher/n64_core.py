@@ -1371,7 +1371,10 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False, output_
                         hires_blocked = "the verified patch for this dump did not apply"
                 else:
                     # default-flavor BPS recipes (e.g. the experimental
-                    # OoT 640x480i build): same gate, applied as BPS
+                    # OoT 640x480i build): same gate, applied as BPS.
+                    # Deliberately does NOT set subdrag_used: Stage 1b
+                    # game fixes are built against the SubDrag xdelta's
+                    # image, which a BPS build is not guaranteed to be.
                     bps_patch = get_flavor_patch(info["crc1"], info["crc2"], flavor)
                     if bps_patch:
                         from . import ips_bps_patcher
@@ -1379,7 +1382,6 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False, output_
                         res = ips_bps_patcher.apply_bps_patch(temp_z64, bps_patch, patched_z64)
                         log(f"  {flavor} BPS: {res.get('message', res.get('status'))}")
                         if res.get("status") == "patched":
-                            subdrag_used = True
                             flavor_used = True
                             stage_log.append(f"bps-{flavor}:{os.path.basename(bps_patch)}")
                             patched_exists = True
