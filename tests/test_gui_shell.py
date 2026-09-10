@@ -390,6 +390,20 @@ class TestManifestAndDatParity(unittest.TestCase):
             self.win = gui.N64PatcherGUI()
         self.addCleanup(self.win.close)
 
+    def test_hires_flavor_combo_reaches_the_patch_options(self):
+        index = self.win.hires_flavor_combo.findData("640x240")
+        self.assertGreaterEqual(index, 0, "640x240 flavor is not offered")
+        self.win.hires_flavor_combo.setCurrentIndex(index)
+        rom = make_rom(self.tmp.name, "plain.z64", (0xDEADBEEF, 0x12345678))
+        self.win.rom_list = [rom]
+        with mock.patch.object(gui.QMessageBox, "information"):
+            self.win.start_patching()
+            flavor = self.win.worker.options.hires_flavor
+            self.win.worker.cancel()
+            self.win.worker.wait(5000)
+            QApplication.processEvents()
+        self.assertEqual(flavor, "640x240")
+
     def test_manifest_flag_reaches_the_patch_options(self):
         self.win.cb_manifest.setChecked(True)
         rom = make_rom(self.tmp.name, "plain.z64", (0xDEADBEEF, 0x12345678))

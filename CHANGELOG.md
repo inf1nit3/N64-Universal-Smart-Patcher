@@ -18,7 +18,8 @@
 - **Verify in the GUI.** After a run, one button re-checks every output with the same strict checks as `--verify` (in a worker; per-file verdicts land in the log).
 - List hygiene: single entries can be removed from the ROM and save lists (context menu - until now only "Clear list" existed), the file manager can reveal an entry, the inspector has a filter box, and the window geometry persists.
 - CI gates: the core job fails below 55% coverage, and the smoke test (33 checks now, run against every frozen binary) verifies the shipped game-fix database survived packaging.
-- Tests: 453 with every optional dependency installed, up from 410.
+- **SM64 H2X (640x240) as a second hi-res flavor.** The recipe database now lets one dump offer alternative hi-res builds: entries carry a `flavor` (default `640x480`), a new `bps` operation applies BPS patches with full source/target CRC verification, and recipes can declare their `outputs` checksums so a patched ROM is recognised as the output of a verified recipe instead of being misread. First resident: dataDave's SM64 H2X v1.0 RC1 for Super Mario 64 (USA) - `--h2x` or the flavor box in the GUI picks it; `--hires` alone still means 640x480. Applied byte-exactly through the built-in engine (output SHA-1 matches the release's documented hash); the author's 2D rework means no Stage 1b game fix runs on H2X. Asking for 640x240 on a dump that only has 640x480 refuses with the reason rather than falling into the broken generic widening. The inspector also stops calling mixed-resolution ROMs "320x240".
+- Tests: 461 with every optional dependency installed, up from 410.
 
 ## v3.5.0 - Save Tools and Built-in Deltas
 

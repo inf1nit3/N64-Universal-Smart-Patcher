@@ -33,10 +33,15 @@ SCHEMA_VERSION = 1
 
 #: Operations a recipe may ask for. Unknown types make an entry invalid
 #: rather than being ignored, so a recipe never applies *partially*.
-KNOWN_OPERATIONS = ("xdelta", "poke")
+KNOWN_OPERATIONS = ("xdelta", "bps", "poke")
 
 #: Capabilities an entry can advertise; consumed by hires_support and the UI.
 KNOWN_CAPABILITIES = ("hires", "noaa", "nodither", "widescreen", "misc")
+
+#: Recipes without an explicit flavor build on this one (the SubDrag
+#: 640x480 deltas). Alternative hi-res builds - like SM64 H2X 640x240 -
+#: carry their own flavor and are selected by it.
+DEFAULT_FLAVOR = "640x480"
 
 USER_PATCH_DIR = os.path.join(os.path.expanduser("~"), ".n64patcher", "patches")
 ENV_PATCH_DIR = "N64PATCHER_PATCHES"
@@ -134,8 +139,8 @@ def validate_entry(entry: Any, source: str = "<memory>") -> dict[str, Any]:
                 f"{entry_id}: operation {i} has unknown type {op_type!r} "
                 f"(known: {', '.join(KNOWN_OPERATIONS)})"
             )
-        if op_type == "xdelta" and not isinstance(op.get("file"), str):
-            raise PatchDBError(f"{entry_id}: xdelta operation needs a 'file'")
+        if op_type in ("xdelta", "bps") and not isinstance(op.get("file"), str):
+            raise PatchDBError(f"{entry_id}: {op_type} operation needs a 'file'")
         if op_type == "poke":
             if not isinstance(op.get("offset"), int):
                 raise PatchDBError(f"{entry_id}: poke needs an integer 'offset'")
@@ -156,6 +161,22 @@ def validate_entry(entry: Any, source: str = "<memory>") -> dict[str, Any]:
             f"{entry_id}: unknown capability {unknown!r} (known: {', '.join(KNOWN_CAPABILITIES)})"
         )
 
+    flavor = entry.get("flavor", DEFAULT_FLAVOR)
+    if not isinstance(flavor, str) or not flavor.strip():
+        raise PatchDBError(f"{entry_id}: 'flavor' must be a non-empty string")
+
+    outputs = entry.get("outputs") or {}
+    if not isinstance(outputs, dict):
+        raise PatchDBError(f"{entry_id}: 'outputs' must be an object with crc1/crc2")
+    norm_outputs = {}
+    if outputs:
+        if "crc1" not in outputs or "crc2" not in outputs:
+            raise PatchDBError(f"{entry_id}: outputs needs both crc1 and crc2")
+        norm_outputs = {
+            "crc1": _parse_crc(outputs["crc1"], "outputs.crc1", entry_id),
+            "crc2": _parse_crc(outputs["crc2"], "outputs.crc2", entry_id),
+        }
+
     return {
         "id": entry_id,
         "name": entry.get("name") or entry_id,
@@ -163,16 +184,20 @@ def validate_entry(entry: Any, source: str = "<memory>") -> dict[str, Any]:
         "notes": entry.get("notes", ""),
         "crc1": crc1,
         "crc2": crc2,
+        "flavor": flavor,
         "provides": list(provides),
         "operations": norm_ops,
+        "outputs": norm_outputs,
         "origin": source,
     }
 
 
 def load_patch_db(
     dirs: list[str] | None = None, on_error: Any = None
-) -> dict[tuple[int, int], dict[str, Any]]:
-    """Load and merge every recipe file. Returns {(crc1, crc2): entry}.
+) -> dict[tuple[int, int], list[dict[str, Any]]]:
+    """Load and merge every recipe file. Returns
+    {(crc1, crc2): [entry, ...]} - one slot per flavor, so a dump can
+    offer alternative hi-res builds (640x480 delta vs 640x240 H2X).
 
     *on_error* is called with a human-readable string for each problem found;
     loading continues regardless.
@@ -182,7 +207,7 @@ def load_patch_db(
         if on_error is not None:
             on_error(msg)
 
-    db: dict[tuple[int, int], dict[str, Any]] = {}
+    db: dict[tuple[int, int], list[dict[str, Any]]] = {}
     for directory in dirs if dirs is not None else patch_dirs():
         if not os.path.isdir(directory):
             continue
@@ -210,29 +235,49 @@ def load_patch_db(
                 except PatchDBError as e:
                     report(f"patch db: {e}")
                     continue
-                db[(entry["crc1"], entry["crc2"])] = entry
+                key = (entry["crc1"], entry["crc2"])
+                slots = db.setdefault(key, [])
+                for i, existing in enumerate(slots):
+                    if existing["flavor"] == entry["flavor"]:
+                        report(
+                            f"patch db: {name}: {entry['id']} replaces "
+                            f"{existing['id']} for {key[0]:08X}/{key[1]:08X} "
+                            f"flavor {entry['flavor']!r}"
+                        )
+                        slots[i] = entry
+                        break
+                else:
+                    slots.append(entry)
     return db
 
 
 def entries_providing(
-    db: dict[tuple[int, int], dict[str, Any]], capability: str
+    db: dict[tuple[int, int], list[dict[str, Any]]], capability: str
 ) -> list[dict[str, Any]]:
     """Every entry advertising *capability*, sorted by id."""
-    return sorted((e for e in db.values() if capability in e["provides"]), key=lambda e: e["id"])
+    flat = [e for slots in db.values() for e in slots]
+    return sorted((e for e in flat if capability in e["provides"]), key=lambda e: e["id"])
 
 
-def describe(db: dict[tuple[int, int], dict[str, Any]]) -> str:
+def describe(db: dict[tuple[int, int], list[dict[str, Any]]]) -> str:
     """Human-readable listing, used by `n64patcher --list-patches`."""
     if not db:
         return "No patch recipes loaded."
-    lines = [f"{len(db)} patch recipe(s):", ""]
-    for entry in sorted(db.values(), key=lambda e: e["id"]):
+    entries = sorted((e for slots in db.values() for e in slots), key=lambda e: e["id"])
+    lines = [f"{len(entries)} patch recipe(s) across {len(db)} dump(s):", ""]
+    for entry in entries:
         caps = ", ".join(entry["provides"]) or "-"
+        flavor = "" if entry["flavor"] == DEFAULT_FLAVOR else f"   flavor: {entry['flavor']}"
         lines.append(f"  {entry['id']}")
         lines.append(f"    {entry['name']}")
-        lines.append(f"    match: {entry['crc1']:08X}/{entry['crc2']:08X}   provides: {caps}")
+        lines.append(
+            f"    match: {entry['crc1']:08X}/{entry['crc2']:08X}   provides: {caps}{flavor}"
+        )
         ops = ", ".join(op["type"] for op in entry["operations"])
         lines.append(f"    operations: {ops}   from: {entry['origin']}")
+        if entry["outputs"]:
+            out = entry["outputs"]
+            lines.append(f"    output: {out['crc1']:08X}/{out['crc2']:08X}")
         if entry["notes"]:
             lines.append(f"    {entry['notes']}")
         lines.append("")

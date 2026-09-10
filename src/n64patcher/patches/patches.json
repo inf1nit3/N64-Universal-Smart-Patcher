@@ -151,6 +151,30 @@
           "file": "Super Mario 64 (U) [!] 640 x 480i No AA[SubDrag].xdelta"
         }
       ]
+    },
+    {
+      "id": "super-mario-64-usa-h2x-640x240",
+      "name": "Super Mario 64 (USA) H2X 640x240 (dataDave v1.0 RC1) - horizontal hi-res",
+      "source": "dataDave (DavidFallows), SM64 H2X - https://github.com/DavidFallows/sm64",
+      "notes": "640x240: doubles the horizontal framebuffer while keeping the 240-line output and the game's logical 320x240 layout; needs an Expansion Pak. The author reworked the 2D layer (menus, HUD, text) for the wide framebuffer, so no Stage 1b game fix applies.",
+      "flavor": "640x240",
+      "match": {
+        "crc1": "635A2BFF",
+        "crc2": "8B022326"
+      },
+      "provides": [
+        "hires"
+      ],
+      "operations": [
+        {
+          "type": "bps",
+          "file": "SM64 - H2X (dataDave) v1.0 RC1.bps"
+        }
+      ],
+      "outputs": {
+        "crc1": "65D3D6B2",
+        "crc2": "70B82FEB"
+      }
     }
   ]
 }

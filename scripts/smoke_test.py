@@ -147,6 +147,11 @@ def main() -> int:
             proc.stdout[:800],
         )
         check(proc.stdout.count("\n") > 5, "--list-patches lists more than a couple of entries")
+        check(
+            "h2x" in proc.stdout.lower() and "640x240" in proc.stdout,
+            "--list-patches shows the SM64 H2X 640x240 flavor",
+            proc.stdout[:300],
+        )
 
         # The shipped game-fix database must survive packaging: this check
         # runs against frozen binaries in the build job, where a missing

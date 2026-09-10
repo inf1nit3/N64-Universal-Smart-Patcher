@@ -347,6 +347,13 @@ def main(argv: list[str] | None = None) -> int:
         "a verified patch; others are reported and skipped)",
     )
     parser.add_argument(
+        "--h2x",
+        action="store_true",
+        help="Request the 640x240 H2X build instead of 640x480 where one "
+        "exists (Super Mario 64, dataDave's SM64 H2X). Implies --hires; "
+        "keeps the 240-line look while doubling horizontal resolution",
+    )
+    parser.add_argument(
         "--force-hires",
         action="store_true",
         help="Apply the generic VI-table widening even without a "
@@ -671,7 +678,8 @@ def main(argv: list[str] | None = None) -> int:
             log(f"   ROMs:       {len(roms)}")
             log(f"   Preset:     {args.preset or 'none (individual flags)'}")
             log(
-                f"   Options:    hires={args.hires or (args.preset and PRESETS[args.preset].options.hires)} "
+                f"   Options:    hires={args.hires or (args.preset and PRESETS[args.preset].options.hires)}"
+                f"{' [640x240 H2X]' if args.h2x else ''} "
                 f"no_dither={args.no_dither} no_divot={args.no_divot} no_gamma={args.no_gamma} "
                 f"keep_aa={args.keep_aa}"
             )
@@ -692,7 +700,12 @@ def main(argv: list[str] | None = None) -> int:
                     log(f"⚠️  Error inspecting {os.path.basename(rom)}: {e}")
                     continue
                 infos.append(info)
-                resolution = "640x480" if info["is_hires_640x480"] else "320x240"
+                if info["is_hires_640x480"]:
+                    resolution = "640x480"
+                elif info.get("is_mixed_resolution"):
+                    resolution = "mixed (640+320)"
+                else:
+                    resolution = "320x240"
                 aa = "No-AA" if info["no_aa"] else "AA"
                 hires_label = {
                     core.HIRES_VERIFIED: "hi-res: verified",
@@ -768,10 +781,13 @@ def main(argv: list[str] | None = None) -> int:
                 no_divot=args.no_divot,
                 no_gamma=args.no_gamma,
                 hires=args.hires,
+                hires_flavor="640x240" if args.h2x else "640x480",
             )
         options.force_hires = args.force_hires
         options.write_manifest = args.manifest
         if args.force_hires:
+            options.hires = True
+        if args.h2x:
             options.hires = True
             log(
                 "⚠️  --force-hires: applying the generic VI-table widening to "

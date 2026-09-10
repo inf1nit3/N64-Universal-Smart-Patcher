@@ -34,7 +34,7 @@ def bundled_patch_entries():
     db = patchdb.load_patch_db([os.path.join(SRC, "patches")], on_error=problems.append)
     if problems:
         raise AssertionError("bundled patch database has errors: " + "; ".join(problems))
-    return list(db.values())
+    return [entry for slots in db.values() for entry in slots]
 
 
 class TestPatchAssetNamesResolveCaseExactly(unittest.TestCase):
@@ -52,13 +52,14 @@ class TestPatchAssetNamesResolveCaseExactly(unittest.TestCase):
     def referenced_files(self):
         for entry in bundled_patch_entries():
             for op in entry.get("operations", []):
-                if op.get("type") == "xdelta":
+                if op.get("type") in ("xdelta", "bps"):
                     yield entry["id"], op["file"]
 
     def test_database_is_not_empty(self):
         """A load failure would make every other test here vacuously pass."""
         self.assertTrue(
-            list(self.referenced_files()), "no xdelta operations found - did the database load?"
+            list(self.referenced_files()),
+            "no patch operations found - did the database load?",
         )
 
     def test_every_referenced_patch_exists_with_exact_case(self):

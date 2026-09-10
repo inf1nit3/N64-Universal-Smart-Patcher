@@ -431,6 +431,27 @@ So the tool classifies every ROM:
 `--force-hires` overrides the last row. It is experimental and expected to
 render incorrectly; the log says so and the run is labelled EXPERIMENTAL.
 
+### 640x240: the H2X alternative for Super Mario 64
+
+Where a dump has more than one verified hi-res build, the recipes carry a
+*flavor* and you pick one. Super Mario 64 (USA) is the first such case:
+
+| Flavor | Build | What it does |
+|---|---|---|
+| `640x480` | SubDrag delta | doubles both axes; needs the menu game fix (applied automatically) |
+| `640x240` | **SM64 H2X** (dataDave, v1.0 RC1) | doubles the horizontal framebuffer only, keeps the 240-line look; the 2D layer is reworked by the author, so no game fix runs |
+
+`--h2x` (or the flavor box under the hi-res checkbox) selects the H2X
+build; `--hires` alone keeps meaning 640x480. H2X requires an Expansion
+Pak. The BPS applies through the built-in engine with full source and
+target CRC verification, and the recipe declares the output checksums, so
+a patched ROM is recognised as *the output of a verified recipe* instead
+of being misread as a mixed-resolution dump.
+
+Credit: SM64 H2X by dataDave (DavidFallows) —
+<https://github.com/DavidFallows/sm64>. Bundled as a patch file only; no
+ROM content is distributed.
+
 Check before patching:
 
 ```bash

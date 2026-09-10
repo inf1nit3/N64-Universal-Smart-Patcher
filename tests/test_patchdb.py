@@ -131,7 +131,41 @@ class TestLoadPatchDb(unittest.TestCase):
         write_db(self.tmp.name, "a.json", [VALID])
         write_db(d2, "b.json", [dict(VALID, id="override", name="Override")])
         db = patchdb.load_patch_db([self.tmp.name, d2])
-        self.assertEqual(db[(0xAABBCCDD, 0x11223344)]["id"], "override")
+        slots = db[(0xAABBCCDD, 0x11223344)]
+        self.assertEqual([e["id"] for e in slots], ["override"])
+
+    def test_same_dump_different_flavor_coexists(self):
+        """A dump can offer alternative hi-res builds: same key, distinct
+        flavors live side by side instead of clobbering each other."""
+        write_db(self.tmp.name, "a.json", [VALID])
+        write_db(
+            self.tmp.name,
+            "b.json",
+            [
+                dict(
+                    VALID,
+                    id="example-h2x",
+                    flavor="640x240",
+                    operations=[{"type": "bps", "file": "example.bps"}],
+                )
+            ],
+        )
+        problems = []
+        db = patchdb.load_patch_db([self.tmp.name], on_error=problems.append)
+        self.assertEqual(problems, [])
+        self.assertEqual(
+            {e["flavor"] for e in db[(0xAABBCCDD, 0x11223344)]},
+            {"640x480", "640x240"},
+        )
+
+    def test_same_dump_same_flavor_replaces_with_a_problem(self):
+        write_db(self.tmp.name, "a.json", [VALID])
+        write_db(self.tmp.name, "b.json", [dict(VALID, id="other")])
+        problems = []
+        db = patchdb.load_patch_db([self.tmp.name], on_error=problems.append)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("replaces", problems[0])
+        self.assertEqual([e["id"] for e in db[(0xAABBCCDD, 0x11223344)]], ["other"])
 
     def test_missing_directory_is_not_an_error(self):
         db = patchdb.load_patch_db([os.path.join(self.tmp.name, "nope")])
@@ -171,20 +205,42 @@ class TestShippedDatabase(unittest.TestCase):
     def test_core_exposes_the_db_without_errors(self):
         self.assertEqual(core.patch_db_problems(), [])
         self.assertEqual(len(core.PATCH_DB), 8)
+        # 8 dumps, 9 recipes: SM64 carries a second, 640x240 flavor
+        entries = [e for slots in core.PATCH_DB.values() for e in slots]
+        self.assertEqual(len(entries), 9)
+        self.assertEqual(
+            [e["id"] for e in entries if e["flavor"] == "640x240"],
+            ["super-mario-64-usa-h2x-640x240"],
+        )
 
-    def test_every_bundled_xdelta_file_exists(self):
-        """A recipe naming a missing delta would fail only at patch time."""
+    def test_every_bundled_patch_file_exists(self):
+        """A recipe naming a missing patch would fail only at patch time."""
         missing = []
-        for entry in core.PATCH_DB.values():
-            for op in entry["operations"]:
-                if op["type"] == "xdelta":
-                    path = os.path.join(core.HIRES_PATCHES_DIR, op["file"])
-                    if not os.path.isfile(path):
-                        missing.append(f"{entry['id']}: {op['file']}")
+        for slots in core.PATCH_DB.values():
+            for entry in slots:
+                for op in entry["operations"]:
+                    if op["type"] in ("xdelta", "bps"):
+                        path = os.path.join(core.HIRES_PATCHES_DIR, op["file"])
+                        if not os.path.isfile(path):
+                            missing.append(f"{entry['id']}: {op['file']}")
         self.assertEqual(missing, [])
 
-    def test_compat_view_matches_the_db(self):
-        self.assertEqual(set(core.SUBDRAG_PATCHES), set(core.PATCH_DB))
+    def test_compat_view_matches_the_default_flavors(self):
+        defaults = {
+            k
+            for k, slots in core.PATCH_DB.items()
+            if any(e["flavor"] == patchdb.DEFAULT_FLAVOR for e in slots)
+        }
+        self.assertEqual(set(core.SUBDRAG_PATCHES), defaults)
+
+    def test_flavor_lookup_and_output_registration(self):
+        entry = core.find_patch_entry("635A2BFF", "8B022326", "640x240")
+        self.assertEqual(entry["id"], "super-mario-64-usa-h2x-640x240")
+        self.assertIsNotNone(core.get_flavor_patch("635A2BFF", "8B022326", "640x240"))
+        # the alternative build's output is registered for recognition
+        self.assertEqual(len(core.KNOWN_HIRES_OUTPUTS), 1)
+        # and the default flavor is still what --hires alone means
+        self.assertEqual(core.find_patch_entry("635A2BFF", "8B022326")["flavor"], "640x480")
 
     def test_find_patch_entry_accepts_hex_and_int(self):
         key = next(iter(core.PATCH_DB))
@@ -193,7 +249,7 @@ class TestShippedDatabase(unittest.TestCase):
         self.assertIsNone(core.find_patch_entry("bogus", "bogus"))
 
     def test_ids_are_unique(self):
-        ids = [e["id"] for e in core.PATCH_DB.values()]
+        ids = [e["id"] for slots in core.PATCH_DB.values() for e in slots]
         self.assertEqual(len(ids), len(set(ids)))
 
     def test_bundled_dir_follows_meipass_when_frozen(self):
@@ -215,8 +271,11 @@ class TestShippedDatabase(unittest.TestCase):
 
     def test_describe_mentions_every_entry(self):
         text = patchdb.describe(core.PATCH_DB)
-        for entry in core.PATCH_DB.values():
-            self.assertIn(entry["id"], text)
+        for slots in core.PATCH_DB.values():
+            for entry in slots:
+                self.assertIn(entry["id"], text)
+        self.assertIn("flavor: 640x240", text)
+        self.assertIn("output: 65D3D6B2/70B82FEB", text)
 
 
 if __name__ == "__main__":

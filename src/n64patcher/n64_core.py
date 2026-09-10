@@ -674,10 +674,22 @@ PATCH_DB = patchdb.load_patch_db(on_error=_patch_db_problems.append)
 # already speak; find_patch_entry() exposes the full recipe.
 SUBDRAG_PATCHES = {
     key: (entry["operations"][0].get("file", ""), entry["name"])
-    for key, entry in PATCH_DB.items()
-    if "hires" in entry["provides"]
+    for key, slots in PATCH_DB.items()
+    for entry in slots
+    if entry["flavor"] == patchdb.DEFAULT_FLAVOR
+    and "hires" in entry["provides"]
     and entry["operations"]
     and entry["operations"][0]["type"] == "xdelta"
+}
+
+#: {(crc1, crc2): recipe name} for the outputs recipes declare - lets the
+#: inspector recognise a ROM that a flavor build already produced, instead
+#: of misreading it as a mixed-resolution dump with no hi-res support.
+KNOWN_HIRES_OUTPUTS = {
+    (entry["outputs"]["crc1"], entry["outputs"]["crc2"]): entry["name"]
+    for slots in PATCH_DB.values()
+    for entry in slots
+    if entry.get("outputs")
 }
 
 
@@ -686,8 +698,12 @@ def patch_db_problems():
     return list(_patch_db_problems)
 
 
-def find_patch_entry(crc1, crc2):
-    """Full recipe for this exact dump, or None. Accepts ints or hex text."""
+def find_patch_entry(crc1, crc2, flavor=None):
+    """Full recipe for this exact dump, or None. Accepts ints or hex text.
+
+    With *flavor*, only that build matches (e.g. "640x240" for SM64 H2X);
+    without it the default flavor wins over alternatives, mirroring what
+    `--hires` alone has always meant."""
     try:
         key = (
             int(crc1, 16) if isinstance(crc1, str) else int(crc1),
@@ -695,7 +711,16 @@ def find_patch_entry(crc1, crc2):
         )
     except (TypeError, ValueError):
         return None
-    return PATCH_DB.get(key)
+    slots = PATCH_DB.get(key) or []
+    if flavor is not None:
+        for entry in slots:
+            if entry["flavor"] == flavor:
+                return entry
+        return None
+    for entry in slots:
+        if entry["flavor"] == patchdb.DEFAULT_FLAVOR:
+            return entry
+    return slots[0] if slots else None
 
 
 def get_subdrag_patch(crc1, crc2):
@@ -716,6 +741,20 @@ def get_subdrag_patch(crc1, crc2):
     if entry is None:
         return None
     candidate = os.path.join(HIRES_PATCHES_DIR, entry[0])
+    if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
+        return candidate
+    return None
+
+
+def get_flavor_patch(crc1, crc2, flavor):
+    """Path of a recipe file for an alternative hi-res build (e.g. the
+    SM64 H2X 640x240 BPS), or None when this dump has no such flavor.
+    The first operation's file is the patch, same convention as
+    get_subdrag_patch."""
+    entry = find_patch_entry(crc1, crc2, flavor)
+    if entry is None or not entry["operations"]:
+        return None
+    candidate = os.path.join(HIRES_PATCHES_DIR, entry["operations"][0].get("file", ""))
     if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
         return candidate
     return None
@@ -750,6 +789,14 @@ HIRES_UNSUPPORTED = "unsupported"
 
 def hires_support(info):
     """Classify a ROM's 640x480 support. Returns (status, reason)."""
+    known = KNOWN_HIRES_OUTPUTS.get(
+        (
+            int(info.get("crc1") or 0, 16) if isinstance(info.get("crc1"), str) else 0,
+            int(info.get("crc2") or 0, 16) if isinstance(info.get("crc2"), str) else 0,
+        )
+    )
+    if known:
+        return HIRES_NATIVE, f"Output of a verified recipe: {known}"
     if get_subdrag_patch(info.get("crc1"), info.get("crc2")):
         return HIRES_VERIFIED, "Verified SubDrag patch exists for this exact dump"
     if info.get("is_hires_640x480"):
@@ -1098,6 +1145,9 @@ class PatchOptions:
     # hires_support). Requesting hi-res on a dump with no verified patch is
     # a no-op unless this is set explicitly.
     force_hires: bool = False
+    # Which verified hi-res build to apply: "640x480" (the SubDrag deltas)
+    # or "640x240" (SM64 H2X, where one exists).
+    hires_flavor: str = "640x480"
     # Write a JSON sidecar recording every changed byte run.
     write_manifest: bool = False
 
@@ -1284,34 +1334,62 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False, output_
         base = temp_z64  # current working file
         patched_exists = False  # True once `patched_z64` holds working data
         subdrag_used = False
+        flavor_used = False  # any verified hi-res build applied (Stage 1)
         # Set when the only correct hi-res route for this dump could not be
         # taken. Stage 3's generic widening is NOT a substitute (see below).
         hires_blocked = ""
 
-        # --- Stage 1: SubDrag verified .xdelta on the CLEAN source ---------
+        # --- Stage 1: verified hi-res build on the CLEAN source -------------
         # No tool gate here: try_subdrag_xdelta falls back to the built-in
-        # VCDIFF engine, so a verified dump gets its correct patch on every
-        # platform, with or without an xdelta3 binary.
+        # VCDIFF engine and BPS is native Python, so a verified dump gets
+        # its correct patch on every platform, with or without binaries.
         if options.hires:
-            patch = get_subdrag_patch(info["crc1"], info["crc2"])
-            if patch:
-                ok, msg = try_subdrag_xdelta(patch, temp_z64, patched_z64)
-                log(f"  SubDrag .xdelta: {msg}")
-                if ok:
-                    subdrag_used = True
-                    stage_log.append(f"subdrag-xdelta:{os.path.basename(patch)}")
-                    patched_exists = True
-                    base = patched_z64
-                    applied.add("HR")
-                    if patch_includes_noaa(patch):
-                        applied.add("NoAA")
-                else:
-                    hires_blocked = "the verified patch for this dump did not apply"
+            flavor = getattr(options, "hires_flavor", "640x480")
+            patch = None
+            if flavor == patchdb.DEFAULT_FLAVOR:
+                patch = get_subdrag_patch(info["crc1"], info["crc2"])
+                if patch:
+                    ok, msg = try_subdrag_xdelta(patch, temp_z64, patched_z64)
+                    log(f"  SubDrag .xdelta: {msg}")
+                    if ok:
+                        subdrag_used = True
+                        flavor_used = True
+                        stage_log.append(f"subdrag-xdelta:{os.path.basename(patch)}")
+                        patched_exists = True
+                        base = patched_z64
+                        applied.add("HR")
+                        if patch_includes_noaa(patch):
+                            applied.add("NoAA")
+                    else:
+                        hires_blocked = "the verified patch for this dump did not apply"
+            else:
+                patch = get_flavor_patch(info["crc1"], info["crc2"], flavor)
+                if patch:
+                    # Imported here: ips_bps_patcher imports this module.
+                    from . import ips_bps_patcher
+
+                    res = ips_bps_patcher.apply_bps_patch(temp_z64, patch, patched_z64)
+                    log(f"  {flavor} BPS: {res.get('message', res.get('status'))}")
+                    if res.get("status") == "patched":
+                        flavor_used = True
+                        stage_log.append(f"bps-{flavor}:{os.path.basename(patch)}")
+                        patched_exists = True
+                        base = patched_z64
+                        applied.add("HR")
+                    else:
+                        hires_blocked = f"the {flavor} build for this dump did not apply"
+                elif get_subdrag_patch(info["crc1"], info["crc2"]):
+                    hires_blocked = (
+                        f"no {flavor} build exists for this dump - only "
+                        f"{patchdb.DEFAULT_FLAVOR}. Request that flavor "
+                        f"instead of falling back to unverified widening."
+                    )
 
             # --- Stage 1b: per-game menu/HUD fix (keyed by CRC1) -----------
-            # Only on top of a delta that actually applied: the fix is built
-            # against the hi-res image, so on anything else its offsets point
-            # at the wrong bytes.
+            # Only on top of the 640x480 delta that actually applied: the
+            # fix is built against that hi-res image, so on anything else
+            # its offsets point at the wrong bytes. H2X reworks the 2D
+            # layer itself and needs no fix.
             if subdrag_used:
                 fix_out = patched_z64 + ".gamefix.z64"
                 ok_fix, msg_fix = apply_game_fix(patched_z64, info["crc1"], fix_out)
@@ -1397,10 +1475,16 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False, output_
             return result
 
         # --- Stage 3: Smart Hi-Res fallback --------------------------------
-        if options.hires and not subdrag_used:
+        if options.hires and not flavor_used:
             support = info.get("hires_support", HIRES_UNSUPPORTED)
             if support == HIRES_NATIVE:
-                log("  Hi-Res Engine: SKIPPED - ROM already renders at 640x480")
+                log(
+                    "  Hi-Res Engine: SKIPPED - "
+                    + info.get(
+                        "hires_support_reason",
+                        "ROM already renders at 640x480",
+                    )
+                )
             elif hires_blocked and not options.force_hires:
                 # A dump classified `verified` has exactly one correct route:
                 # its hand-made delta. If that route is closed, falling back to
@@ -1449,6 +1533,8 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False, output_
                 reason = "Already patched with No-AA & No-Dither (no re-patch needed)"
             elif info["is_hires_640x480"] and options.hires:
                 reason = "Already 640x480 hi-res (native or previously patched)"
+            elif info.get("hires_support") == HIRES_NATIVE and options.hires:
+                reason = f"Already the output of a verified recipe - {info.get('hires_support_reason', '')}"
             elif (
                 options.hires
                 and info.get("hires_support") == HIRES_UNSUPPORTED
@@ -1627,7 +1713,7 @@ def verify_output(path, applied=None):
             else "no dither mask signature (expected when applied via u64aap)",
         )
     if "HR" in applied:
-        converted = info["vi_table_count"] == 0 and info["vi_table_640_count"] > 0
+        converted = info["vi_table_640_count"] > 0
         add(
             "hires",
             converted,

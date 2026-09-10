@@ -559,7 +559,17 @@ class N64PatcherGUI(QMainWindow):
         self.cb_no_dither = QCheckBox("Remove dither filter - no 16-bit artifacts")
         self.cb_no_divot = QCheckBox("Remove divot filter - no edge blurring")
         self.cb_no_gamma = QCheckBox("Remove gamma boost - accurate colors")
-        self.cb_hires = QCheckBox("High-Res 640x480 (Smart VI Table Engine)")
+        self.cb_hires = QCheckBox("High-Res (Smart VI Table Engine)")
+        self.hires_flavor_combo = QComboBox()
+        self.hires_flavor_combo.addItem("640x480 - SubDrag delta (8 games)", "640x480")
+        self.hires_flavor_combo.addItem("640x240 - H2X (Super Mario 64, dataDave)", "640x240")
+        self.hires_flavor_combo.setToolTip(
+            "Which verified hi-res build to apply.\n\n"
+            "640x480 doubles both axes (SubDrag deltas). 640x240 (H2X) "
+            "doubles the width only and keeps the 240-line look - Super "
+            "Mario 64 only, needs an Expansion Pak, and its 2D layer is "
+            "already adapted, so no game fix runs on top."
+        )
         for cb in [
             self.cb_no_aa,
             self.cb_no_dither,
@@ -568,6 +578,7 @@ class N64PatcherGUI(QMainWindow):
             self.cb_hires,
         ]:
             options_layout.addWidget(cb)
+        options_layout.addWidget(self.hires_flavor_combo)
         options_group.setLayout(options_layout)
         patch_layout.addWidget(options_group)
 
@@ -1487,7 +1498,12 @@ class N64PatcherGUI(QMainWindow):
 
     def on_inspect_item(self, info: dict) -> None:
         self.last_infos.append(info)
-        res = "640x480" if info.get("is_hires_640x480") else "320x240"
+        if info.get("is_hires_640x480"):
+            res = "640x480"
+        elif info.get("is_mixed_resolution"):
+            res = "mixed (640+320)"
+        else:
+            res = "320x240"
         aa = "No-AA" if info.get("no_aa") else "AA"
         item = QTreeWidgetItem(
             [
@@ -1583,6 +1599,7 @@ class N64PatcherGUI(QMainWindow):
             no_divot=self.cb_no_divot.isChecked(),
             no_gamma=self.cb_no_gamma.isChecked(),
             hires=self.cb_hires.isChecked(),
+            hires_flavor=self.hires_flavor_combo.currentData() or "640x480",
             write_manifest=self.cb_manifest.isChecked(),
         )
 
@@ -1700,6 +1717,10 @@ class N64PatcherGUI(QMainWindow):
         self.cb_no_divot.setChecked(self.settings.value("no_divot", False, type=bool))
         self.cb_no_gamma.setChecked(self.settings.value("no_gamma", False, type=bool))
         self.cb_hires.setChecked(self.settings.value("hires", False, type=bool))
+        flavor = self.settings.value("hires_flavor", "640x480", type=str)
+        index = self.hires_flavor_combo.findData(flavor)
+        if index >= 0:
+            self.hires_flavor_combo.setCurrentIndex(index)
         self.cb_strip_header.setChecked(self.settings.value("strip_header", False, type=bool))
         self.cb_fix_crc.setChecked(self.settings.value("fix_crc", False, type=bool))
         self.cb_manifest.setChecked(self.settings.value("write_manifest", False, type=bool))
@@ -1720,6 +1741,7 @@ class N64PatcherGUI(QMainWindow):
         self.settings.setValue("no_divot", self.cb_no_divot.isChecked())
         self.settings.setValue("no_gamma", self.cb_no_gamma.isChecked())
         self.settings.setValue("hires", self.cb_hires.isChecked())
+        self.settings.setValue("hires_flavor", self.hires_flavor_combo.currentData() or "640x480")
         self.settings.setValue("strip_header", self.cb_strip_header.isChecked())
         self.settings.setValue("fix_crc", self.cb_fix_crc.isChecked())
         self.settings.setValue("write_manifest", self.cb_manifest.isChecked())

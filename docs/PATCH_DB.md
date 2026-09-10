@@ -82,7 +82,24 @@ skipped, because applying some steps and not others leaves a corrupt ROM.
 | Type | Fields | Meaning |
 |---|---|---|
 | `xdelta` | `file` | Apply a delta from the bundled patches directory |
+| `bps` | `file` | Apply a BPS patch from the bundled patches directory (source and target CRC32 verified) |
 | `poke` | `offset` (int), `bytes` (hex string) | Write bytes at a ROM offset |
+
+### `flavor`
+
+Optional, default `"640x480"`. A dump may offer alternative hi-res builds:
+same `match`, different flavor, selected by the caller (`--hires` means the
+default flavor, `--h2x` means `640x240`). Two entries with the same dump
+**and** the same flavor is an error - the later one replaces the earlier
+with a problem reported, exactly like the directory override.
+
+### `outputs`
+
+Optional: `{ "crc1": "...", "crc2": "..." }` - the boot checksums of the
+ROM this recipe *produces*. Declaring them lets the inspector recognise a
+already-patched ROM as `native` with the recipe's name, instead of
+misclassifying it (an H2X image keeps 320-space VI tables for some modes
+and would otherwise read as mixed-resolution `unsupported`).
 
 ## Adding an entry
 
