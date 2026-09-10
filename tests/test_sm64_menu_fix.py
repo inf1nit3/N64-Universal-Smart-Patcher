@@ -194,9 +194,7 @@ class TestGameFixListing(unittest.TestCase):
             self.assertTrue(crc1 and len(crc1) == 8, crc1)
             if source == "shipped":
                 self.assertTrue(
-                    path.startswith(
-                        os.path.dirname(core.GAME_FIXES_DIR) if False else core.GAME_FIXES_DIR
-                    ),
+                    path.startswith(core.GAME_FIXES_DIR),
                     path,
                 )
 

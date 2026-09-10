@@ -76,8 +76,11 @@ the hi-res section in the README.
 
 ### `operations`
 
-Applied in order. Unknown types reject the **whole entry** rather than being
-skipped, because applying some steps and not others leaves a corrupt ROM.
+Exactly **one** operation per entry - the pipeline applies one patch per
+recipe, and entries with more are rejected up front rather than silently
+half-applied (chain additional steps as separate entries). Unknown types
+reject the **whole entry** rather than being skipped, because applying
+some steps and not others leaves a corrupt ROM.
 
 | Type | Fields | Meaning |
 |---|---|---|

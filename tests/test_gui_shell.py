@@ -369,10 +369,6 @@ class TestGameFixColumnVerifyAndLists(unittest.TestCase):
         self.assertTrue(bytes(stored.value("geometry")))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 @unittest.skipUnless(HAVE_QT, "PyQt6 not installed")
 class TestManifestAndDatParity(unittest.TestCase):
     """The two CLI powers the GUI now shares: undo manifests and DAT

@@ -127,6 +127,14 @@ def validate_entry(entry: Any, source: str = "<memory>") -> dict[str, Any]:
     ops = entry.get("operations")
     if not isinstance(ops, list) or not ops:
         raise PatchDBError(f"{entry_id}: 'operations' must be a non-empty list")
+    if len(ops) > 1:
+        # The pipeline applies exactly one patch per recipe entry (the
+        # first operation); accepting more here would let a recipe be
+        # silently half-applied. Reject up front with the truth.
+        raise PatchDBError(
+            f"{entry_id}: more than one operation is not supported yet - "
+            f"split additional steps into their own entries"
+        )
     norm_ops = []
     for i, op in enumerate(ops):
         if not isinstance(op, dict):

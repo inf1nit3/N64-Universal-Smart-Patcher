@@ -1007,7 +1007,10 @@ class N64PatcherGUI(QMainWindow):
         """The DAT index for this run, loaded once and cached.
 
         Returns None when no DAT resolves, so the inspector falls back to
-        reading headers alone - the same degradation the CLI has.
+        reading headers alone - the same degradation the CLI has. An
+        empty result is cached too (sentinel False): without it every
+        inspection would rescan the DAT folders and re-log the same
+        warnings. choose_dat_dir() clears the cache to reload.
         """
         if self._dat_index is None:
             problems: list[str] = []
@@ -1019,12 +1022,15 @@ class N64PatcherGUI(QMainWindow):
                 index = datdb.load_dats(explicit, on_error=problems.append)
             except Exception as e:  # a broken DAT must not kill inspection
                 self.log(f"⚠️ DAT lookup disabled: {e}")
+                self._dat_index = datdb.DatIndex()
                 return None
             for problem in problems:
                 self.log(f"⚠️ {problem}")
-            if not index:
-                return None
-            self.log(f"📚 {datdb.describe(index).splitlines()[0]}")
+            if index:
+                self.log(f"📚 {datdb.describe(index).splitlines()[0]}")
+            # Cache even the empty result: an empty DatIndex is falsy, so
+            # the caller still gets None below, but without it every
+            # inspection would rescan the DAT folders and re-log warnings.
             self._dat_index = index
         return self._dat_index or None
 
@@ -1166,9 +1172,6 @@ class N64PatcherGUI(QMainWindow):
             if self._hires_cache.get(rom):
                 names.append(os.path.basename(rom))
         return names
-
-    def _any_hires_supported(self) -> bool:
-        return bool(self._hires_supported_names())
 
     def _hires_scan_pending(self) -> bool:
         if self._hires_scan_worker is not None and self._hires_scan_worker.isRunning():
@@ -1763,6 +1766,8 @@ class N64PatcherGUI(QMainWindow):
             self._hires_scan_worker.wait(5000)
         if self.save_worker is not None and self.save_worker.isRunning():
             self.save_worker.wait(5000)
+        if self.verify_worker is not None and self.verify_worker.isRunning():
+            self.verify_worker.wait(5000)
         for temp_dir in self.temp_dirs:
             cleanup_temp_dir(temp_dir)
         self.temp_dirs.clear()

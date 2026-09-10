@@ -746,15 +746,24 @@ def get_subdrag_patch(crc1, crc2):
     return None
 
 
-def get_flavor_patch(crc1, crc2, flavor):
-    """Path of a recipe file for an alternative hi-res build (e.g. the
-    SM64 H2X 640x240 BPS), or None when this dump has no such flavor.
-    The first operation's file is the patch, same convention as
-    get_subdrag_patch; it is resolved against the recipe's own directory
-    first (user recipes ship their patch next to the JSON), then against
-    the bundled hires_patches directory."""
+def get_flavor_patch(crc1, crc2, flavor, op_type=None):
+    """Path of a recipe file for a flavor hi-res build (e.g. the SM64
+    H2X 640x240 BPS), or None when this dump has no such flavor.
+
+    Only entries that actually provide 'hires' count: a same-flavor
+    recipe with another capability must not be applied as THE hi-res
+    patch. *op_type* further requires the first operation to be of that
+    type ("bps"/"xdelta"). The operation's file is resolved against the
+    recipe's own directory first (user recipes ship their patch next to
+    the JSON), then against the bundled hires_patches directory."""
     entry = find_patch_entry(crc1, crc2, flavor)
     if entry is None or not entry["operations"]:
+        return None
+    if "hires" not in entry["provides"]:
+        return None
+    if entry["operations"][0].get("type") not in ("bps", "xdelta"):
+        return None
+    if op_type is not None and entry["operations"][0].get("type") != op_type:
         return None
     fname = entry["operations"][0].get("file", "")
     candidates = [
@@ -765,6 +774,13 @@ def get_flavor_patch(crc1, crc2, flavor):
         if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
             return candidate
     return None
+
+
+def flavor_patch_exists(crc1, crc2, flavor):
+    """True when a recipe entry for this dump/flavor exists, even if its
+    patch file is missing on disk. Lets callers distinguish 'no such
+    build' from 'broken install'."""
+    return find_patch_entry(crc1, crc2, flavor) is not None
 
 
 # ---------------------------------------------------------------------------
@@ -794,14 +810,23 @@ HIRES_NATIVE = "native"
 HIRES_UNSUPPORTED = "unsupported"
 
 
+def _crc_int(value):
+    """Tolerant CRC coercion for lookups: hex strings (including the
+    inspector's 'Unknown'), ints, or anything unparsable -> 0. Mirrors the
+    tolerance of find_patch_entry/crc1_prefix."""
+    if isinstance(value, bool) or value is None:
+        return 0
+    if isinstance(value, int):
+        return value & 0xFFFFFFFF
+    try:
+        return int(str(value).strip().removeprefix("0X").removeprefix("0x"), 16) & 0xFFFFFFFF
+    except ValueError:
+        return 0
+
+
 def hires_support(info):
     """Classify a ROM's 640x480 support. Returns (status, reason)."""
-    known = KNOWN_HIRES_OUTPUTS.get(
-        (
-            int(info.get("crc1") or 0, 16) if isinstance(info.get("crc1"), str) else 0,
-            int(info.get("crc2") or 0, 16) if isinstance(info.get("crc2"), str) else 0,
-        )
-    )
+    known = KNOWN_HIRES_OUTPUTS.get((_crc_int(info.get("crc1")), _crc_int(info.get("crc2"))))
     if known:
         return HIRES_NATIVE, f"Output of a verified recipe: {known}"
     if get_subdrag_patch(info.get("crc1"), info.get("crc2")):
@@ -1375,7 +1400,7 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False, output_
                     # Deliberately does NOT set subdrag_used: Stage 1b
                     # game fixes are built against the SubDrag xdelta's
                     # image, which a BPS build is not guaranteed to be.
-                    bps_patch = get_flavor_patch(info["crc1"], info["crc2"], flavor)
+                    bps_patch = get_flavor_patch(info["crc1"], info["crc2"], flavor, op_type="bps")
                     if bps_patch:
                         from . import ips_bps_patcher
 
@@ -1389,8 +1414,13 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False, output_
                             applied.add("HR")
                         else:
                             hires_blocked = "the verified patch for this dump did not apply"
+                    elif flavor_patch_exists(info["crc1"], info["crc2"], flavor):
+                        hires_blocked = (
+                            "the recipe for this dump exists but its patch "
+                            "file is missing or empty - broken install"
+                        )
             else:
-                patch = get_flavor_patch(info["crc1"], info["crc2"], flavor)
+                patch = get_flavor_patch(info["crc1"], info["crc2"], flavor, op_type="bps")
                 if patch:
                     # Imported here: ips_bps_patcher imports this module.
                     from . import ips_bps_patcher
@@ -1405,6 +1435,11 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False, output_
                         applied.add("HR")
                     else:
                         hires_blocked = f"the {flavor} build for this dump did not apply"
+                elif flavor_patch_exists(info["crc1"], info["crc2"], flavor):
+                    hires_blocked = (
+                        "the recipe for this dump exists but its patch file "
+                        "is missing or empty - broken install"
+                    )
                 elif get_subdrag_patch(info["crc1"], info["crc2"]):
                     hires_blocked = (
                         f"no {flavor} build exists for this dump - only "
@@ -1570,6 +1605,11 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False, output_
                 reason = (
                     f"640x480 not supported for this dump - {info.get('hires_support_reason', '')}"
                 )
+            elif options.hires and hires_blocked:
+                # A verified dump whose route failed above (delta/BPS did
+                # not apply, or the build's file is missing): say that,
+                # not the generic no-VI-data fallback.
+                reason = f"Hi-res not applied - {hires_blocked}"
             else:
                 reason = "ROM contains no patchable VI data (compressed or non-standard)"
             result["status"] = "skipped"

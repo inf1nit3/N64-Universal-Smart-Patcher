@@ -1716,10 +1716,31 @@ class TestH2xFlavor(unittest.TestCase):
             mock.patch.object(core, "get_flavor_patch", return_value=None),
             mock.patch.object(core, "SUBDRAG_PATCHES", table),
             mock.patch.object(core, "HIRES_PATCHES_DIR", self.tmp.name),
+            mock.patch.object(core, "PATCH_DB", {}),  # no 640x240 recipe at all
         ):
             result, log = self._run()
         self.assertEqual(result["status"], "skipped")
         self.assertIn("no 640x240 build exists", log)
+
+    def test_missing_flavor_file_reports_a_broken_install(self):
+        """A recipe entry for the flavor whose patch file is absent is a
+        broken install, not 'no such build' - the message must say so."""
+        entry = {
+            "id": "h2x-broken",
+            "name": "H2X",
+            "source": "t",
+            "crc1": self.SM64[0],
+            "crc2": self.SM64[1],
+            "flavor": "640x240",
+            "provides": ["hires"],
+            "operations": [{"type": "bps", "file": "missing.bps"}],
+            "outputs": {},
+            "origin_dir": self.tmp.name,
+        }
+        with mock.patch.object(core, "PATCH_DB", {self.SM64: [entry]}):
+            result, log = self._run()
+        self.assertEqual(result["status"], "skipped")
+        self.assertIn("patch file is missing or empty", log)
 
     def test_known_flavor_output_is_recognised_as_native(self):
         rom = self._write("out.z64", self._rom((0x65D3D6B2, 0x70B82FEB)))
@@ -1809,8 +1830,13 @@ class TestH2xFlavor(unittest.TestCase):
             mock.patch.object(core, "apply_game_fix", side_effect=lambda *a: calls.append(a)),
         ):
             options = core.PatchOptions(
-                no_aa=False, no_dither=False, no_divot=False, no_gamma=False,
-                hires=True, hires_flavor="640x480")
+                no_aa=False,
+                no_dither=False,
+                no_divot=False,
+                no_gamma=False,
+                hires=True,
+                hires_flavor="640x480",
+            )
             lines = []
             result = core.patch_rom(self.clean, options, log=lines.append)
         self.assertEqual(result["status"], "patched", "\n".join(lines))

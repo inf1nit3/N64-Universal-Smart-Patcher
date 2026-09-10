@@ -322,6 +322,51 @@ def _save_convert(args: argparse.Namespace, log: Callable[[object], object]) -> 
     return 0 if converted else 1
 
 
+def _assemble_options(
+    args: argparse.Namespace, log: Callable[[object], object]
+) -> "core.PatchOptions":
+    """Build the PatchOptions from parsed args, presets first, individual
+    flags overriding. Extracted from main() so the assembly (especially
+    the --h2x flavor across both branches and the --force-hires warning)
+    is directly testable."""
+    if args.preset:
+        log(f"📋 Preset: {PRESETS[args.preset].name}")
+        options = apply_preset(args.preset)
+        if args.keep_aa:
+            options.no_aa = False
+        if args.no_dither:
+            options.no_dither = True
+        if args.no_divot:
+            options.no_divot = True
+        if args.no_gamma:
+            options.no_gamma = True
+        if args.hires:
+            options.hires = True
+    else:
+        options = core.PatchOptions(
+            no_aa=not args.keep_aa,
+            no_dither=args.no_dither,
+            no_divot=args.no_divot,
+            no_gamma=args.no_gamma,
+            hires=args.hires,
+        )
+    options.hires_flavor = "640x240" if args.h2x else "640x480"
+    options.force_hires = args.force_hires
+    options.write_manifest = args.manifest
+    if args.force_hires:
+        options.hires = True
+        log(
+            "⚠️  --force-hires: applying the generic VI-table widening to "
+            "unverified dumps.\n"
+            "   This renders incorrectly on hardware (doubled image, "
+            "misplaced UI).\n"
+        )
+    if args.h2x:
+        options.hires = True
+        options.hires_flavor = "640x240"
+    return options
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="n64patcher",
@@ -678,7 +723,7 @@ def main(argv: list[str] | None = None) -> int:
             log(f"   ROMs:       {len(roms)}")
             log(f"   Preset:     {args.preset or 'none (individual flags)'}")
             log(
-                f"   Options:    hires={args.hires or (args.preset and PRESETS[args.preset].options.hires)}"
+                f"   Options:    hires={args.hires or args.h2x or (args.preset and PRESETS[args.preset].options.hires)}"
                 f"{' [640x240 H2X]' if args.h2x else ''} "
                 f"no_dither={args.no_dither} no_divot={args.no_divot} no_gamma={args.no_gamma} "
                 f"keep_aa={args.keep_aa}"
@@ -760,41 +805,7 @@ def main(argv: list[str] | None = None) -> int:
             log(f"{'=' * 60}\n")
             return 1 if errors > 0 else 0
 
-        # Assemble patch options (individual flags override presets)
-        if args.preset:
-            log(f"📋 Preset: {PRESETS[args.preset].name}")
-            options = apply_preset(args.preset)
-            if args.keep_aa:
-                options.no_aa = False
-            if args.no_dither:
-                options.no_dither = True
-            if args.no_divot:
-                options.no_divot = True
-            if args.no_gamma:
-                options.no_gamma = True
-            if args.hires:
-                options.hires = True
-        else:
-            options = core.PatchOptions(
-                no_aa=not args.keep_aa,
-                no_dither=args.no_dither,
-                no_divot=args.no_divot,
-                no_gamma=args.no_gamma,
-                hires=args.hires,
-                hires_flavor="640x240" if args.h2x else "640x480",
-            )
-        options.force_hires = args.force_hires
-        options.write_manifest = args.manifest
-        if args.force_hires:
-            options.hires = True
-        if args.h2x:
-            options.hires = True
-            log(
-                "⚠️  --force-hires: applying the generic VI-table widening to "
-                "unverified dumps.\n"
-                "   This renders incorrectly on hardware (doubled image, "
-                "misplaced UI).\n"
-            )
+        options = _assemble_options(args, log)
 
         # Header stripping (before patching)
         stripped_tmp_files = []

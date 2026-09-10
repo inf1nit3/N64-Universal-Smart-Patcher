@@ -67,10 +67,19 @@ class TestValidateEntry(unittest.TestCase):
     def test_unknown_operation_rejects_whole_entry(self):
         """Half-applying a recipe would leave a corrupt ROM, so an unknown
         step invalidates the entry rather than being skipped."""
-        msg = self._invalid(
-            operations=[{"type": "xdelta", "file": "a.xdelta"}, {"type": "reticulate_splines"}]
-        )
+        msg = self._invalid(operations=[{"type": "reticulate_splines"}])
         self.assertIn("unknown type", msg)
+
+    def test_multiple_operations_rejected(self):
+        """The pipeline applies one patch per entry; more than one op
+        would be silently half-applied, so validation refuses up front."""
+        msg = self._invalid(
+            operations=[
+                {"type": "xdelta", "file": "a.xdelta"},
+                {"type": "poke", "offset": 0, "bytes": "00"},
+            ]
+        )
+        self.assertIn("more than one operation", msg)
 
     def test_xdelta_without_file_rejected(self):
         self.assertIn("file", self._invalid(operations=[{"type": "xdelta"}]))
