@@ -1,0 +1,187 @@
+    {
+        ACTOR_EN_BOX,
+        {  -1100,    264,   -300 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x07C0, // params
+    }, // 0
+    {
+        ACTOR_EN_POH,
+        {   -330,    120,   -260 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 1
+    {
+        ACTOR_BG_MJIN,
+        {   1145,    340,     85 }, // pos
+        {  0x0000,  0x1555,  0x0000 }, // rot
+         0x0002, // params
+    }, // 2
+    {
+        ACTOR_BG_HAKA,
+        {   -348,     60,     59 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 3
+    {
+        ACTOR_BG_HAKA,
+        {   -348,     60,    179 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 4
+    {
+        ACTOR_BG_HAKA,
+        {   -348,     60,    299 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 5
+    {
+        ACTOR_BG_HAKA,
+        {   -348,     60,    419 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 6
+    {
+        ACTOR_BG_HAKA,
+        {   -348,     60,    539 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 7
+    {
+        ACTOR_BG_HAKA,
+        {    155,    120,    699 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 8
+    {
+        ACTOR_BG_HAKA,
+        {    155,    120,    579 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 9
+    {
+        ACTOR_BG_HAKA,
+        {    155,    120,    459 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 10
+    {
+        ACTOR_BG_HAKA,
+        {    155,    120,    339 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 11
+    {
+        ACTOR_BG_HAKA,
+        {    155,    120,    219 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 12
+    {
+        ACTOR_BG_HAKA,
+        {    155,    120,    -57 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 13
+    {
+        ACTOR_BG_HAKA,
+        {    155,    120,   -177 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 14
+    {
+        ACTOR_BG_HAKA,
+        {     22,    120,   -336 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 15
+    {
+        ACTOR_BG_HAKA,
+        {    -98,    120,   -336 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 16
+    {
+        ACTOR_BG_HAKA,
+        {   -218,    120,   -336 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 17
+    {
+        ACTOR_BG_HAKA,
+        {   -338,    120,   -336 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 18
+    {
+        ACTOR_BG_HAKA,
+        {   -458,    120,   -336 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 19
+    {
+        ACTOR_BG_HAKA,
+        {   -578,    120,   -336 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 20
+    {
+        ACTOR_BG_HAKA,
+        {   -764,    120,   -243 }, // pos
+        {  0x0000,  0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 21
+    {
+        ACTOR_BG_HAKA,
+        {    664,    180,   -101 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 22
+    {
+        ACTOR_BG_HAKA,
+        {    664,    180,    261 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 23
+    {
+        ACTOR_EN_TK,
+        {   -476,     61,    434 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 24
+    {
+        ACTOR_BG_SPOT02_OBJECTS,
+        {    762,    180,     80 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0002, // params
+    }, // 25
+    {
+        ACTOR_BG_SPOT02_OBJECTS,
+        {   -578,    120,   -336 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0001, // params
+    }, // 26
+    {
+        ACTOR_OBJ_BEAN,
+        {   -745,    120,   -450 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x1F01, // params
+    }, // 27
+    {
+        ACTOR_OBJECT_KANKYO,
+        {    854,    321,     94 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0002, // params
+    }, // 28
+    {
+        ACTOR_OBJECT_KANKYO,
+        {    851,    180,     49 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0004, // params
+    }, // 29
+    {
+        ACTOR_BG_SPOT01_FUSYA,
+        {  -3200,    880,    150 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 30
+

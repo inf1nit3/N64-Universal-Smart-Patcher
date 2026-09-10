@@ -1,0 +1,20 @@
+#ifndef VR_KHVR_STATIC_H
+#define VR_KHVR_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gKnowItAllBrosHouseBgTex_WIDTH 256
+#define gKnowItAllBrosHouseBgTex_HEIGHT 256
+extern u64 gKnowItAllBrosHouseBgTex[TEX_LEN(u64, gKnowItAllBrosHouseBgTex_WIDTH, gKnowItAllBrosHouseBgTex_HEIGHT, 8)];
+#define gKnowItAllBrosHouse2BgTex_WIDTH 256
+#define gKnowItAllBrosHouse2BgTex_HEIGHT 256
+extern u64 gKnowItAllBrosHouse2BgTex[TEX_LEN(u64, gKnowItAllBrosHouse2BgTex_WIDTH, gKnowItAllBrosHouse2BgTex_HEIGHT, 8)];
+#define gKnowItAllBrosHouse3BgTex_WIDTH 256
+#define gKnowItAllBrosHouse3BgTex_HEIGHT 256
+extern u64 gKnowItAllBrosHouse3BgTex[TEX_LEN(u64, gKnowItAllBrosHouse3BgTex_WIDTH, gKnowItAllBrosHouse3BgTex_HEIGHT, 8)];
+#define gKnowItAllBrosHouse4BgTex_WIDTH 256
+#define gKnowItAllBrosHouse4BgTex_HEIGHT 256
+extern u64 gKnowItAllBrosHouse4BgTex[TEX_LEN(u64, gKnowItAllBrosHouse4BgTex_WIDTH, gKnowItAllBrosHouse4BgTex_HEIGHT, 8)];
+
+#endif

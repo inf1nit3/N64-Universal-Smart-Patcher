@@ -1,0 +1,15 @@
+#ifndef VR_LBVR_PAL_STATIC_H
+#define VR_LBVR_PAL_STATIC_H
+
+#include "ultra64.h"
+
+//#define gCowHouseBgTLUT_TLUT_COUNT 256
+extern u64 gCowHouseBgTLUT[];
+//#define gCowHouseBg2TLUT_TLUT_COUNT 256
+extern u64 gCowHouseBg2TLUT[];
+//#define gCowHouseBg3TLUT_TLUT_COUNT 256
+extern u64 gCowHouseBg3TLUT[];
+//#define gCowHouseBg4TLUT_TLUT_COUNT 256
+extern u64 gCowHouseBg4TLUT[];
+
+#endif

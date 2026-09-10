@@ -1,0 +1,17 @@
+    {
+        {
+            ROOM_SHAPE_TYPE_IMAGE, // type
+        }, // base
+        ROOM_SHAPE_IMAGE_AMOUNT_SINGLE, // amountType
+        &shop1_room_0_030000A0_RoomShapeImageSingle_030000C0_RoomShapeDListsEntry, // entry
+    }, // base
+    &shop1_room_0_030000A0_RoomShapeImageSingle_03003FB0_JFIF, // source
+    0, // unk_0C
+    0, // tlut
+    320, // width
+    240, // height
+    0, // fmt
+    2, // siz
+    0, // tlutMode
+    0, // tlutCount
+

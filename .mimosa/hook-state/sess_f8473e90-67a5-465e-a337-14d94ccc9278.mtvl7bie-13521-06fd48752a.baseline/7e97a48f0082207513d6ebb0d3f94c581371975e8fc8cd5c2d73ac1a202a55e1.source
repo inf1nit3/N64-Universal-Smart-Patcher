@@ -1,0 +1,72 @@
+#ifndef SPOT06_ROOM_0_H
+#define SPOT06_ROOM_0_H
+
+#include "room.h"
+#include "scene.h"
+#include "ultra64.h"
+
+extern SceneCmd spot06_room_0[];
+extern SceneCmd* spot06_room_0_03000048_AltHeaders[];
+#define LENGTH_spot06_room_0_0300005C_ObjectList 15
+extern s16 spot06_room_0_0300005C_ObjectList[LENGTH_spot06_room_0_0300005C_ObjectList];
+#define LENGTH_spot06_room_0_0300007C_ActorEntryList 56
+extern ActorEntry spot06_room_0_0300007C_ActorEntryList[LENGTH_spot06_room_0_0300007C_ActorEntryList];
+extern RoomShapeCullable spot06_room_0_03000400_RoomShapeCullable;
+#define LENGTH_spot06_room_0_03000400_RoomShapeCullable_0300040C_CullableEntries 17
+extern RoomShapeCullableEntry spot06_room_0_03000400_RoomShapeCullable_0300040C_CullableEntries[LENGTH_spot06_room_0_03000400_RoomShapeCullable_0300040C_CullableEntries];
+extern u8 spot06_room_0_unaccounted_00051C[];
+extern SceneCmd spot06_room_0_03000048_AltHeaders_03000520_Cmds[];
+#define LENGTH_spot06_room_0_03000048_AltHeaders_03000520_Cmds_03000560_ObjectList 15
+extern s16 spot06_room_0_03000048_AltHeaders_03000520_Cmds_03000560_ObjectList[LENGTH_spot06_room_0_03000048_AltHeaders_03000520_Cmds_03000560_ObjectList];
+#define LENGTH_spot06_room_0_03000048_AltHeaders_03000520_Cmds_03000580_ActorEntryList 44
+extern ActorEntry spot06_room_0_03000048_AltHeaders_03000520_Cmds_03000580_ActorEntryList[LENGTH_spot06_room_0_03000048_AltHeaders_03000520_Cmds_03000580_ActorEntryList];
+extern SceneCmd spot06_room_0_03000048_AltHeaders_03000840_Cmds[];
+#define LENGTH_spot06_room_0_03000048_AltHeaders_03000840_Cmds_03000880_ObjectList 7
+extern s16 spot06_room_0_03000048_AltHeaders_03000840_Cmds_03000880_ObjectList[LENGTH_spot06_room_0_03000048_AltHeaders_03000840_Cmds_03000880_ObjectList];
+#define LENGTH_spot06_room_0_03000048_AltHeaders_03000840_Cmds_03000890_ActorEntryList 9
+extern ActorEntry spot06_room_0_03000048_AltHeaders_03000840_Cmds_03000890_ActorEntryList[LENGTH_spot06_room_0_03000048_AltHeaders_03000840_Cmds_03000890_ActorEntryList];
+extern SceneCmd spot06_room_0_03000048_AltHeaders_03000920_Cmds[];
+#define LENGTH_spot06_room_0_03000048_AltHeaders_03000920_Cmds_03000968_ObjectList 6
+extern s16 spot06_room_0_03000048_AltHeaders_03000920_Cmds_03000968_ObjectList[LENGTH_spot06_room_0_03000048_AltHeaders_03000920_Cmds_03000968_ObjectList];
+#define LENGTH_spot06_room_0_03000048_AltHeaders_03000920_Cmds_03000974_ActorEntryList 8
+extern ActorEntry spot06_room_0_03000048_AltHeaders_03000920_Cmds_03000974_ActorEntryList[LENGTH_spot06_room_0_03000048_AltHeaders_03000920_Cmds_03000974_ActorEntryList];
+extern Vtx gSpot06DL_00A400_03001240_DL_03000A00_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03001240_DL[77];
+extern Vtx gSpot06DL_00A400_03001628_DL_030014A8_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03001628_DL[47];
+extern Vtx gSpot06DL_00A400_03002040_DL_030017A0_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03002040_DL[142];
+extern Vtx gSpot06DL_00A400_03003270_DL_030024B0_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03003270_DL[139];
+extern Vtx gSpot06DL_00A400_03003EF8_DL_030036C8_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03003EF8_DL[125];
+extern Vtx gSpot06DL_00A400_03004AF0_DL_030042E0_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03004AF0_DL[63];
+extern Vtx gSpot06DL_00A400_03004EC8_DL_03004CE8_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03004EC8_DL[57];
+extern Vtx gSpot06DL_00A400_030059C0_DL_03005090_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_030059C0_DL[99];
+extern Vtx gSpot06DL_00A400_03006358_DL_03005CD8_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03006358_DL[85];
+extern Vtx gSpot06DL_00A400_03006C80_DL_03006600_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03006C80_DL[85];
+extern Vtx gSpot06DL_00A400_03007DF8_DL_03006F28_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03007DF8_DL[218];
+extern Vtx gSpot06DL_00A400_03008858_DL_030084C8_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03008858_DL[51];
+extern Vtx gSpot06DL_00A400_03008ED0_DL_030089F0_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03008ED0_DL[52];
+extern Vtx gSpot06DL_00A400_03009510_DL_03009070_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03009510_DL[59];
+extern Vtx gSpot06DL_00A400_030098C8_DL_030096E8_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_030098C8_DL[42];
+extern Vtx gSpot06DL_00A400_03009CA8_DL_03009A18_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_03009CA8_DL[52];
+extern Vtx gSpot06DL_00A400_0300A148_DL_03009E48_Vtx_fused_[];
+extern Gfx gSpot06DL_00A400_0300A148_DL[87];
+extern Gfx gSpot06DL_00A400[18];
+extern Vtx gSpot06DL_00A608_0300A550_DL_0300A490_Vtx_fused_[];
+extern Gfx gSpot06DL_00A608_0300A550_DL[23];
+extern Gfx gSpot06DL_00A608[2];
+
+#endif

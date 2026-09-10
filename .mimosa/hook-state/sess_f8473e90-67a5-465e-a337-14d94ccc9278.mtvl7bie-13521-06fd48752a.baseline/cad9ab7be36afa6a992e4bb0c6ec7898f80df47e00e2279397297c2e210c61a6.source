@@ -1,0 +1,227 @@
+#include "parameter_static.h"
+
+
+u64 gHeartEmptyTex[TEX_LEN(u64, gHeartEmptyTex_WIDTH, gHeartEmptyTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gHeartEmptyTex.ia8.inc.c"
+};
+
+u64 gHeartQuarterTex[TEX_LEN(u64, gHeartQuarterTex_WIDTH, gHeartQuarterTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gHeartQuarterTex.ia8.inc.c"
+};
+
+u64 gHeartHalfTex[TEX_LEN(u64, gHeartHalfTex_WIDTH, gHeartHalfTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gHeartHalfTex.ia8.inc.c"
+};
+
+u64 gHeartThreeQuarterTex[TEX_LEN(u64, gHeartThreeQuarterTex_WIDTH, gHeartThreeQuarterTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gHeartThreeQuarterTex.ia8.inc.c"
+};
+
+u64 gHeartFullTex[TEX_LEN(u64, gHeartFullTex_WIDTH, gHeartFullTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gHeartFullTex.ia8.inc.c"
+};
+
+u64 gDefenseHeartEmptyTex[TEX_LEN(u64, gDefenseHeartEmptyTex_WIDTH, gDefenseHeartEmptyTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gDefenseHeartEmptyTex.ia8.inc.c"
+};
+
+u64 gDefenseHeartQuarterTex[TEX_LEN(u64, gDefenseHeartQuarterTex_WIDTH, gDefenseHeartQuarterTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gDefenseHeartQuarterTex.ia8.inc.c"
+};
+
+u64 gDefenseHeartHalfTex[TEX_LEN(u64, gDefenseHeartHalfTex_WIDTH, gDefenseHeartHalfTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gDefenseHeartHalfTex.ia8.inc.c"
+};
+
+u64 gDefenseHeartThreeQuarterTex[TEX_LEN(u64, gDefenseHeartThreeQuarterTex_WIDTH, gDefenseHeartThreeQuarterTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gDefenseHeartThreeQuarterTex.ia8.inc.c"
+};
+
+u64 gDefenseHeartFullTex[TEX_LEN(u64, gDefenseHeartFullTex_WIDTH, gDefenseHeartFullTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gDefenseHeartFullTex.ia8.inc.c"
+};
+
+u64 gButtonBackgroundTex[TEX_LEN(u64, gButtonBackgroundTex_WIDTH, gButtonBackgroundTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gButtonBackgroundTex.ia8.inc.c"
+};
+
+u64 gEquippedItemOutlineTex[TEX_LEN(u64, gEquippedItemOutlineTex_WIDTH, gEquippedItemOutlineTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gEquippedItemOutlineTex.ia8.inc.c"
+};
+
+u64 gEmptyCLeftArrowTex[TEX_LEN(u64, gEmptyCLeftArrowTex_WIDTH, gEmptyCLeftArrowTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gEmptyCLeftArrowTex.ia8.inc.c"
+};
+
+u64 gEmptyCDownArrowTex[TEX_LEN(u64, gEmptyCDownArrowTex_WIDTH, gEmptyCDownArrowTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gEmptyCDownArrowTex.ia8.inc.c"
+};
+
+u64 gEmptyCRightArrowTex[TEX_LEN(u64, gEmptyCRightArrowTex_WIDTH, gEmptyCRightArrowTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gEmptyCRightArrowTex.ia8.inc.c"
+};
+
+u64 gSmallKeyCounterIconTex[TEX_LEN(u64, gSmallKeyCounterIconTex_WIDTH, gSmallKeyCounterIconTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gSmallKeyCounterIconTex.ia8.inc.c"
+};
+
+u64 gRupeeCounterIconTex[TEX_LEN(u64, gRupeeCounterIconTex_WIDTH, gRupeeCounterIconTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gRupeeCounterIconTex.ia8.inc.c"
+};
+
+u64 gClockIconTex[TEX_LEN(u64, gClockIconTex_WIDTH, gClockIconTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gClockIconTex.ia8.inc.c"
+};
+
+u64 gCarrotIconTex[TEX_LEN(u64, gCarrotIconTex_WIDTH, gCarrotIconTex_HEIGHT, 32)] = {
+#include "assets/textures/parameter_static/gCarrotIconTex.rgba32.inc.c"
+};
+
+u64 gMapDungeonEntranceIconTex[TEX_LEN(u64, gMapDungeonEntranceIconTex_WIDTH, gMapDungeonEntranceIconTex_HEIGHT, 16)] = {
+#include "assets/textures/parameter_static/gMapDungeonEntranceIconTex.rgba16.inc.c"
+};
+
+u64 gMapChestIconTex[TEX_LEN(u64, gMapChestIconTex_WIDTH, gMapChestIconTex_HEIGHT, 16)] = {
+#include "assets/textures/parameter_static/gMapChestIconTex.rgba16.inc.c"
+};
+
+u64 gArcheryScoreIconTex[TEX_LEN(u64, gArcheryScoreIconTex_WIDTH, gArcheryScoreIconTex_HEIGHT, 16)] = {
+#include "assets/textures/parameter_static/gArcheryScoreIconTex.rgba16.inc.c"
+};
+
+u64 gMapBossIconTex[TEX_LEN(u64, gMapBossIconTex_WIDTH, gMapBossIconTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gMapBossIconTex.ia8.inc.c"
+};
+
+u64 gOcarinaBtnIconATex[TEX_LEN(u64, gOcarinaBtnIconATex_WIDTH, gOcarinaBtnIconATex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gOcarinaBtnIconATex.ia8.inc.c"
+};
+
+u64 gOcarinaBtnIconCDownTex[TEX_LEN(u64, gOcarinaBtnIconCDownTex_WIDTH, gOcarinaBtnIconCDownTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gOcarinaBtnIconCDownTex.ia8.inc.c"
+};
+
+u64 gOcarinaBtnIconCRightTex[TEX_LEN(u64, gOcarinaBtnIconCRightTex_WIDTH, gOcarinaBtnIconCRightTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gOcarinaBtnIconCRightTex.ia8.inc.c"
+};
+
+u64 gOcarinaBtnIconCLeftTex[TEX_LEN(u64, gOcarinaBtnIconCLeftTex_WIDTH, gOcarinaBtnIconCLeftTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gOcarinaBtnIconCLeftTex.ia8.inc.c"
+};
+
+u64 gOcarinaBtnIconCUpTex[TEX_LEN(u64, gOcarinaBtnIconCUpTex_WIDTH, gOcarinaBtnIconCUpTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gOcarinaBtnIconCUpTex.ia8.inc.c"
+};
+
+u64 gOcarinaTrebleClefTex[TEX_LEN(u64, gOcarinaTrebleClefTex_WIDTH, gOcarinaTrebleClefTex_HEIGHT, 4)] = {
+#include "assets/textures/parameter_static/gOcarinaTrebleClefTex.i4.inc.c"
+};
+
+u64 gNaviCUpJPNTex[TEX_LEN(u64, gNaviCUpJPNTex_WIDTH, gNaviCUpJPNTex_HEIGHT, 4)] = {
+#include "assets/textures/parameter_static/gNaviCUpJPNTex.ia4.inc.c"
+};
+
+u64 gNaviCUpENGTex[TEX_LEN(u64, gNaviCUpENGTex_WIDTH, gNaviCUpENGTex_HEIGHT, 4)] = {
+#include "assets/textures/parameter_static/gNaviCUpENGTex.ia4.inc.c"
+};
+
+u64 gCounterDigit0Tex[TEX_LEN(u64, gCounterDigit0Tex_WIDTH, gCounterDigit0Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gCounterDigit0Tex.i8.inc.c"
+};
+
+u64 gCounterDigit1Tex[TEX_LEN(u64, gCounterDigit1Tex_WIDTH, gCounterDigit1Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gCounterDigit1Tex.i8.inc.c"
+};
+
+u64 gCounterDigit2Tex[TEX_LEN(u64, gCounterDigit2Tex_WIDTH, gCounterDigit2Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gCounterDigit2Tex.i8.inc.c"
+};
+
+u64 gCounterDigit3Tex[TEX_LEN(u64, gCounterDigit3Tex_WIDTH, gCounterDigit3Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gCounterDigit3Tex.i8.inc.c"
+};
+
+u64 gCounterDigit4Tex[TEX_LEN(u64, gCounterDigit4Tex_WIDTH, gCounterDigit4Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gCounterDigit4Tex.i8.inc.c"
+};
+
+u64 gCounterDigit5Tex[TEX_LEN(u64, gCounterDigit5Tex_WIDTH, gCounterDigit5Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gCounterDigit5Tex.i8.inc.c"
+};
+
+u64 gCounterDigit6Tex[TEX_LEN(u64, gCounterDigit6Tex_WIDTH, gCounterDigit6Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gCounterDigit6Tex.i8.inc.c"
+};
+
+u64 gCounterDigit7Tex[TEX_LEN(u64, gCounterDigit7Tex_WIDTH, gCounterDigit7Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gCounterDigit7Tex.i8.inc.c"
+};
+
+u64 gCounterDigit8Tex[TEX_LEN(u64, gCounterDigit8Tex_WIDTH, gCounterDigit8Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gCounterDigit8Tex.i8.inc.c"
+};
+
+u64 gCounterDigit9Tex[TEX_LEN(u64, gCounterDigit9Tex_WIDTH, gCounterDigit9Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gCounterDigit9Tex.i8.inc.c"
+};
+
+u64 gCounterColonTex[TEX_LEN(u64, gCounterColonTex_WIDTH, gCounterColonTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gCounterColonTex.i8.inc.c"
+};
+
+u64 gAmmoDigit0Tex[TEX_LEN(u64, gAmmoDigit0Tex_WIDTH, gAmmoDigit0Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gAmmoDigit0Tex.ia8.inc.c"
+};
+
+u64 gAmmoDigit1Tex[TEX_LEN(u64, gAmmoDigit1Tex_WIDTH, gAmmoDigit1Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gAmmoDigit1Tex.ia8.inc.c"
+};
+
+u64 gAmmoDigit2Tex[TEX_LEN(u64, gAmmoDigit2Tex_WIDTH, gAmmoDigit2Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gAmmoDigit2Tex.ia8.inc.c"
+};
+
+u64 gAmmoDigit3Tex[TEX_LEN(u64, gAmmoDigit3Tex_WIDTH, gAmmoDigit3Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gAmmoDigit3Tex.ia8.inc.c"
+};
+
+u64 gAmmoDigit4Tex[TEX_LEN(u64, gAmmoDigit4Tex_WIDTH, gAmmoDigit4Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gAmmoDigit4Tex.ia8.inc.c"
+};
+
+u64 gAmmoDigit5Tex[TEX_LEN(u64, gAmmoDigit5Tex_WIDTH, gAmmoDigit5Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gAmmoDigit5Tex.ia8.inc.c"
+};
+
+u64 gAmmoDigit6Tex[TEX_LEN(u64, gAmmoDigit6Tex_WIDTH, gAmmoDigit6Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gAmmoDigit6Tex.ia8.inc.c"
+};
+
+u64 gAmmoDigit7Tex[TEX_LEN(u64, gAmmoDigit7Tex_WIDTH, gAmmoDigit7Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gAmmoDigit7Tex.ia8.inc.c"
+};
+
+u64 gAmmoDigit8Tex[TEX_LEN(u64, gAmmoDigit8Tex_WIDTH, gAmmoDigit8Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gAmmoDigit8Tex.ia8.inc.c"
+};
+
+u64 gAmmoDigit9Tex[TEX_LEN(u64, gAmmoDigit9Tex_WIDTH, gAmmoDigit9Tex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gAmmoDigit9Tex.ia8.inc.c"
+};
+
+u64 gUnusedAmmoDigitHalfTex[TEX_LEN(u64, gUnusedAmmoDigitHalfTex_WIDTH, gUnusedAmmoDigitHalfTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gUnusedAmmoDigitHalfTex.ia8.inc.c"
+};
+
+u64 gMagicMeterEndTex[TEX_LEN(u64, gMagicMeterEndTex_WIDTH, gMagicMeterEndTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gMagicMeterEndTex.ia8.inc.c"
+};
+
+u64 gMagicMeterMidTex[TEX_LEN(u64, gMagicMeterMidTex_WIDTH, gMagicMeterMidTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gMagicMeterMidTex.ia8.inc.c"
+};
+
+u64 gMagicMeterFillTex[TEX_LEN(u64, gMagicMeterFillTex_WIDTH, gMagicMeterFillTex_HEIGHT, 8)] = {
+#include "assets/textures/parameter_static/gMagicMeterFillTex.ia8.inc.c"
+};
+

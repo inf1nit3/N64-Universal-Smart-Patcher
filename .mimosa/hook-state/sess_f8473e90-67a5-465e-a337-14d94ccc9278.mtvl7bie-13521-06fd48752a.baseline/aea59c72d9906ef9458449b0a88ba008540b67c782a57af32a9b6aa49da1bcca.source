@@ -1,0 +1,33 @@
+    {
+        250, // xMin
+        -15, // ySurface
+        -177, // zMin
+        200, // xLength
+        200, // zLength
+        WATERBOX_PROPERTIES(/* bgCamIndex */ 5, /* lightIndex */ 1, /* room */ 0, /* isDisabled */ false), // properties
+    }, // 0
+    {
+        -350, // xMin
+        -15, // ySurface
+        423, // zMin
+        200, // xLength
+        200, // zLength
+        WATERBOX_PROPERTIES(/* bgCamIndex */ 5, /* lightIndex */ 1, /* room */ 0, /* isDisabled */ false), // properties
+    }, // 1
+    {
+        350, // xMin
+        -15, // ySurface
+        773, // zMin
+        200, // xLength
+        200, // zLength
+        WATERBOX_PROPERTIES(/* bgCamIndex */ 5, /* lightIndex */ 1, /* room */ 0, /* isDisabled */ false), // properties
+    }, // 2
+    {
+        -650, // xMin
+        -15, // ySurface
+        1373, // zMin
+        200, // xLength
+        200, // zLength
+        WATERBOX_PROPERTIES(/* bgCamIndex */ 5, /* lightIndex */ 1, /* room */ 0, /* isDisabled */ false), // properties
+    }, // 3
+

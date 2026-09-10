@@ -1,0 +1,118 @@
+#include "icon_item_field_static.h"
+
+#include "ultra64.h"
+
+u64 gWorldMapImageTex[TEX_LEN(u64, gWorldMapImageTex_WIDTH, gWorldMapImageTex_HEIGHT, 8)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapImageTex.ci8.inc.c"
+};
+
+u64 gWorldMapImageTLUT[] = {
+#include "assets/textures/icon_item_field_static/gWorldMapImageTex.tlut.rgba16.inc.c"
+};
+
+u64 gWorldMapDotTex[TEX_LEN(u64, gWorldMapDotTex_WIDTH, gWorldMapDotTex_HEIGHT, 8)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapDotTex.ia8.inc.c"
+};
+
+u64 gWorldMapAreaBox1Tex[TEX_LEN(u64, gWorldMapAreaBox1Tex_WIDTH, gWorldMapAreaBox1Tex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapAreaBox1Tex.ia4.inc.c"
+};
+
+u64 gWorldMapAreaBox2Tex[TEX_LEN(u64, gWorldMapAreaBox2Tex_WIDTH, gWorldMapAreaBox2Tex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapAreaBox2Tex.ia4.inc.c"
+};
+
+u64 gWorldMapAreaBox3Tex[TEX_LEN(u64, gWorldMapAreaBox3Tex_WIDTH, gWorldMapAreaBox3Tex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapAreaBox3Tex.ia4.inc.c"
+};
+
+u64 gWorldMapAreaBox4Tex[TEX_LEN(u64, gWorldMapAreaBox4Tex_WIDTH, gWorldMapAreaBox4Tex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapAreaBox4Tex.ia4.inc.c"
+};
+
+u64 gWorldMapAreaBox5Tex[TEX_LEN(u64, gWorldMapAreaBox5Tex_WIDTH, gWorldMapAreaBox5Tex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapAreaBox5Tex.ia4.inc.c"
+};
+
+u64 gWorldMapAreaBox6Tex[TEX_LEN(u64, gWorldMapAreaBox6Tex_WIDTH, gWorldMapAreaBox6Tex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapAreaBox6Tex.ia4.inc.c"
+};
+
+u64 gWorldMapAreaBox7Tex[TEX_LEN(u64, gWorldMapAreaBox7Tex_WIDTH, gWorldMapAreaBox7Tex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapAreaBox7Tex.ia4.inc.c"
+};
+
+u64 gWorldMapAreaBox8Tex[TEX_LEN(u64, gWorldMapAreaBox8Tex_WIDTH, gWorldMapAreaBox8Tex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapAreaBox8Tex.ia4.inc.c"
+};
+
+u64 gWorldMapArrowTex[TEX_LEN(u64, gWorldMapArrowTex_WIDTH, gWorldMapArrowTex_HEIGHT, 8)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapArrowTex.ia8.inc.c"
+};
+
+u64 gWorldMapCloudLakeHyliaTex[TEX_LEN(u64, gWorldMapCloudLakeHyliaTex_WIDTH, gWorldMapCloudLakeHyliaTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudLakeHyliaTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudDesertColossusTex[TEX_LEN(u64, gWorldMapCloudDesertColossusTex_WIDTH, gWorldMapCloudDesertColossusTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudDesertColossusTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudGerudosFortressTex[TEX_LEN(u64, gWorldMapCloudGerudosFortressTex_WIDTH, gWorldMapCloudGerudosFortressTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudGerudosFortressTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudGerudoValleyTex[TEX_LEN(u64, gWorldMapCloudGerudoValleyTex_WIDTH, gWorldMapCloudGerudoValleyTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudGerudoValleyTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudZorasFountainTex[TEX_LEN(u64, gWorldMapCloudZorasFountainTex_WIDTH, gWorldMapCloudZorasFountainTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudZorasFountainTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudZorasDomainTex[TEX_LEN(u64, gWorldMapCloudZorasDomainTex_WIDTH, gWorldMapCloudZorasDomainTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudZorasDomainTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudZorasRiverTex[TEX_LEN(u64, gWorldMapCloudZorasRiverTex_WIDTH, gWorldMapCloudZorasRiverTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudZorasRiverTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudGoronCityTex[TEX_LEN(u64, gWorldMapCloudGoronCityTex_WIDTH, gWorldMapCloudGoronCityTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudGoronCityTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudDeathMountainTrailTex[TEX_LEN(u64, gWorldMapCloudDeathMountainTrailTex_WIDTH, gWorldMapCloudDeathMountainTrailTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudDeathMountainTrailTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudGraveyardTex[TEX_LEN(u64, gWorldMapCloudGraveyardTex_WIDTH, gWorldMapCloudGraveyardTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudGraveyardTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudKakarikoVillageTex[TEX_LEN(u64, gWorldMapCloudKakarikoVillageTex_WIDTH, gWorldMapCloudKakarikoVillageTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudKakarikoVillageTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudHyruleCastleTex[TEX_LEN(u64, gWorldMapCloudHyruleCastleTex_WIDTH, gWorldMapCloudHyruleCastleTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudHyruleCastleTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudMarketTex[TEX_LEN(u64, gWorldMapCloudMarketTex_WIDTH, gWorldMapCloudMarketTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudMarketTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudLonLonRanchTex[TEX_LEN(u64, gWorldMapCloudLonLonRanchTex_WIDTH, gWorldMapCloudLonLonRanchTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudLonLonRanchTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudHyruleFieldTex[TEX_LEN(u64, gWorldMapCloudHyruleFieldTex_WIDTH, gWorldMapCloudHyruleFieldTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudHyruleFieldTex.i4.inc.c"
+};
+
+u64 gWorldMapCloudSacredForestMeadowTex[TEX_LEN(u64, gWorldMapCloudSacredForestMeadowTex_WIDTH, gWorldMapCloudSacredForestMeadowTex_HEIGHT, 4)] = {
+#include "assets/textures/icon_item_field_static/gWorldMapCloudSacredForestMeadowTex.i4.inc.c"
+};
+
+u8 icon_item_field_static_zeros_00B928[8] = { 0 };
+

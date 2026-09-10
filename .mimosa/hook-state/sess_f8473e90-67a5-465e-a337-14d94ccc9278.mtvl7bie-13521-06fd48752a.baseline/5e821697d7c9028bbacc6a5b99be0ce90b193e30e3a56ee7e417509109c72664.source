@@ -1,0 +1,8 @@
+    OBJECT_IN, // 0
+    OBJECT_TA, // 1
+    OBJECT_EC, // 2
+    OBJECT_KM1, // 3
+    OBJECT_KW1, // 4
+    OBJECT_ZO, // 5
+    OBJECT_GE1, // 6
+

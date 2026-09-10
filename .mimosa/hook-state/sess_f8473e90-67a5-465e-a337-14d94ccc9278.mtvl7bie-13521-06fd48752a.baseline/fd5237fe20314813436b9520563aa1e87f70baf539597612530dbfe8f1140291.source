@@ -1,0 +1,37 @@
+    {
+        ACTOR_DEMO_EFFECT,
+        {   -706,   -113,    756 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0015, // params
+    }, // 0
+    {
+        ACTOR_DEMO_EFFECT,
+        {   -626,   -335,    703 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x1012, // params
+    }, // 1
+    {
+        ACTOR_EN_RU1,
+        {   -761,    185,    785 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0001, // params
+    }, // 2
+    {
+        ACTOR_EN_JJ,
+        {   -949,     69,    -48 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 3
+    {
+        ACTOR_BG_SPOT08_BAKUDANKABE,
+        {    316,     60,   2634 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x00FF, // params
+    }, // 4
+    {
+        ACTOR_EN_ISHI,
+        {    316,     60,   2634 }, // pos
+        {  0x0000,  0x7BBC,  0x0000 }, // rot
+        -0x0FF /* 0xFF01 */, // params
+    }, // 5
+

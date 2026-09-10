@@ -1,0 +1,16 @@
+    {
+        CAM_SET_PREREND_FIXED, // setting
+        3, // count
+        &zoora_scene_02000360_BgCamList_02000090_BgCamFuncData[0], // bgCamFuncData
+    }, // 0
+    {
+        CAM_SET_PIVOT_SHOP_BROWSING, // setting
+        3, // count
+        &zoora_scene_02000360_BgCamList_02000090_BgCamFuncData[3], // bgCamFuncData
+    }, // 1
+    {
+        CAM_SET_NONE, // setting
+        0, // count
+        NULL, // bgCamFuncData
+    }, // 2
+

@@ -1,0 +1,11 @@
+#ifndef VR_ZRVR_PAL_STATIC_H
+#define VR_ZRVR_PAL_STATIC_H
+
+#include "ultra64.h"
+
+//#define gZoraShopBgTLUT_TLUT_COUNT 256
+extern u64 gZoraShopBgTLUT[];
+//#define gZoraShopBg2TLUT_TLUT_COUNT 256
+extern u64 gZoraShopBg2TLUT[];
+
+#endif

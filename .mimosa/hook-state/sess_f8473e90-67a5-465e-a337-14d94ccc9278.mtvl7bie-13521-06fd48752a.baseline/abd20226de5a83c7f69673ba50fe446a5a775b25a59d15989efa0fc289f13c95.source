@@ -1,0 +1,27 @@
+#ifndef DRAG_ROOM_0_H
+#define DRAG_ROOM_0_H
+
+#include "gfx.h"
+#include "room.h"
+#include "scene.h"
+#include "ultra64.h"
+
+extern SceneCmd drag_room_0[];
+#define LENGTH_drag_room_0_03000040_ObjectList 11
+extern s16 drag_room_0_03000040_ObjectList[LENGTH_drag_room_0_03000040_ObjectList];
+#define LENGTH_drag_room_0_03000058_ActorEntryList 3
+extern ActorEntry drag_room_0_03000058_ActorEntryList[LENGTH_drag_room_0_03000058_ActorEntryList];
+extern RoomShapeImageSingle drag_room_0_03000090_RoomShapeImageSingle;
+extern RoomShapeDListsEntry drag_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry;
+extern Vtx drag_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry_03006618_DL_030050C0_DL_030000C0_Vtx_fused_[];
+extern Gfx drag_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry_03006618_DL_030050C0_DL[46];
+extern Gfx drag_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry_03006618_DL_03005230_DL[30];
+extern Gfx drag_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry_03006618_DL_03005320_DL[26];
+extern Gfx drag_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry_03006618_DL_030053F0_DL[22];
+extern Gfx drag_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry_03006618_DL_030054A0_DL[18];
+extern Gfx drag_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry_03006618_DL_03005530_DL[541];
+extern Gfx drag_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry_03006618_DL[7];
+extern u8 drag_room_0_unaccounted_006650[];
+extern u64 drag_room_0_03000090_RoomShapeImageSingle_03006660_JFIF[SCREEN_WIDTH * SCREEN_HEIGHT * G_IM_SIZ_16b_BYTES / sizeof(u64)];
+
+#endif

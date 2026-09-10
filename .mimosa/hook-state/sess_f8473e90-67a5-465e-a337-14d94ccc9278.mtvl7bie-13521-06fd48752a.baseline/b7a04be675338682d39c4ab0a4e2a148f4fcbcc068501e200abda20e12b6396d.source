@@ -1,0 +1,334 @@
+#include "spot02_scene.h"
+
+#include "actor.h"
+#include "array_count.h"
+#include "camera.h"
+#include "cutscene_commands.h"
+#include "object.h"
+#include "ocarina.h"
+#include "player.h"
+#include "segment_symbols.h"
+#include "sequence.h"
+#include "skybox.h"
+#include "src/overlays/actors/ovl_En_Door/z_en_door.h"
+#include "stdbool.h"
+#include "ultra64.h"
+
+SceneCmd spot02_scene[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene.inc.c"
+};
+
+SceneCmd* spot02_scene_02000070_AltHeaders[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders.inc.c"
+};
+
+ActorEntry spot02_scene_02000084_PlayerEntryList[LENGTH_spot02_scene_02000084_PlayerEntryList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000084_PlayerEntryList.inc.c"
+};
+
+TransitionActorEntry spot02_scene_02000104_TransitionActorEntryList[LENGTH_spot02_scene_02000104_TransitionActorEntryList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000104_TransitionActorEntryList.inc.c"
+};
+
+RomFile spot02_scene_02000124_RoomList[LENGTH_spot02_scene_02000124_RoomList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000124_RoomList.inc.c"
+};
+
+Spawn spot02_scene_02000134_SpawnList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000134_SpawnList.inc.c"
+};
+
+s16 spot02_scene_02000144_ExitList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000144_ExitList.inc.c"
+};
+
+EnvLightSettings spot02_scene_02000154_EnvLightSettingsList[LENGTH_spot02_scene_02000154_EnvLightSettingsList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000154_EnvLightSettingsList.inc.c"
+};
+
+Vec3s spot02_scene_02000348_PathList_02000324_Points[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000348_PathList_02000324_Points.inc.c"
+};
+
+Path spot02_scene_02000348_PathList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000348_PathList.inc.c"
+};
+
+Vec3s spot02_scene_02003C4C_BgCamList_02000350_BgCamFuncData[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02003C4C_BgCamList_02000350_BgCamFuncData.inc.c"
+};
+
+BgCamInfo spot02_scene_02003C4C_BgCamList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02003C4C_BgCamList.inc.c"
+};
+
+SurfaceType spot02_scene_02003C4C_SurfaceTypes[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02003C4C_SurfaceTypes.inc.c"
+};
+
+CollisionPoly spot02_scene_02003C4C_PolyList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02003C4C_PolyList.inc.c"
+};
+
+Vec3s spot02_scene_02003C4C_VtxList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02003C4C_VtxList.inc.c"
+};
+
+CollisionHeader spot02_scene_02003C4C_Col = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02003C4C_Col.inc.c"
+};
+
+u8 spot02_scene_zeros_003C78[8] = { 0 };
+
+CutsceneData gGraveyardTombOpeningAdultCs[] = {
+#include "assets/scenes/overworld/spot02/gGraveyardTombOpeningAdultCs.csdata.inc.c"
+};
+
+CutsceneData gGraveyardSunsSongPart2Cs[] = {
+#include "assets/scenes/overworld/spot02/gGraveyardSunsSongPart2Cs.csdata.inc.c"
+};
+
+CutsceneData gGraveyardTombOpeningChildCs[] = {
+#include "assets/scenes/overworld/spot02/gGraveyardTombOpeningChildCs.csdata.inc.c"
+};
+
+SceneCmd spot02_scene_02000070_AltHeaders_020061D0_Cmds[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020061D0_Cmds.inc.c"
+};
+
+ActorEntry spot02_scene_02000070_AltHeaders_020061D0_Cmds_02006238_PlayerEntryList[LENGTH_spot02_scene_02000070_AltHeaders_020061D0_Cmds_02006238_PlayerEntryList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020061D0_Cmds_02006238_PlayerEntryList.inc.c"
+};
+
+TransitionActorEntry spot02_scene_02000070_AltHeaders_020061D0_Cmds_020062C8_TransitionActorEntryList[LENGTH_spot02_scene_02000070_AltHeaders_020061D0_Cmds_020062C8_TransitionActorEntryList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020061D0_Cmds_020062C8_TransitionActorEntryList.inc.c"
+};
+
+RomFile spot02_scene_02000070_AltHeaders_020061D0_Cmds_020062E8_RoomList[LENGTH_spot02_scene_02000070_AltHeaders_020061D0_Cmds_020062E8_RoomList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020061D0_Cmds_020062E8_RoomList.inc.c"
+};
+
+Spawn spot02_scene_02000070_AltHeaders_020061D0_Cmds_020062F8_SpawnList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020061D0_Cmds_020062F8_SpawnList.inc.c"
+};
+
+s16 spot02_scene_02000070_AltHeaders_020061D0_Cmds_0200630C_ExitList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020061D0_Cmds_0200630C_ExitList.inc.c"
+};
+
+EnvLightSettings spot02_scene_02000070_AltHeaders_020061D0_Cmds_0200631C_EnvLightSettingsList[LENGTH_spot02_scene_02000070_AltHeaders_020061D0_Cmds_0200631C_EnvLightSettingsList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020061D0_Cmds_0200631C_EnvLightSettingsList.inc.c"
+};
+
+Vec3s spot02_scene_02000070_AltHeaders_020061D0_Cmds_02006540_PathList_0200652C_Points[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020061D0_Cmds_02006540_PathList_0200652C_Points.inc.c"
+};
+
+Path spot02_scene_02000070_AltHeaders_020061D0_Cmds_02006540_PathList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020061D0_Cmds_02006540_PathList.inc.c"
+};
+
+u8 spot02_scene_zeros_006548[8] = { 0 };
+
+SceneCmd spot02_scene_02000070_AltHeaders_02006550_Cmds[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006550_Cmds.inc.c"
+};
+
+ActorEntry spot02_scene_02000070_AltHeaders_02006550_Cmds_020065B8_PlayerEntryList[LENGTH_spot02_scene_02000070_AltHeaders_02006550_Cmds_020065B8_PlayerEntryList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006550_Cmds_020065B8_PlayerEntryList.inc.c"
+};
+
+TransitionActorEntry spot02_scene_02000070_AltHeaders_02006550_Cmds_02006648_TransitionActorEntryList[LENGTH_spot02_scene_02000070_AltHeaders_02006550_Cmds_02006648_TransitionActorEntryList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006550_Cmds_02006648_TransitionActorEntryList.inc.c"
+};
+
+RomFile spot02_scene_02000070_AltHeaders_02006550_Cmds_02006668_RoomList[LENGTH_spot02_scene_02000070_AltHeaders_02006550_Cmds_02006668_RoomList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006550_Cmds_02006668_RoomList.inc.c"
+};
+
+Spawn spot02_scene_02000070_AltHeaders_02006550_Cmds_02006678_SpawnList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006550_Cmds_02006678_SpawnList.inc.c"
+};
+
+s16 spot02_scene_02000070_AltHeaders_02006550_Cmds_0200668C_ExitList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006550_Cmds_0200668C_ExitList.inc.c"
+};
+
+EnvLightSettings spot02_scene_02000070_AltHeaders_02006550_Cmds_0200669C_EnvLightSettingsList[LENGTH_spot02_scene_02000070_AltHeaders_02006550_Cmds_0200669C_EnvLightSettingsList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006550_Cmds_0200669C_EnvLightSettingsList.inc.c"
+};
+
+Vec3s spot02_scene_02000070_AltHeaders_02006550_Cmds_020068C0_PathList_020068AC_Points[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006550_Cmds_020068C0_PathList_020068AC_Points.inc.c"
+};
+
+Path spot02_scene_02000070_AltHeaders_02006550_Cmds_020068C0_PathList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006550_Cmds_020068C0_PathList.inc.c"
+};
+
+u8 spot02_scene_zeros_0068C8[8] = { 0 };
+
+SceneCmd spot02_scene_02000070_AltHeaders_020068D0_Cmds[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020068D0_Cmds.inc.c"
+};
+
+ActorEntry spot02_scene_02000070_AltHeaders_020068D0_Cmds_02006938_PlayerEntryList[LENGTH_spot02_scene_02000070_AltHeaders_020068D0_Cmds_02006938_PlayerEntryList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020068D0_Cmds_02006938_PlayerEntryList.inc.c"
+};
+
+TransitionActorEntry spot02_scene_02000070_AltHeaders_020068D0_Cmds_020069B8_TransitionActorEntryList[LENGTH_spot02_scene_02000070_AltHeaders_020068D0_Cmds_020069B8_TransitionActorEntryList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020068D0_Cmds_020069B8_TransitionActorEntryList.inc.c"
+};
+
+RomFile spot02_scene_02000070_AltHeaders_020068D0_Cmds_020069D8_RoomList[LENGTH_spot02_scene_02000070_AltHeaders_020068D0_Cmds_020069D8_RoomList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020068D0_Cmds_020069D8_RoomList.inc.c"
+};
+
+Spawn spot02_scene_02000070_AltHeaders_020068D0_Cmds_020069E8_SpawnList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020068D0_Cmds_020069E8_SpawnList.inc.c"
+};
+
+s16 spot02_scene_02000070_AltHeaders_020068D0_Cmds_020069F8_ExitList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020068D0_Cmds_020069F8_ExitList.inc.c"
+};
+
+EnvLightSettings spot02_scene_02000070_AltHeaders_020068D0_Cmds_02006A08_EnvLightSettingsList[LENGTH_spot02_scene_02000070_AltHeaders_020068D0_Cmds_02006A08_EnvLightSettingsList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020068D0_Cmds_02006A08_EnvLightSettingsList.inc.c"
+};
+
+Vec3s spot02_scene_02000070_AltHeaders_020068D0_Cmds_02006BFC_PathList_02006BD8_Points[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020068D0_Cmds_02006BFC_PathList_02006BD8_Points.inc.c"
+};
+
+Path spot02_scene_02000070_AltHeaders_020068D0_Cmds_02006BFC_PathList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_020068D0_Cmds_02006BFC_PathList.inc.c"
+};
+
+u8 spot02_scene_zeros_006C04[12] = { 0 };
+
+SceneCmd spot02_scene_02000070_AltHeaders_02006C10_Cmds[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006C10_Cmds.inc.c"
+};
+
+ActorEntry spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006C80_PlayerEntryList[LENGTH_spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006C80_PlayerEntryList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006C80_PlayerEntryList.inc.c"
+};
+
+TransitionActorEntry spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006C90_TransitionActorEntryList[LENGTH_spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006C90_TransitionActorEntryList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006C90_TransitionActorEntryList.inc.c"
+};
+
+RomFile spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006CB0_RoomList[LENGTH_spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006CB0_RoomList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006CB0_RoomList.inc.c"
+};
+
+Spawn spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006CC0_SpawnList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006CC0_SpawnList.inc.c"
+};
+
+s16 spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006CC4_ExitList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006CC4_ExitList.inc.c"
+};
+
+EnvLightSettings spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006CD4_EnvLightSettingsList[LENGTH_spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006CD4_EnvLightSettingsList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006CD4_EnvLightSettingsList.inc.c"
+};
+
+Vec3s spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006EB0_PathList_02006E8C_Points[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006EB0_PathList_02006E8C_Points.inc.c"
+};
+
+Path spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006EB0_PathList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006C10_Cmds_02006EB0_PathList.inc.c"
+};
+
+u8 spot02_scene_zeros_006EB8[8] = { 0 };
+
+SceneCmd spot02_scene_02000070_AltHeaders_02006EC0_Cmds[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006EC0_Cmds.inc.c"
+};
+
+ActorEntry spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F30_PlayerEntryList[LENGTH_spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F30_PlayerEntryList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F30_PlayerEntryList.inc.c"
+};
+
+TransitionActorEntry spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F40_TransitionActorEntryList[LENGTH_spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F40_TransitionActorEntryList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F40_TransitionActorEntryList.inc.c"
+};
+
+RomFile spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F60_RoomList[LENGTH_spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F60_RoomList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F60_RoomList.inc.c"
+};
+
+Spawn spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F70_SpawnList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F70_SpawnList.inc.c"
+};
+
+s16 spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F74_ExitList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F74_ExitList.inc.c"
+};
+
+EnvLightSettings spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F84_EnvLightSettingsList[LENGTH_spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F84_EnvLightSettingsList] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006EC0_Cmds_02006F84_EnvLightSettingsList.inc.c"
+};
+
+Vec3s spot02_scene_02000070_AltHeaders_02006EC0_Cmds_020070B0_PathList_0200708C_Points[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006EC0_Cmds_020070B0_PathList_0200708C_Points.inc.c"
+};
+
+Path spot02_scene_02000070_AltHeaders_02006EC0_Cmds_020070B0_PathList[] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_02000070_AltHeaders_02006EC0_Cmds_020070B0_PathList.inc.c"
+};
+
+u8 spot02_scene_zeros_0070B8[8] = { 0 };
+
+CutsceneData gGraveyardIntroCs[] = {
+#include "assets/scenes/overworld/spot02/gGraveyardIntroCs.csdata.inc.c"
+};
+
+u8 spot02_scene_zeros_007278[8] = { 0 };
+
+u64 spot02_scene_00007280_Tex[TEX_LEN(u64, spot02_scene_00007280_Tex_WIDTH, spot02_scene_00007280_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_00007280_Tex.rgba16.inc.c"
+};
+
+u64 spot02_scene_00007A80_Tex[TEX_LEN(u64, spot02_scene_00007A80_Tex_WIDTH, spot02_scene_00007A80_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_00007A80_Tex.rgba16.inc.c"
+};
+
+u64 spot02_scene_00007E80_Tex[TEX_LEN(u64, spot02_scene_00007E80_Tex_WIDTH, spot02_scene_00007E80_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_00007E80_Tex.rgba16.inc.c"
+};
+
+u64 spot02_scene_00008680_Tex[TEX_LEN(u64, spot02_scene_00008680_Tex_WIDTH, spot02_scene_00008680_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_00008680_Tex.rgba16.inc.c"
+};
+
+u64 spot02_scene_00008E80_Tex[TEX_LEN(u64, spot02_scene_00008E80_Tex_WIDTH, spot02_scene_00008E80_Tex_HEIGHT, 8)] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_00008E80_Tex.i8.inc.c"
+};
+
+u64 spot02_scene_00009E80_Tex[TEX_LEN(u64, spot02_scene_00009E80_Tex_WIDTH, spot02_scene_00009E80_Tex_HEIGHT, 4)] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_00009E80_Tex.ia4.inc.c"
+};
+
+u64 spot02_scene_0000A280_Tex[TEX_LEN(u64, spot02_scene_0000A280_Tex_WIDTH, spot02_scene_0000A280_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_0000A280_Tex.rgba16.inc.c"
+};
+
+u64 spot02_scene_0000AA80_Tex[TEX_LEN(u64, spot02_scene_0000AA80_Tex_WIDTH, spot02_scene_0000AA80_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_0000AA80_Tex.rgba16.inc.c"
+};
+
+u64 spot02_scene_0000AE80_Tex[TEX_LEN(u64, spot02_scene_0000AE80_Tex_WIDTH, spot02_scene_0000AE80_Tex_HEIGHT, 4)] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_0000AE80_Tex.i4.inc.c"
+};
+
+u64 spot02_scene_0000B080_Tex[TEX_LEN(u64, spot02_scene_0000B080_Tex_WIDTH, spot02_scene_0000B080_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_0000B080_Tex.rgba16.inc.c"
+};
+
+u64 spot02_scene_0000B880_Tex[TEX_LEN(u64, spot02_scene_0000B880_Tex_WIDTH, spot02_scene_0000B880_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot02/spot02_scene_0000B880_Tex.rgba16.inc.c"
+};
+

@@ -1,0 +1,15 @@
+#include "vr_TTVR_pal_static.h"
+
+
+u64 gCarpentersTentBgTLUT[] = {
+#include "assets/textures/backgrounds/gCarpentersTentBgTex.tlut.rgba16.inc.c"
+};
+
+u64 gCarpentersTentBg2TLUT[] = {
+#include "assets/textures/backgrounds/gCarpentersTent2BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gCarpentersTentBg3TLUT[] = {
+#include "assets/textures/backgrounds/gCarpentersTent3BgTex.tlut.rgba16.inc.c"
+};
+

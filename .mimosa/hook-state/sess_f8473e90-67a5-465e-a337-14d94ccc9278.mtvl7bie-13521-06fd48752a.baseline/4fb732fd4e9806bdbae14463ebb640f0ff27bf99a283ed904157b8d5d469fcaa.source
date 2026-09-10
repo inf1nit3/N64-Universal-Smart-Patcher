@@ -1,0 +1,27 @@
+#ifndef DRAG_SCENE_H
+#define DRAG_SCENE_H
+
+#include "bgcheck.h"
+#include "environment.h"
+#include "romfile.h"
+#include "scene.h"
+#include "ultra64.h"
+#include "z_math.h"
+
+extern SceneCmd drag_scene[];
+#define LENGTH_drag_scene_02000058_PlayerEntryList 3
+extern ActorEntry drag_scene_02000058_PlayerEntryList[LENGTH_drag_scene_02000058_PlayerEntryList];
+#define LENGTH_drag_scene_02000088_RoomList 1
+extern RomFile drag_scene_02000088_RoomList[LENGTH_drag_scene_02000088_RoomList];
+extern Spawn drag_scene_02000090_SpawnList[];
+extern s16 drag_scene_02000098_ExitList[];
+#define LENGTH_drag_scene_0200009C_EnvLightSettingsList 1
+extern EnvLightSettings drag_scene_0200009C_EnvLightSettingsList[LENGTH_drag_scene_0200009C_EnvLightSettingsList];
+extern Vec3s drag_scene_020003C0_BgCamList_020000C0_BgCamFuncData[];
+extern BgCamInfo drag_scene_020003C0_BgCamList[];
+extern SurfaceType drag_scene_020003C0_SurfaceTypes[];
+extern CollisionPoly drag_scene_020003C0_PolyList[];
+extern Vec3s drag_scene_020003C0_VtxList[];
+extern CollisionHeader drag_scene_020003C0_Col;
+
+#endif

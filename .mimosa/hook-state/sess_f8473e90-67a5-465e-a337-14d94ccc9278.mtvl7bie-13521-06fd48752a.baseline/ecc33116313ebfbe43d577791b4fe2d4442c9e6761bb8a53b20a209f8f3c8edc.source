@@ -1,0 +1,13 @@
+   
+ gsSPVertex(&spot16_room_0_030003D0_RoomShapeNormal_030003DC_DListsEntries_0300A290_DL_03009B50_DL_03008FB8_DL_03008F98_Vtx_fused_[0],
+ 1, 0),
+   
+ gsSPBranchLessZraw(spot16_room_0_030003D0_RoomShapeNormal_030003DC_DListsEntries_0300A290_DL_03009B50_DL_03008FB8_DL_030089B8_DL,
+ 0, 0x000004B0),
+   
+ gsSPVertex(&spot16_room_0_030003D0_RoomShapeNormal_030003DC_DListsEntries_0300A290_DL_03009B50_DL_03008FB8_DL_03008F98_Vtx_fused_[1],
+ 1, 0),
+   
+ gsSPBranchLessZraw(spot16_room_0_030003D0_RoomShapeNormal_030003DC_DListsEntries_0300A290_DL_03009B50_DL_03008FB8_DL_03008EF8_DL,
+ 0, 0x17D78400),
+    gsSPEndDisplayList(),

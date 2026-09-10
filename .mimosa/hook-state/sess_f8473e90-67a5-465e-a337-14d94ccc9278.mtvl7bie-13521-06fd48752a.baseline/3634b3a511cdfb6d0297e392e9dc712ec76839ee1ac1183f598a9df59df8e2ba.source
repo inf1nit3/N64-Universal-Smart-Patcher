@@ -1,0 +1,61 @@
+#include "night_shop_scene.h"
+#include "assets/scenes/shops/night_shop/night_shop_room_0.h"
+
+#include "actor.h"
+#include "array_count.h"
+#include "camera.h"
+#include "object.h"
+#include "segment_symbols.h"
+#include "sequence.h"
+#include "skybox.h"
+#include "stdbool.h"
+#include "ultra64.h"
+
+SceneCmd night_shop_scene[] = {
+#include "assets/scenes/shops/night_shop/night_shop_scene.inc.c"
+};
+
+ActorEntry night_shop_scene_02000058_PlayerEntryList[LENGTH_night_shop_scene_02000058_PlayerEntryList] = {
+#include "assets/scenes/shops/night_shop/night_shop_scene_02000058_PlayerEntryList.inc.c"
+};
+
+RomFile night_shop_scene_02000078_RoomList[LENGTH_night_shop_scene_02000078_RoomList] = {
+#include "assets/scenes/shops/night_shop/night_shop_scene_02000078_RoomList.inc.c"
+};
+
+Spawn night_shop_scene_02000080_SpawnList[] = {
+#include "assets/scenes/shops/night_shop/night_shop_scene_02000080_SpawnList.inc.c"
+};
+
+s16 night_shop_scene_02000084_ExitList[] = {
+#include "assets/scenes/shops/night_shop/night_shop_scene_02000084_ExitList.inc.c"
+};
+
+EnvLightSettings night_shop_scene_02000088_EnvLightSettingsList[LENGTH_night_shop_scene_02000088_EnvLightSettingsList] = {
+#include "assets/scenes/shops/night_shop/night_shop_scene_02000088_EnvLightSettingsList.inc.c"
+};
+
+Vec3s night_shop_scene_02000644_BgCamList_020000A0_BgCamFuncData[] = {
+#include "assets/scenes/shops/night_shop/night_shop_scene_02000644_BgCamList_020000A0_BgCamFuncData.inc.c"
+};
+
+BgCamInfo night_shop_scene_02000644_BgCamList[] = {
+#include "assets/scenes/shops/night_shop/night_shop_scene_02000644_BgCamList.inc.c"
+};
+
+SurfaceType night_shop_scene_02000644_SurfaceTypes[] = {
+#include "assets/scenes/shops/night_shop/night_shop_scene_02000644_SurfaceTypes.inc.c"
+};
+
+CollisionPoly night_shop_scene_02000644_PolyList[] = {
+#include "assets/scenes/shops/night_shop/night_shop_scene_02000644_PolyList.inc.c"
+};
+
+Vec3s night_shop_scene_02000644_VtxList[] = {
+#include "assets/scenes/shops/night_shop/night_shop_scene_02000644_VtxList.inc.c"
+};
+
+CollisionHeader night_shop_scene_02000644_Col = {
+#include "assets/scenes/shops/night_shop/night_shop_scene_02000644_Col.inc.c"
+};
+

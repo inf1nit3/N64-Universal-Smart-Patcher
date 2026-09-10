@@ -1,0 +1,19 @@
+#include "vr_LBVR_pal_static.h"
+
+
+u64 gCowHouseBgTLUT[] = {
+#include "assets/textures/backgrounds/gCowHouseBgTex.tlut.rgba16.inc.c"
+};
+
+u64 gCowHouseBg2TLUT[] = {
+#include "assets/textures/backgrounds/gCowHouse2BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gCowHouseBg3TLUT[] = {
+#include "assets/textures/backgrounds/gCowHouse3BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gCowHouseBg4TLUT[] = {
+#include "assets/textures/backgrounds/gCowHouse4BgTex.tlut.rgba16.inc.c"
+};
+

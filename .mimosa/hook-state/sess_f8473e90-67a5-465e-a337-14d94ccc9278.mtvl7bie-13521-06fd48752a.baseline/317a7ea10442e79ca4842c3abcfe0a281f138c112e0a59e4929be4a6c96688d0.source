@@ -1,0 +1,12 @@
+    OBJECT_SPOT02_OBJECTS, // 0
+    OBJECT_MJIN, // 1
+    OBJECT_MJIN_DARK, // 2
+    OBJECT_EFC_FLASH, // 3
+    OBJECT_SYOKUDAI, // 4
+    OBJECT_POH, // 5
+    OBJECT_TK, // 6
+    OBJECT_HAKA, // 7
+    OBJECT_NIW, // 8
+    OBJECT_MAMENOKI, // 9
+    OBJECT_BOX, // 10
+

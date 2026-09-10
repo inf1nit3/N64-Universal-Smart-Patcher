@@ -1,0 +1,25 @@
+    {
+        ACTOR_PLAYER,
+        {     56,    600,   1104 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x0FFF, // params
+    }, // 0
+    {
+        ACTOR_PLAYER,
+        {     90,     40,  -1416 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0D00, // params
+    }, // 1
+    {
+        ACTOR_PLAYER,
+        {   -134,     -3,    -42 }, // pos
+        {  0x0000,  0x4CCD,  0x0000 }, // rot
+         0x0DFF, // params
+    }, // 2
+    {
+        ACTOR_PLAYER,
+        {    441,    196,   1153 }, // pos
+        {  0x0000, -0x7333,  0x0000 }, // rot
+         0x0DFF, // params
+    }, // 3
+

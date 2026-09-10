@@ -1,0 +1,73 @@
+    {
+        ACTOR_EN_RIVER_SOUND,
+        {   3207,    500,  -1527 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 0
+    {
+        ACTOR_EN_GS,
+        {   3930,    640,  -1650 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x3A0C, // params
+    }, // 1
+    {
+        ACTOR_BG_SPOT03_TAKI,
+        {   4226,    660,  -1402 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0038, // params
+    }, // 2
+    {
+        ACTOR_EN_ITEM00,
+        {   3585,    848,  -1665 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0B06, // params
+    }, // 3
+    {
+        ACTOR_EN_SW,
+        {   3727,    647,  -1609 }, // pos
+        {  0x4000, -0x6000,  0x0000 }, // rot
+        -0x4DFF /* 0xB201 */, // params
+    }, // 4
+    {
+        ACTOR_EN_WONDER_ITEM,
+        {   2831,    460,  -1421 }, // pos
+        {  0x0000,  0x0000,  0x0001 }, // rot
+         0x123F, // params
+    }, // 5
+    {
+        ACTOR_EN_WONDER_ITEM,
+        {   2987,    460,  -1499 }, // pos
+        {  0x0000,  0x0000,  0x0001 }, // rot
+         0x123F, // params
+    }, // 6
+    {
+        ACTOR_EN_WONDER_ITEM,
+        {   3161,    460,  -1493 }, // pos
+        {  0x0000,  0x0000,  0x0001 }, // rot
+         0x123F, // params
+    }, // 7
+    {
+        ACTOR_EN_WONDER_ITEM,
+        {   3329,    460,  -1499 }, // pos
+        {  0x0000,  0x0000,  0x0001 }, // rot
+         0x123F, // params
+    }, // 8
+    {
+        ACTOR_EN_OKARINA_TAG,
+        {   4096,    921,  -1400 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x07F8, // params
+    }, // 9
+    {
+        ACTOR_OBJ_MURE,
+        {   4093,   1010,  -1400 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x3324, // params
+    }, // 10
+    {
+        ACTOR_EN_WONDER_TALK2,
+        {   4096,    920,  -1401 }, // pos
+        {  0x0000, -0x4000,  0x0029 }, // rot
+        -0x7481 /* 0x8B7F */, // params
+    }, // 11
+

@@ -1,0 +1,55 @@
+    {
+        ACTOR_EN_RIVER_SOUND,
+        {  -4218,   -873,   2340 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 0
+    {
+        ACTOR_BG_MJIN,
+        {  -1045,  -1243,   7457 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0004, // params
+    }, // 1
+    {
+        ACTOR_OBJ_MURE2,
+        {  -2071,   -906,   2500 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x0FF /* 0xFF01 */, // params
+    }, // 2
+    {
+        ACTOR_OBJ_MURE2,
+        {  -1680,  -1014,   2754 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x0FF /* 0xFF01 */, // params
+    }, // 3
+    {
+        ACTOR_OBJ_MURE2,
+        {  -2247,   -985,   3008 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x0FF /* 0xFF01 */, // params
+    }, // 4
+    {
+        ACTOR_EN_XC,
+        {  -1044,  -1243,   7650 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0003, // params
+    }, // 5
+    {
+        ACTOR_BG_SPOT06_OBJECTS,
+        {   -916,  -2201,   6437 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x00FF, // params
+    }, // 6
+    {
+        ACTOR_BG_SPOT06_OBJECTS,
+        {   -916,  -1976,   6371 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x01FF, // params
+    }, // 7
+    {
+        ACTOR_BG_SPOT06_OBJECTS,
+        {  -1057,  -1313,   5010 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x02FF, // params
+    }, // 8
+

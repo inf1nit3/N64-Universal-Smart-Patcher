@@ -1,0 +1,15 @@
+#include "vr_K5VR_pal_static.h"
+
+
+u64 gSariasHouseBgTLUT[] = {
+#include "assets/textures/backgrounds/gSariasHouseBgTex.tlut.rgba16.inc.c"
+};
+
+u64 gSariasHouseBg2TLUT[] = {
+#include "assets/textures/backgrounds/gSariasHouse2BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gSariasHouseBg3TLUT[] = {
+#include "assets/textures/backgrounds/gSariasHouse3BgTex.tlut.rgba16.inc.c"
+};
+

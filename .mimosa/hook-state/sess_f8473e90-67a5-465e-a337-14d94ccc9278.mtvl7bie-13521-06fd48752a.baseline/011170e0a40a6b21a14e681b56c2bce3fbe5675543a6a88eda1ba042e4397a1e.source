@@ -1,0 +1,11 @@
+#include "vr_NSVR_static.h"
+
+
+u64 gBombchuShopBgTex[TEX_LEN(u64, gBombchuShopBgTex_WIDTH, gBombchuShopBgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gBombchuShopBgTex.ci8.inc.c"
+};
+
+u64 gBombchuShop2BgTex[TEX_LEN(u64, gBombchuShop2BgTex_WIDTH, gBombchuShop2BgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gBombchuShop2BgTex.ci8.inc.c"
+};
+

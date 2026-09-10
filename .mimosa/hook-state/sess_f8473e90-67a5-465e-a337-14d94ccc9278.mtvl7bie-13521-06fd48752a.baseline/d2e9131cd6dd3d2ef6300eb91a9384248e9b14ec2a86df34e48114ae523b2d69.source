@@ -1,0 +1,36 @@
+#ifndef SHOP1_ROOM_0_H
+#define SHOP1_ROOM_0_H
+
+#include "gfx.h"
+#include "room.h"
+#include "scene.h"
+#include "ultra64.h"
+
+extern SceneCmd shop1_room_0[];
+#define LENGTH_shop1_room_0_03000040_ObjectList 12
+extern s16 shop1_room_0_03000040_ObjectList[LENGTH_shop1_room_0_03000040_ObjectList];
+#define LENGTH_shop1_room_0_03000058_ActorEntryList 4
+extern ActorEntry shop1_room_0_03000058_ActorEntryList[LENGTH_shop1_room_0_03000058_ActorEntryList];
+extern RoomShapeImageSingle shop1_room_0_030000A0_RoomShapeImageSingle;
+extern RoomShapeDListsEntry shop1_room_0_030000A0_RoomShapeImageSingle_030000C0_RoomShapeDListsEntry;
+extern Vtx gShop1DL_003F98_03003F18_DL_03002F60_DL_030000D0_Vtx_fused_[];
+extern Gfx gShop1DL_003F98_03003F18_DL_03002F60_DL[16];
+extern Gfx gShop1DL_003F98_03003F18_DL_03002FE0_DL[18];
+extern Gfx gShop1DL_003F98_03003F18_DL_03003070_DL[18];
+extern Gfx gShop1DL_003F98_03003F18_DL_03003100_DL[18];
+extern Gfx gShop1DL_003F98_03003F18_DL_03003190_DL[28];
+extern Gfx gShop1DL_003F98_03003F18_DL_03003270_DL[16];
+extern Gfx gShop1DL_003F98_03003F18_DL_030032F0_DL[18];
+extern Gfx gShop1DL_003F98_03003F18_DL_03003380_DL[17];
+extern Gfx gShop1DL_003408[19];
+extern Gfx gShop1DL_0034A0[19];
+extern Gfx gShop1DL_003538[19];
+extern Gfx gShop1DL_0035D0[19];
+extern Gfx gShop1DL_003668[143];
+extern Gfx gShop1DL_003AE0[135];
+extern Gfx gShop1DL_003F98_03003F18_DL[9];
+extern Gfx gShop1DL_003F60[7];
+extern Gfx gShop1DL_003F98[3];
+extern u64 shop1_room_0_030000A0_RoomShapeImageSingle_03003FB0_JFIF[SCREEN_WIDTH * SCREEN_HEIGHT * G_IM_SIZ_16b_BYTES / sizeof(u64)];
+
+#endif

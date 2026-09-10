@@ -1,0 +1,14 @@
+#ifndef VR_ALVR_STATIC_H
+#define VR_ALVR_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gMarketPotionShopBgTex_WIDTH 256
+#define gMarketPotionShopBgTex_HEIGHT 256
+extern u64 gMarketPotionShopBgTex[TEX_LEN(u64, gMarketPotionShopBgTex_WIDTH, gMarketPotionShopBgTex_HEIGHT, 8)];
+#define gMarketPotionShop2BgTex_WIDTH 256
+#define gMarketPotionShop2BgTex_HEIGHT 256
+extern u64 gMarketPotionShop2BgTex[TEX_LEN(u64, gMarketPotionShop2BgTex_WIDTH, gMarketPotionShop2BgTex_HEIGHT, 8)];
+
+#endif

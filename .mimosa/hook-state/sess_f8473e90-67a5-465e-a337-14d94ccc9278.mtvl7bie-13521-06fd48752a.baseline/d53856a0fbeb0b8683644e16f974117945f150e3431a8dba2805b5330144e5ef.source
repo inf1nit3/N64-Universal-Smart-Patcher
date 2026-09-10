@@ -1,0 +1,79 @@
+    {
+        ACTOR_DEMO_KANKYO,
+        {   7833,   2106,  -4252 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0002, // params
+    }, // 0
+    {
+        ACTOR_DEMO_KANKYO,
+        {   7548,   2003,  -4109 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0003, // params
+    }, // 1
+    {
+        ACTOR_DEMO_KANKYO,
+        {   7477,   2003,  -3931 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0004, // params
+    }, // 2
+    {
+        ACTOR_DEMO_KANKYO,
+        {   7406,   1932,  -4074 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0005, // params
+    }, // 3
+    {
+        ACTOR_DEMO_KANKYO,
+        {   7406,   1932,  -4074 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0006, // params
+    }, // 4
+    {
+        ACTOR_BG_SPOT09_OBJ,
+        {      0,      0,      0 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0001, // params
+    }, // 5
+    {
+        ACTOR_BG_SPOT09_OBJ,
+        {  -1219,      0,   -832 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0003, // params
+    }, // 6
+    {
+        ACTOR_EN_RIVER_SOUND,
+        {    137,  -2790,  -2459 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0003, // params
+    }, // 7
+    {
+        ACTOR_EN_RIVER_SOUND,
+        {    527,  -3123,   3582 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 8
+    {
+        ACTOR_BG_SPOT09_OBJ,
+        {  -1105,     15,   -747 }, // pos
+        {  0x0000,  0x0CCD,  0x0000 }, // rot
+         0x0003, // params
+    }, // 9
+    {
+        ACTOR_BG_SPOT09_OBJ,
+        {      0,      0,      0 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 10
+    {
+        ACTOR_BG_SPOT09_OBJ,
+        {      0,      0,      0 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0002, // params
+    }, // 11
+    {
+        ACTOR_BG_SPOT09_OBJ,
+        {      0,      0,      0 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0004, // params
+    }, // 12
+

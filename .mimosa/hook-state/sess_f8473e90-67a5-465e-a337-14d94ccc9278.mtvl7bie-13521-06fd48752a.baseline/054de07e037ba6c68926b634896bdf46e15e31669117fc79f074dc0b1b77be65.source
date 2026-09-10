@@ -1,0 +1,11 @@
+#include "vr_GLVR_pal_static.h"
+
+
+u64 gGoronShopBgTLUT[] = {
+#include "assets/textures/backgrounds/gGoronShopBgTex.tlut.rgba16.inc.c"
+};
+
+u64 gGoronShopBg2TLUT[] = {
+#include "assets/textures/backgrounds/gGoronShop2BgTex.tlut.rgba16.inc.c"
+};
+

@@ -1,0 +1,15 @@
+    OBJECT_SPOT03_OBJECT, // 0
+    OBJECT_GS, // 1
+    OBJECT_KANBAN, // 2
+    OBJECT_BOMBIWA, // 3
+    OBJECT_NIW, // 4
+    OBJECT_ST, // 5
+    OBJECT_OKUTA, // 6
+    OBJECT_TITE, // 7
+    OBJECT_MAMENOKI, // 8
+    OBJECT_MS, // 9
+    OBJECT_OWL, // 10
+    OBJECT_FR, // 11
+    OBJECT_EFC_FLASH, // 12
+    OBJECT_WOOD02, // 13
+

@@ -1,0 +1,15 @@
+#ifndef VR_IPVR_PAL_STATIC_H
+#define VR_IPVR_PAL_STATIC_H
+
+#include "ultra64.h"
+
+//#define gRichardsHouseBgTLUT_TLUT_COUNT 256
+extern u64 gRichardsHouseBgTLUT[];
+//#define gRichardsHouseBg2TLUT_TLUT_COUNT 256
+extern u64 gRichardsHouseBg2TLUT[];
+//#define gRichardsHouseBg3TLUT_TLUT_COUNT 256
+extern u64 gRichardsHouseBg3TLUT[];
+//#define gRichardsHouseBg4TLUT_TLUT_COUNT 256
+extern u64 gRichardsHouseBg4TLUT[];
+
+#endif

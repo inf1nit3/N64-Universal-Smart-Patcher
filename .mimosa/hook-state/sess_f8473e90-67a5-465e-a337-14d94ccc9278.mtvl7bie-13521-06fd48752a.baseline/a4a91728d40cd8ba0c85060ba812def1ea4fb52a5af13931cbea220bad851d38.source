@@ -1,0 +1,187 @@
+    {
+        ACTOR_BG_SPOT01_FUSYA,
+        {   1140,    990,    524 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 0
+    {
+        ACTOR_EN_HEISHI2,
+        {    -30,    400,  -1298 }, // pos
+        {  0x0000,  0x0E39,  0x0000 }, // rot
+        -0x0FB /* 0xFF05 */, // params
+    }, // 1
+    {
+        ACTOR_EN_HY,
+        {   -205,      0,    185 }, // pos
+        {  0x0000, -0x160B,  0x0000 }, // rot
+        -0x0FA /* 0xFF06 */, // params
+    }, // 2
+    {
+        ACTOR_EN_HY,
+        {    -73,    320,   -591 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x0F9 /* 0xFF07 */, // params
+    }, // 3
+    {
+        ACTOR_EN_HY,
+        {   -408,    240,   1632 }, // pos
+        {  0x0000, -0x5333,  0x0000 }, // rot
+        -0x0F8 /* 0xFF08 */, // params
+    }, // 4
+    {
+        ACTOR_OBJ_MURE2,
+        {    594,    138,   1465 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x0FE /* 0xFF02 */, // params
+    }, // 5
+    {
+        ACTOR_OBJ_MURE2,
+        {    -35,    400,  -1184 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x0FF /* 0xFF01 */, // params
+    }, // 6
+    {
+        ACTOR_OBJ_MURE2,
+        {   -548,     58,    405 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x100 /* 0xFF00 */, // params
+    }, // 7
+    {
+        ACTOR_EN_WOOD02,
+        {   -860,      0,    522 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x0FF /* 0xFF01 */, // params
+    }, // 8
+    {
+        ACTOR_BG_GATE_SHUTTER,
+        {     91,    400,  -1350 }, // pos
+        {  0x0000, -0x666,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 9
+    {
+        ACTOR_EN_XC,
+        {  -2619,    138,   1077 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0005, // params
+    }, // 10
+    {
+        ACTOR_DEMO_SHD,
+        {      0,      0,      0 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 11
+    {
+        ACTOR_BG_SPOT17_FUNEN,
+        {   -736,   -369,    902 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 12
+    {
+        ACTOR_BG_SPOT17_FUNEN,
+        {   -453,    240,   1452 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 13
+    {
+        ACTOR_BG_SPOT17_FUNEN,
+        {    982,   -234,      7 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 14
+    {
+        ACTOR_BG_SPOT17_FUNEN,
+        {   -217,     80,    908 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 15
+    {
+        ACTOR_BG_HIDAN_FWBIG,
+        {   -513,    340,   1145 }, // pos
+        {  0x0000,  0x4000,  0x0000 }, // rot
+         0x00FF, // params
+    }, // 16
+    {
+        ACTOR_BG_HIDAN_FWBIG,
+        {   -461,    282,   1124 }, // pos
+        {  0x0000,  0x4000,  0x0000 }, // rot
+         0x00FF, // params
+    }, // 17
+    {
+        ACTOR_BG_HIDAN_CURTAIN,
+        {    292,    423,   1674 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x1FFF, // params
+    }, // 18
+    {
+        ACTOR_BG_HIDAN_CURTAIN,
+        {    296,    339,   1759 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x1FFF, // params
+    }, // 19
+    {
+        ACTOR_BG_HIDAN_CURTAIN,
+        {    269,    371,   1533 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x1FFF, // params
+    }, // 20
+    {
+        ACTOR_BG_SPOT17_FUNEN,
+        {    371,     80,   1647 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 21
+    {
+        ACTOR_EN_SYATEKI_NIW,
+        {   -872,      0,    405 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0001, // params
+    }, // 22
+    {
+        ACTOR_BG_SPOT01_IDOHASHIRA,
+        {    799,    190,    503 }, // pos
+        {  0x0000, -0x2AAB,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 23
+    {
+        ACTOR_BG_SPOT01_IDOMIZU,
+        {    762,     52,    524 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 24
+    {
+        ACTOR_BG_SPOT16_DOUGHNUT,
+        {  -1409,   2767,  -4417 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 25
+    {
+        ACTOR_BG_SPOT01_OBJECTS2,
+        {    210,    250,    795 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x0001, // params
+    }, // 26
+    {
+        ACTOR_BG_SPOT01_OBJECTS2,
+        {    324,    160,   1000 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x0FC /* 0xFF04 */, // params
+    }, // 27
+    {
+        ACTOR_OBJ_KIBAKO2,
+        {    185,    160,    776 }, // pos
+        { -0x001,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 28
+    {
+        ACTOR_OBJ_KIBAKO2,
+        {     32,      0,    348 }, // pos
+        { -0x001,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 29
+    {
+        ACTOR_OBJ_KIBAKO2,
+        {     92,      0,    348 }, // pos
+        { -0x001,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 30
+

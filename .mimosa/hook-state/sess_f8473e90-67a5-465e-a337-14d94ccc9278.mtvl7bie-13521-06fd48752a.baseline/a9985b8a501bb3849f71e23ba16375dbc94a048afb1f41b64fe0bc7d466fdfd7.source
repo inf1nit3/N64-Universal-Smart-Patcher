@@ -1,0 +1,41 @@
+    {
+        {  53,  48,  58 }, // ambientColor
+        {   80,   14,   96 }, // light1Dir
+        { 108,  69,  97 }, // light1Color
+        {  -74,   20, -100 }, // light2Dir
+        {  46,  46,  93 }, // light2Color
+        {   4,   3,  25 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 992), // blendRateAndFogNear
+        12800, // zFar
+    }, // 0
+    {
+        {  53,  48,  58 }, // ambientColor
+        {   80,   14,   96 }, // light1Dir
+        { 108,  69,  97 }, // light1Color
+        {  -74,   20, -100 }, // light2Dir
+        {  46,  46,  93 }, // light2Color
+        {   4,   3,  25 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 992), // blendRateAndFogNear
+        12800, // zFar
+    }, // 1
+    {
+        {  53,  48,  58 }, // ambientColor
+        {   80,   14,   96 }, // light1Dir
+        { 108,  69,  97 }, // light1Color
+        {  -74,   20, -100 }, // light2Dir
+        {  46,  46,  93 }, // light2Color
+        {   4,   3,  25 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 992), // blendRateAndFogNear
+        12800, // zFar
+    }, // 2
+    {
+        {  53,  48,  58 }, // ambientColor
+        {   80,   14,   96 }, // light1Dir
+        { 108,  69,  97 }, // light1Color
+        {  -74,   20, -100 }, // light2Dir
+        {  46,  46,  93 }, // light2Color
+        {   4,   3,  25 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 992), // blendRateAndFogNear
+        12800, // zFar
+    }, // 3
+

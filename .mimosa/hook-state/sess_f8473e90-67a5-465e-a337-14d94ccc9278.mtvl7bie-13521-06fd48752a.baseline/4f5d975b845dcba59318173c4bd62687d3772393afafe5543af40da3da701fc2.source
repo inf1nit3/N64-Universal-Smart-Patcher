@@ -1,0 +1,27 @@
+#include "vr_holy1_static.h"
+
+
+u64 gHoly1Skybox1Tex[TEX_LEN(u64, gHoly1Skybox1Tex_WIDTH, gHoly1Skybox1Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gHoly1Skybox1Tex.ci8.split_hi.tlut_gHoly1SkyboxTLUT.inc.c"
+};
+
+u64 gHoly1Skybox2Tex[TEX_LEN(u64, gHoly1Skybox2Tex_WIDTH, gHoly1Skybox2Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gHoly1Skybox2Tex.ci8.split_hi.tlut_gHoly1SkyboxTLUT.inc.c"
+};
+
+u64 gHoly1Skybox3Tex[TEX_LEN(u64, gHoly1Skybox3Tex_WIDTH, gHoly1Skybox3Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gHoly1Skybox3Tex.ci8.split_hi.tlut_gHoly1SkyboxTLUT.inc.c"
+};
+
+u64 gHoly1Skybox4Tex[TEX_LEN(u64, gHoly1Skybox4Tex_WIDTH, gHoly1Skybox4Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gHoly1Skybox4Tex.ci8.split_hi.tlut_gHoly1SkyboxTLUT.inc.c"
+};
+
+u64 gHoly1Skybox5Tex[TEX_LEN(u64, gHoly1Skybox5Tex_WIDTH, gHoly1Skybox5Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gHoly1Skybox5Tex.ci8.split_hi.tlut_gHoly1SkyboxTLUT.inc.c"
+};
+
+u64 gHoly1Skybox6Tex[TEX_LEN(u64, gHoly1Skybox6Tex_WIDTH, gHoly1Skybox6Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gHoly1Skybox6Tex.ci8.split_hi.tlut_gHoly1SkyboxTLUT.inc.c"
+};
+

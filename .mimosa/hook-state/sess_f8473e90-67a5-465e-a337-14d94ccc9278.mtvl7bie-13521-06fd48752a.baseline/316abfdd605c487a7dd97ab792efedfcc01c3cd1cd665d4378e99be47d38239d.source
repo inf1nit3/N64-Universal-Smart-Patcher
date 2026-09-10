@@ -1,0 +1,7 @@
+    {
+        ROOM_SHAPE_TYPE_CULLABLE, // type
+    }, // base
+    ARRAY_COUNT(spot18_room_0_03000390_RoomShapeCullable_0300039C_CullableEntries), // numEntries
+    spot18_room_0_03000390_RoomShapeCullable_0300039C_CullableEntries, // entries
+    spot18_room_0_03000390_RoomShapeCullable_0300039C_CullableEntries + ARRAY_COUNT(spot18_room_0_03000390_RoomShapeCullable_0300039C_CullableEntries), // entriesEnd
+

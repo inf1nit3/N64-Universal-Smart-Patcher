@@ -1,0 +1,14 @@
+#ifndef VR_KSVR_STATIC_H
+#define VR_KSVR_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gKokiriShopBgTex_WIDTH 256
+#define gKokiriShopBgTex_HEIGHT 256
+extern u64 gKokiriShopBgTex[TEX_LEN(u64, gKokiriShopBgTex_WIDTH, gKokiriShopBgTex_HEIGHT, 8)];
+#define gKokiriShop2BgTex_WIDTH 256
+#define gKokiriShop2BgTex_HEIGHT 256
+extern u64 gKokiriShop2BgTex[TEX_LEN(u64, gKokiriShop2BgTex_WIDTH, gKokiriShop2BgTex_HEIGHT, 8)];
+
+#endif

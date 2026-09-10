@@ -1,0 +1,20 @@
+#ifndef VR_LBVR_STATIC_H
+#define VR_LBVR_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gCowHouseBgTex_WIDTH 256
+#define gCowHouseBgTex_HEIGHT 256
+extern u64 gCowHouseBgTex[TEX_LEN(u64, gCowHouseBgTex_WIDTH, gCowHouseBgTex_HEIGHT, 8)];
+#define gCowHouse2BgTex_WIDTH 256
+#define gCowHouse2BgTex_HEIGHT 256
+extern u64 gCowHouse2BgTex[TEX_LEN(u64, gCowHouse2BgTex_WIDTH, gCowHouse2BgTex_HEIGHT, 8)];
+#define gCowHouse3BgTex_WIDTH 256
+#define gCowHouse3BgTex_HEIGHT 256
+extern u64 gCowHouse3BgTex[TEX_LEN(u64, gCowHouse3BgTex_WIDTH, gCowHouse3BgTex_HEIGHT, 8)];
+#define gCowHouse4BgTex_WIDTH 256
+#define gCowHouse4BgTex_HEIGHT 256
+extern u64 gCowHouse4BgTex[TEX_LEN(u64, gCowHouse4BgTex_WIDTH, gCowHouse4BgTex_HEIGHT, 8)];
+
+#endif

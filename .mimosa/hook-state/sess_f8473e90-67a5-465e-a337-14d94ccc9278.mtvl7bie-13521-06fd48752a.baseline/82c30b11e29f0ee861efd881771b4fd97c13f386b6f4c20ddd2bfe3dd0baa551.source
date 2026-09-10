@@ -1,0 +1,65 @@
+#include "drag_scene.h"
+#include "assets/scenes/shops/drag/drag_room_0.h"
+
+#include "actor.h"
+#include "array_count.h"
+#include "camera.h"
+#include "object.h"
+#include "segment_symbols.h"
+#include "sequence.h"
+#include "skybox.h"
+#include "stdbool.h"
+#include "ultra64.h"
+
+SceneCmd drag_scene[] = {
+#include "assets/scenes/shops/drag/drag_scene.inc.c"
+};
+
+ActorEntry drag_scene_02000058_PlayerEntryList[LENGTH_drag_scene_02000058_PlayerEntryList] = {
+#include "assets/scenes/shops/drag/drag_scene_02000058_PlayerEntryList.inc.c"
+};
+
+RomFile drag_scene_02000088_RoomList[LENGTH_drag_scene_02000088_RoomList] = {
+#include "assets/scenes/shops/drag/drag_scene_02000088_RoomList.inc.c"
+};
+
+Spawn drag_scene_02000090_SpawnList[] = {
+#include "assets/scenes/shops/drag/drag_scene_02000090_SpawnList.inc.c"
+};
+
+s16 drag_scene_02000098_ExitList[] = {
+#include "assets/scenes/shops/drag/drag_scene_02000098_ExitList.inc.c"
+};
+
+EnvLightSettings drag_scene_0200009C_EnvLightSettingsList[LENGTH_drag_scene_0200009C_EnvLightSettingsList] = {
+#include "assets/scenes/shops/drag/drag_scene_0200009C_EnvLightSettingsList.inc.c"
+};
+
+u8 drag_scene_zeros_0000B4[12] = { 0 };
+
+Vec3s drag_scene_020003C0_BgCamList_020000C0_BgCamFuncData[] = {
+#include "assets/scenes/shops/drag/drag_scene_020003C0_BgCamList_020000C0_BgCamFuncData.inc.c"
+};
+
+BgCamInfo drag_scene_020003C0_BgCamList[] = {
+#include "assets/scenes/shops/drag/drag_scene_020003C0_BgCamList.inc.c"
+};
+
+SurfaceType drag_scene_020003C0_SurfaceTypes[] = {
+#include "assets/scenes/shops/drag/drag_scene_020003C0_SurfaceTypes.inc.c"
+};
+
+CollisionPoly drag_scene_020003C0_PolyList[] = {
+#include "assets/scenes/shops/drag/drag_scene_020003C0_PolyList.inc.c"
+};
+
+Vec3s drag_scene_020003C0_VtxList[] = {
+#include "assets/scenes/shops/drag/drag_scene_020003C0_VtxList.inc.c"
+};
+
+CollisionHeader drag_scene_020003C0_Col = {
+#include "assets/scenes/shops/drag/drag_scene_020003C0_Col.inc.c"
+};
+
+u8 drag_scene_zeros_0003EC[4] = { 0 };
+

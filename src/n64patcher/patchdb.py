@@ -235,6 +235,7 @@ def load_patch_db(
                 except PatchDBError as e:
                     report(f"patch db: {e}")
                     continue
+                entry["origin_dir"] = directory
                 key = (entry["crc1"], entry["crc2"])
                 slots = db.setdefault(key, [])
                 for i, existing in enumerate(slots):

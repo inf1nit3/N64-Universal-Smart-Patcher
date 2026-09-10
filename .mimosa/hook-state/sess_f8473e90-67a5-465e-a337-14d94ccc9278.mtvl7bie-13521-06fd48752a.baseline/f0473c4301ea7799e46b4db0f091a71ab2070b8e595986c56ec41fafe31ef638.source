@@ -1,0 +1,17 @@
+#ifndef VR_K4VR_STATIC_H
+#define VR_K4VR_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gMidosHouseBgTex_WIDTH 256
+#define gMidosHouseBgTex_HEIGHT 256
+extern u64 gMidosHouseBgTex[TEX_LEN(u64, gMidosHouseBgTex_WIDTH, gMidosHouseBgTex_HEIGHT, 8)];
+#define gMidosHouse2BgTex_WIDTH 256
+#define gMidosHouse2BgTex_HEIGHT 256
+extern u64 gMidosHouse2BgTex[TEX_LEN(u64, gMidosHouse2BgTex_WIDTH, gMidosHouse2BgTex_HEIGHT, 8)];
+#define gMidosHouse3BgTex_WIDTH 256
+#define gMidosHouse3BgTex_HEIGHT 256
+extern u64 gMidosHouse3BgTex[TEX_LEN(u64, gMidosHouse3BgTex_WIDTH, gMidosHouse3BgTex_HEIGHT, 8)];
+
+#endif

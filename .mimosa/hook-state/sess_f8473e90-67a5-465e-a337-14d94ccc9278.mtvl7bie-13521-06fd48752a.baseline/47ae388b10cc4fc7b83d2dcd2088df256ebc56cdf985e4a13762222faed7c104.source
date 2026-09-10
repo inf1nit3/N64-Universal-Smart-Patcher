@@ -1,0 +1,9 @@
+    OBJECT_O_ANIME, // 0
+    OBJECT_OE_ANIME, // 1
+    OBJECT_OF1D_MAP, // 2
+    OBJECT_DU, // 3
+    OBJECT_GI_JEWEL, // 4
+    OBJECT_EFC_FLASH, // 5
+    OBJECT_WARP1, // 6
+    OBJECT_EFC_DOUGHNUT, // 7
+

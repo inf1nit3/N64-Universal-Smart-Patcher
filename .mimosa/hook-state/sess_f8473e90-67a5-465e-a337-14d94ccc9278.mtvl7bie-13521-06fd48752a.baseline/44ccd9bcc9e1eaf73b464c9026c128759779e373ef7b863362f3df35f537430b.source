@@ -1,0 +1,163 @@
+    {
+        ACTOR_OBJECT_KANKYO,
+        {   -188,      0,   1919 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 0
+    {
+        ACTOR_EN_WF,
+        {   -345,      0,   1658 }, // pos
+        {  0x0000,  0x09F5,  0x0000 }, // rot
+         0x1F00, // params
+    }, // 1
+    {
+        ACTOR_EN_GS,
+        {    200,    120,   1370 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x3816, // params
+    }, // 2
+    {
+        ACTOR_EN_GS,
+        {   -350,    120,    740 }, // pos
+        {  0x0000,  0x4000,  0x0000 }, // rot
+         0x3917, // params
+    }, // 3
+    {
+        ACTOR_EN_GS,
+        {   -330,    480,  -2300 }, // pos
+        {  0x0000,  0x5555,  0x0000 }, // rot
+         0x3A1C, // params
+    }, // 4
+    {
+        ACTOR_EN_DEKUNUTS,
+        {   -303,      0,    316 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x100 /* 0xFF00 */, // params
+    }, // 5
+    {
+        ACTOR_EN_DEKUNUTS,
+        {    374,      0,    578 }, // pos
+        {  0x0000, -0x40B6,  0x0000 }, // rot
+        -0x100 /* 0xFF00 */, // params
+    }, // 6
+    {
+        ACTOR_EN_DEKUNUTS,
+        {   -402,      0,   1177 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x0300, // params
+    }, // 7
+    {
+        ACTOR_EN_DEKUNUTS,
+        {    -38,    160,  -1255 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0300, // params
+    }, // 8
+    {
+        ACTOR_EN_DEKUNUTS,
+        {     24,    160,   -947 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0300, // params
+    }, // 9
+    {
+        ACTOR_EN_DEKUNUTS,
+        {    289,      0,   1183 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0300, // params
+    }, // 10
+    {
+        ACTOR_DOOR_ANA,
+        {    310,    480,  -2300 }, // pos
+        {  0x0000, -0x5555,  0x000A }, // rot
+         0x01EE, // params
+    }, // 11
+    {
+        ACTOR_EN_WONDER_ITEM,
+        {   -204,      0,   1283 }, // pos
+        {  0x0000,  0x0000,  0x0001 }, // rot
+         0x123F, // params
+    }, // 12
+    {
+        ACTOR_EN_WONDER_ITEM,
+        {    100,      0,   1375 }, // pos
+        {  0x0000,  0x0000,  0x0001 }, // rot
+         0x123F, // params
+    }, // 13
+    {
+        ACTOR_EN_WONDER_ITEM,
+        {    299,      0,    285 }, // pos
+        {  0x0000,  0x0000,  0x0001 }, // rot
+         0x123F, // params
+    }, // 14
+    {
+        ACTOR_EN_WONDER_ITEM,
+        {   -351,      1,   2121 }, // pos
+        {  0x0000,  0x0000,  0x0001 }, // rot
+         0x127F, // params
+    }, // 15
+    {
+        ACTOR_EN_WONDER_ITEM,
+        {   -199,      0,    177 }, // pos
+        {  0x0000,  0x0000,  0x0001 }, // rot
+         0x127F, // params
+    }, // 16
+    {
+        ACTOR_EN_WONDER_ITEM,
+        {    100,      0,   1084 }, // pos
+        {  0x0000,  0x0000,  0x0001 }, // rot
+         0x127F, // params
+    }, // 17
+    {
+        ACTOR_BG_SPOT05_SOKO,
+        {   -200,      0,   1613 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x1F01, // params
+    }, // 18
+    {
+        ACTOR_BG_SPOT05_SOKO,
+        {   -550,    -23,   1473 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 19
+    {
+        ACTOR_BG_SPOT05_SOKO,
+        {   -256,    -23,    523 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 20
+    {
+        ACTOR_BG_SPOT05_SOKO,
+        {    352,    -80,    -68 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 21
+    {
+        ACTOR_BG_SPOT05_SOKO,
+        {    450,    -80,    874 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 22
+    {
+        ACTOR_EN_SA,
+        {    118,    489,  -2941 }, // pos
+        {  0x0000, -0xCCD,  0x0000 }, // rot
+         0x0000, // params
+    }, // 23
+    {
+        ACTOR_BG_MJIN,
+        {      8,    480,  -2610 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0006, // params
+    }, // 24
+    {
+        ACTOR_DOOR_ANA,
+        {     45,      0,    220 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x10FF, // params
+    }, // 25
+    {
+        ACTOR_DOOR_ANA,
+        {   -195,      0,   1900 }, // pos
+        {  0x0000, -0x8000,  0x0008 }, // rot
+         0x02ED, // params
+    }, // 26
+

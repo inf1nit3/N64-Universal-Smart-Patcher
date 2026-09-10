@@ -452,6 +452,15 @@ Credit: SM64 H2X by dataDave (DavidFallows) —
 <https://github.com/DavidFallows/sm64>. Bundled as a patch file only; no
 ROM content is distributed.
 
+**Zelda - Ocarina of Time (USA) Rev 0: an experimental 640x480i build is
+available** as a user-installable recipe (see `scripts/oot_hires/`).
+Developed in-project from the zeldaret/oot decompilation: the game's own
+runtime-width machinery is enabled and the framebuffers move into the
+Expansion Pak area, so the 3D world renders full-screen 640x480. Menus
+and HUD keep the original 320-space layout (upper-left quadrant) for now.
+Emulator-verified; hardware validation pending — therefore not bundled
+with the tool by default.
+
 Check before patching:
 
 ```bash

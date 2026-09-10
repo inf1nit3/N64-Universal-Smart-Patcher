@@ -1,0 +1,151 @@
+    {
+        ACTOR_EN_LIGHT,
+        {    -59,   -603,   -660 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x03F4, // params
+    }, // 0
+    {
+        ACTOR_EN_LIGHT,
+        {    323,      0,   -462 }, // pos
+        {  0x0000, -0x58E4,  0x0000 }, // rot
+         0x03F5, // params
+    }, // 1
+    {
+        ACTOR_EN_LIGHT,
+        {    339,      0,   -492 }, // pos
+        {  0x0000, -0x58E4,  0x0000 }, // rot
+         0x03F7, // params
+    }, // 2
+    {
+        ACTOR_EN_LIGHT,
+        {    299,      0,   -434 }, // pos
+        {  0x0000, -0x58E4,  0x0000 }, // rot
+         0x03F8, // params
+    }, // 3
+    {
+        ACTOR_DEMO_EC,
+        {    244,      0,   -942 }, // pos
+        {  0x0000,  0x0C17,  0x0000 }, // rot
+         0x0021, // params
+    }, // 4
+    {
+        ACTOR_DEMO_EC,
+        {   1229,      0,    -65 }, // pos
+        {  0x0000, -0x5BBC,  0x0000 }, // rot
+         0x0020, // params
+    }, // 5
+    {
+        ACTOR_DEMO_EC,
+        {    441,      0,   -390 }, // pos
+        {  0x0000, -0x64FA,  0x0000 }, // rot
+         0x001F, // params
+    }, // 6
+    {
+        ACTOR_DEMO_EC,
+        {    493,      0,   -446 }, // pos
+        {  0x0000, -0x5777,  0x0000 }, // rot
+         0x001E, // params
+    }, // 7
+    {
+        ACTOR_DEMO_EC,
+        {   -153,      0,   -444 }, // pos
+        {  0x0000,  0x6889,  0x0000 }, // rot
+         0x001D, // params
+    }, // 8
+    {
+        ACTOR_DEMO_EC,
+        {   -177,      0,   -459 }, // pos
+        {  0x0000,  0x6889,  0x0000 }, // rot
+         0x001C, // params
+    }, // 9
+    {
+        ACTOR_DEMO_EC,
+        {   -206,      0,   -477 }, // pos
+        {  0x0000,  0x6889,  0x0000 }, // rot
+         0x001B, // params
+    }, // 10
+    {
+        ACTOR_DEMO_EC,
+        {   -231,      0,   -493 }, // pos
+        {  0x0000,  0x6889,  0x0000 }, // rot
+         0x001A, // params
+    }, // 11
+    {
+        ACTOR_DEMO_EC,
+        {    326,      0,   -644 }, // pos
+        {  0x0000, -0x4AAB,  0x0000 }, // rot
+         0x0019, // params
+    }, // 12
+    {
+        ACTOR_DEMO_EC,
+        {    326,      0,   -644 }, // pos
+        {  0x0000, -0x4AAB,  0x0000 }, // rot
+         0x0016, // params
+    }, // 13
+    {
+        ACTOR_DEMO_EC,
+        {    326,      0,   -644 }, // pos
+        {  0x0000, -0x4AAB,  0x0000 }, // rot
+         0x0017, // params
+    }, // 14
+    {
+        ACTOR_DEMO_EC,
+        {    326,      0,   -644 }, // pos
+        {  0x0000, -0x4AAB,  0x0000 }, // rot
+         0x0018, // params
+    }, // 15
+    {
+        ACTOR_DEMO_EC,
+        {    874,      0,   -251 }, // pos
+        {  0x0000, -0x599A,  0x0000 }, // rot
+         0x001E, // params
+    }, // 16
+    {
+        ACTOR_DEMO_EC,
+        {    966,      0,   -372 }, // pos
+        {  0x0000, -0x599A,  0x0000 }, // rot
+         0x001E, // params
+    }, // 17
+    {
+        ACTOR_DEMO_EC,
+        {    600,      0,   -135 }, // pos
+        {  0x0000, -0x6AAB,  0x0000 }, // rot
+         0x0010, // params
+    }, // 18
+    {
+        ACTOR_DEMO_EC,
+        {    560,      0,   -114 }, // pos
+        {  0x0000, -0x6AAB,  0x0000 }, // rot
+         0x0011, // params
+    }, // 19
+    {
+        ACTOR_DEMO_EC,
+        {    528,      0,    -88 }, // pos
+        {  0x0000, -0x6AAB,  0x0000 }, // rot
+         0x0012, // params
+    }, // 20
+    {
+        ACTOR_DEMO_EC,
+        {    643,      0,   -151 }, // pos
+        {  0x0000, -0x6AAB,  0x0000 }, // rot
+         0x0012, // params
+    }, // 21
+    {
+        ACTOR_DEMO_EC,
+        {    495,      0,    -63 }, // pos
+        {  0x0000, -0x6AAB,  0x0000 }, // rot
+         0x0010, // params
+    }, // 22
+    {
+        ACTOR_EN_TG,
+        {    567,      0,   -270 }, // pos
+        {  0x0000, -0x69F5,  0x0000 }, // rot
+         0x0000, // params
+    }, // 23
+    {
+        ACTOR_DEMO_EC,
+        {    464,      0,    -44 }, // pos
+        {  0x0000, -0x6AAB,  0x0000 }, // rot
+         0x0011, // params
+    }, // 24
+

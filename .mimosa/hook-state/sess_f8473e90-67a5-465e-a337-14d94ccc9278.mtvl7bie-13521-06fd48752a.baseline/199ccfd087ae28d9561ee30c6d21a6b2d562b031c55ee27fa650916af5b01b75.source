@@ -1,0 +1,56 @@
+#include "spot13_room_0.h"
+#include "assets/scenes/overworld/spot13/spot13_scene.h"
+
+#include "actor.h"
+#include "array_count.h"
+#include "gfx.h"
+#include "object.h"
+#include "sequence.h"
+#include "skybox.h"
+#include "sys_matrix.h"
+#include "ultra64.h"
+
+SceneCmd spot13_room_0[] = {
+#include "assets/scenes/overworld/spot13/spot13_room_0.inc.c"
+};
+
+s16 spot13_room_0_03000048_ObjectList[LENGTH_spot13_room_0_03000048_ObjectList] = {
+#include "assets/scenes/overworld/spot13/spot13_room_0_03000048_ObjectList.inc.c"
+};
+
+ActorEntry spot13_room_0_03000060_ActorEntryList[LENGTH_spot13_room_0_03000060_ActorEntryList] = {
+#include "assets/scenes/overworld/spot13/spot13_room_0_03000060_ActorEntryList.inc.c"
+};
+
+RoomShapeNormal spot13_room_0_030000E0_RoomShapeNormal = {
+#include "assets/scenes/overworld/spot13/spot13_room_0_030000E0_RoomShapeNormal.inc.c"
+};
+
+RoomShapeDListsEntry spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries[LENGTH_spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries] = {
+#include "assets/scenes/overworld/spot13/spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries.inc.c"
+};
+
+u8 spot13_room_0_unaccounted_0000F4[] = {
+#include "assets/scenes/overworld/spot13/spot13_room_0_unaccounted_0000F4.bin.inc.c"
+};
+
+Vtx spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL_03000560_DL_03000100_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot13/spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL_03000560_DL_03000100_Vtx_fused_.inc.c"
+};
+
+Gfx spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL_03000560_DL[65] = {
+#include "assets/scenes/overworld/spot13/spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL_03000560_DL.inc.c"
+};
+
+Vtx spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL_03000838_DL_03000768_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot13/spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL_03000838_DL_03000768_Vtx_fused_.inc.c"
+};
+
+Gfx spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL_03000838_DL[24] = {
+#include "assets/scenes/overworld/spot13/spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL_03000838_DL.inc.c"
+};
+
+Gfx spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL[3] = {
+#include "assets/scenes/overworld/spot13/spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL.inc.c"
+};
+

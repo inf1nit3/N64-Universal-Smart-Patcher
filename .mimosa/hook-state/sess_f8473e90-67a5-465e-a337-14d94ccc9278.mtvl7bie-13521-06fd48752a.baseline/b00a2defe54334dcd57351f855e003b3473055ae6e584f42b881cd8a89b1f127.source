@@ -1,0 +1,5 @@
+    OBJECT_SPOT04_OBJECTS, // 0
+    OBJECT_BIRD, // 1
+    OBJECT_WOOD02, // 2
+    OBJECT_WARP1, // 3
+

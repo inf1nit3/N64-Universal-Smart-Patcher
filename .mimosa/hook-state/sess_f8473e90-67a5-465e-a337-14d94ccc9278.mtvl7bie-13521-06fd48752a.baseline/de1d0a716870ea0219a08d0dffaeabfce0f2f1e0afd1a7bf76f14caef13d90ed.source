@@ -1,0 +1,12 @@
+    {
+        {
+            // { room, bgCamIndex }
+            { 0, -1 },
+            { 0, -1 },
+        }, // sides
+        ACTOR_EN_DOOR,
+        {   1212,   1128,   3059 }, // pos
+        -0x8000, // rotY
+        ENDOOR_PARAMS_NODATA(DOOR_ROOMLOAD, false) /* 0x003F */, // params
+    }, // 0
+

@@ -1,0 +1,8 @@
+    OBJECT_MJIN, // 0
+    OBJECT_MJIN_SOUL, // 1
+    OBJECT_MJIN_OKA, // 2
+    OBJECT_XC, // 3
+    OBJECT_GI_MELODY, // 4
+    OBJECT_EFC_FLASH, // 5
+    OBJECT_OWL, // 6
+

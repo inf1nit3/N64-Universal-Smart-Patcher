@@ -1,0 +1,20 @@
+#ifndef VR_KKRVR_STATIC_H
+#define VR_KKRVR_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gCarpentersHouseBgTex_WIDTH 256
+#define gCarpentersHouseBgTex_HEIGHT 256
+extern u64 gCarpentersHouseBgTex[TEX_LEN(u64, gCarpentersHouseBgTex_WIDTH, gCarpentersHouseBgTex_HEIGHT, 8)];
+#define gCarpentersHouse2BgTex_WIDTH 256
+#define gCarpentersHouse2BgTex_HEIGHT 256
+extern u64 gCarpentersHouse2BgTex[TEX_LEN(u64, gCarpentersHouse2BgTex_WIDTH, gCarpentersHouse2BgTex_HEIGHT, 8)];
+#define gCarpentersHouse3BgTex_WIDTH 256
+#define gCarpentersHouse3BgTex_HEIGHT 256
+extern u64 gCarpentersHouse3BgTex[TEX_LEN(u64, gCarpentersHouse3BgTex_WIDTH, gCarpentersHouse3BgTex_HEIGHT, 8)];
+#define gCarpentersHouse4BgTex_WIDTH 256
+#define gCarpentersHouse4BgTex_HEIGHT 256
+extern u64 gCarpentersHouse4BgTex[TEX_LEN(u64, gCarpentersHouse4BgTex_WIDTH, gCarpentersHouse4BgTex_HEIGHT, 8)];
+
+#endif

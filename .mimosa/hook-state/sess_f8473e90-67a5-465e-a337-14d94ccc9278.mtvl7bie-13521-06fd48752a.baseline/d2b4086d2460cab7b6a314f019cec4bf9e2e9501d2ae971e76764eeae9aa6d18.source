@@ -1,0 +1,19 @@
+#include "vr_RUVR_pal_static.h"
+
+
+u64 gMarketRuinsBgTLUT[] = {
+#include "assets/textures/backgrounds/gMarketRuinsBgTex.tlut.rgba16.inc.c"
+};
+
+u64 gMarketRuinsBg2TLUT[] = {
+#include "assets/textures/backgrounds/gMarketRuins2BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gMarketRuinsBg3TLUT[] = {
+#include "assets/textures/backgrounds/gMarketRuins3BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gMarketRuinsBg4TLUT[] = {
+#include "assets/textures/backgrounds/gMarketRuins4BgTex.tlut.rgba16.inc.c"
+};
+

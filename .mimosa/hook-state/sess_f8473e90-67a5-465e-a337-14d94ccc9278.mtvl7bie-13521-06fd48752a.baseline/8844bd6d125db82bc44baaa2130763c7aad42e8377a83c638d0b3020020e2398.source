@@ -1,0 +1,9 @@
+    OBJECT_SPOT17_OBJ, // 0
+    OBJECT_HIDAN_OBJECTS, // 1
+    OBJECT_MJIN, // 2
+    OBJECT_MJIN_FLAME, // 3
+    OBJECT_EFC_FLASH, // 4
+    OBJECT_BB, // 5
+    OBJECT_XC, // 6
+    OBJECT_GI_MELODY, // 7
+

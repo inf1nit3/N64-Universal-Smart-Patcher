@@ -1,0 +1,25 @@
+#ifndef FACE_SHOP_ROOM_0_H
+#define FACE_SHOP_ROOM_0_H
+
+#include "gfx.h"
+#include "room.h"
+#include "scene.h"
+#include "ultra64.h"
+
+extern SceneCmd face_shop_room_0[];
+#define LENGTH_face_shop_room_0_03000040_ObjectList 13
+extern s16 face_shop_room_0_03000040_ObjectList[LENGTH_face_shop_room_0_03000040_ObjectList];
+#define LENGTH_face_shop_room_0_0300005C_ActorEntryList 4
+extern ActorEntry face_shop_room_0_0300005C_ActorEntryList[LENGTH_face_shop_room_0_0300005C_ActorEntryList];
+extern RoomShapeImageSingle face_shop_room_0_030000A0_RoomShapeImageSingle;
+extern RoomShapeDListsEntry face_shop_room_0_030000A0_RoomShapeImageSingle_030000C0_RoomShapeDListsEntry;
+extern Vtx face_shop_room_0_030000A0_RoomShapeImageSingle_030000C0_RoomShapeDListsEntry_03008E08_DL_03007240_DL_030000D0_Vtx_fused_[];
+extern Gfx face_shop_room_0_030000A0_RoomShapeImageSingle_030000C0_RoomShapeDListsEntry_03008E08_DL_03007240_DL[18];
+extern Gfx face_shop_room_0_030000A0_RoomShapeImageSingle_030000C0_RoomShapeDListsEntry_03008E08_DL_030072D0_DL[24];
+extern Gfx face_shop_room_0_030000A0_RoomShapeImageSingle_030000C0_RoomShapeDListsEntry_03008E08_DL_03007390_DL[831];
+extern Gfx face_shop_room_0_030000A0_RoomShapeImageSingle_030000C0_RoomShapeDListsEntry_03008E08_DL_03008D88_DL[16];
+extern Gfx face_shop_room_0_030000A0_RoomShapeImageSingle_030000C0_RoomShapeDListsEntry_03008E08_DL[5];
+extern u8 face_shop_room_0_unaccounted_008E30[];
+extern u64 face_shop_room_0_030000A0_RoomShapeImageSingle_03008E40_JFIF[SCREEN_WIDTH * SCREEN_HEIGHT * G_IM_SIZ_16b_BYTES / sizeof(u64)];
+
+#endif

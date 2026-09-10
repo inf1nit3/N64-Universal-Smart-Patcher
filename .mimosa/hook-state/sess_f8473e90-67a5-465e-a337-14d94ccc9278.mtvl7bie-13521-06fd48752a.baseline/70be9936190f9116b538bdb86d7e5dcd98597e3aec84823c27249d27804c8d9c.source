@@ -1,0 +1,31 @@
+    {
+        ACTOR_BG_TREEMOUTH,
+        {   3882,   -171,  -1161 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 0
+    {
+        ACTOR_DEMO_EFFECT,
+        {   3561,   -169,  -1674 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0013, // params
+    }, // 1
+    {
+        ACTOR_DEMO_EFFECT,
+        {   3652,   -177,   -976 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x2112, // params
+    }, // 2
+    {
+        ACTOR_OBJECT_KANKYO,
+        {    378,      0,    483 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 3
+    {
+        ACTOR_OBJECT_KANKYO,
+        {   3580,   -164,   -365 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 4
+

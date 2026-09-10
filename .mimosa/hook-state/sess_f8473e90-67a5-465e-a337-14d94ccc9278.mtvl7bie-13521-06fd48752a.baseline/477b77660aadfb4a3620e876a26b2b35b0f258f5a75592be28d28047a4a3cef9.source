@@ -1,0 +1,17 @@
+#ifndef VR_TTVR_STATIC_H
+#define VR_TTVR_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gCarpentersTentBgTex_WIDTH 256
+#define gCarpentersTentBgTex_HEIGHT 256
+extern u64 gCarpentersTentBgTex[TEX_LEN(u64, gCarpentersTentBgTex_WIDTH, gCarpentersTentBgTex_HEIGHT, 8)];
+#define gCarpentersTent2BgTex_WIDTH 256
+#define gCarpentersTent2BgTex_HEIGHT 256
+extern u64 gCarpentersTent2BgTex[TEX_LEN(u64, gCarpentersTent2BgTex_WIDTH, gCarpentersTent2BgTex_HEIGHT, 8)];
+#define gCarpentersTent3BgTex_WIDTH 256
+#define gCarpentersTent3BgTex_HEIGHT 256
+extern u64 gCarpentersTent3BgTex[TEX_LEN(u64, gCarpentersTent3BgTex_WIDTH, gCarpentersTent3BgTex_HEIGHT, 8)];
+
+#endif

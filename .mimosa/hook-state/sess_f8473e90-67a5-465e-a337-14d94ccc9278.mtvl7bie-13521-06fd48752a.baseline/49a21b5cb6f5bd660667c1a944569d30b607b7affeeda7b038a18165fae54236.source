@@ -1,0 +1,11 @@
+    OBJECT_EC, // 0
+    OBJECT_KM1, // 1
+    OBJECT_KW1, // 2
+    OBJECT_ZO, // 3
+    OBJECT_GE1, // 4
+    OBJECT_MD, // 5
+    OBJECT_KZ, // 6
+    OBJECT_EFC_FLASH, // 7
+    OBJECT_MU, // 8
+    OBJECT_OF1D_MAP, // 9
+

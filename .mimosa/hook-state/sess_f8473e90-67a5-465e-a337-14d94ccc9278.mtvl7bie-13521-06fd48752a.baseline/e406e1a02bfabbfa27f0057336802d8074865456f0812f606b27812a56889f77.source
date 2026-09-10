@@ -1,0 +1,27 @@
+#ifndef ZOORA_SCENE_H
+#define ZOORA_SCENE_H
+
+#include "bgcheck.h"
+#include "environment.h"
+#include "romfile.h"
+#include "scene.h"
+#include "ultra64.h"
+#include "z_math.h"
+
+extern SceneCmd zoora_scene[];
+#define LENGTH_zoora_scene_02000050_PlayerEntryList 1
+extern ActorEntry zoora_scene_02000050_PlayerEntryList[LENGTH_zoora_scene_02000050_PlayerEntryList];
+#define LENGTH_zoora_scene_02000060_RoomList 1
+extern RomFile zoora_scene_02000060_RoomList[LENGTH_zoora_scene_02000060_RoomList];
+extern Spawn zoora_scene_02000068_SpawnList[];
+extern s16 zoora_scene_0200006C_ExitList[];
+#define LENGTH_zoora_scene_02000070_EnvLightSettingsList 1
+extern EnvLightSettings zoora_scene_02000070_EnvLightSettingsList[LENGTH_zoora_scene_02000070_EnvLightSettingsList];
+extern Vec3s zoora_scene_02000360_BgCamList_02000090_BgCamFuncData[];
+extern BgCamInfo zoora_scene_02000360_BgCamList[];
+extern SurfaceType zoora_scene_02000360_SurfaceTypes[];
+extern CollisionPoly zoora_scene_02000360_PolyList[];
+extern Vec3s zoora_scene_02000360_VtxList[];
+extern CollisionHeader zoora_scene_02000360_Col;
+
+#endif

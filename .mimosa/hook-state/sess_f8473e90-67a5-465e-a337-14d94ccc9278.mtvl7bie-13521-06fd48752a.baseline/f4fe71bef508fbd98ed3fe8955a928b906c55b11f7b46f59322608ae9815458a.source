@@ -1,0 +1,25 @@
+    {
+        ACTOR_BG_TREEMOUTH,
+        {   3882,   -171,  -1161 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 0
+    {
+        ACTOR_OBJECT_KANKYO,
+        {   -239,    120,    597 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 1
+    {
+        ACTOR_OBJECT_KANKYO,
+        {   3806,   -179,   -252 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 2
+    {
+        ACTOR_DOOR_WARP1,
+        {   2857,      0,   -594 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0006, // params
+    }, // 3
+

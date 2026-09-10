@@ -1,0 +1,11 @@
+    {
+        {  60,  60,  70 }, // ambientColor
+        {   52,   92,   69 }, // light1Dir
+        { 200, 255, 255 }, // light1Color
+        {  -49,   88,   76 }, // light2Dir
+        {  50,  50,  70 }, // light2Color
+        { 140, 140, 100 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(252, 977), // blendRateAndFogNear
+        5800, // zFar
+    }, // 0
+

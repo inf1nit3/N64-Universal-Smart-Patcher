@@ -1,0 +1,19 @@
+#include "vr_RUVR_static.h"
+
+
+u64 gMarketRuinsBgTex[TEX_LEN(u64, gMarketRuinsBgTex_WIDTH, gMarketRuinsBgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gMarketRuinsBgTex.ci8.inc.c"
+};
+
+u64 gMarketRuins2BgTex[TEX_LEN(u64, gMarketRuins2BgTex_WIDTH, gMarketRuins2BgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gMarketRuins2BgTex.ci8.inc.c"
+};
+
+u64 gMarketRuins3BgTex[TEX_LEN(u64, gMarketRuins3BgTex_WIDTH, gMarketRuins3BgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gMarketRuins3BgTex.ci8.inc.c"
+};
+
+u64 gMarketRuins4BgTex[TEX_LEN(u64, gMarketRuins4BgTex_WIDTH, gMarketRuins4BgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gMarketRuins4BgTex.ci8.inc.c"
+};
+

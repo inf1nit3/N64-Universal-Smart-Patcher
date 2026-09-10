@@ -1,0 +1,34 @@
+    {
+        {
+            // { room, bgCamIndex }
+            { 2, -1 },
+            { 2, -1 },
+        }, // sides
+        ACTOR_EN_HOLL,
+        {   -785,    120,   1159 }, // pos
+        -0x8000, // rotY
+         0x013F, // params
+    }, // 0
+    {
+        {
+            // { room, bgCamIndex }
+            { 2, -1 },
+            { 2, -1 },
+        }, // sides
+        ACTOR_EN_HOLL,
+        {   -785,    120,   1279 }, // pos
+         0x0000, // rotY
+         0x013F, // params
+    }, // 1
+    {
+        {
+            // { room, bgCamIndex }
+            { 1, -1 },
+            { 0, -1 },
+        }, // sides
+        ACTOR_EN_HOLL,
+        {   2160,     -1,   -148 }, // pos
+         0x0000, // rotY
+         0x013F, // params
+    }, // 2
+

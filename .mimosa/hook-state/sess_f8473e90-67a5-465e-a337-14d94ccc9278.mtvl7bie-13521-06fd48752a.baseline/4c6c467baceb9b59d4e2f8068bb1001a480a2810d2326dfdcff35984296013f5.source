@@ -1,0 +1,23 @@
+#ifndef SPOT13_ROOM_0_H
+#define SPOT13_ROOM_0_H
+
+#include "room.h"
+#include "scene.h"
+#include "ultra64.h"
+
+extern SceneCmd spot13_room_0[];
+#define LENGTH_spot13_room_0_03000048_ObjectList 11
+extern s16 spot13_room_0_03000048_ObjectList[LENGTH_spot13_room_0_03000048_ObjectList];
+#define LENGTH_spot13_room_0_03000060_ActorEntryList 8
+extern ActorEntry spot13_room_0_03000060_ActorEntryList[LENGTH_spot13_room_0_03000060_ActorEntryList];
+extern RoomShapeNormal spot13_room_0_030000E0_RoomShapeNormal;
+#define LENGTH_spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries 1
+extern RoomShapeDListsEntry spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries[LENGTH_spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries];
+extern u8 spot13_room_0_unaccounted_0000F4[];
+extern Vtx spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL_03000560_DL_03000100_Vtx_fused_[];
+extern Gfx spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL_03000560_DL[65];
+extern Vtx spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL_03000838_DL_03000768_Vtx_fused_[];
+extern Gfx spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL_03000838_DL[24];
+extern Gfx spot13_room_0_030000E0_RoomShapeNormal_030000EC_DListsEntries_030008F8_DL[3];
+
+#endif

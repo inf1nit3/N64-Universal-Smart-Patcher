@@ -1,0 +1,151 @@
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   1896,     95,     80 }, // pos
+        {  0x0000,  0x4000,  0x0000 }, // rot
+         0x129F, // params
+    }, // 0
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   1930,     95,    -39 }, // pos
+        {  0x0000,  0x2AAB,  0x0000 }, // rot
+         0x129F, // params
+    }, // 1
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   1930,     95,    199 }, // pos
+        {  0x0000,  0x5555,  0x0000 }, // rot
+         0x129F, // params
+    }, // 2
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   1971,     95,     38 }, // pos
+        {  0x0000,  0x33E9,  0x0000 }, // rot
+         0x129F, // params
+    }, // 3
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   1972,     95,    121 }, // pos
+        {  0x0000,  0x4B61,  0x0000 }, // rot
+         0x129F, // params
+    }, // 4
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2011,     95,    197 }, // pos
+        {  0x0000,  0x6000,  0x0000 }, // rot
+         0x129F, // params
+    }, // 5
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2015,     95,   -127 }, // pos
+        {  0x0000,  0x18E4,  0x0000 }, // rot
+         0x129F, // params
+    }, // 6
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2015,     95,    284 }, // pos
+        {  0x0000,  0x671C,  0x0000 }, // rot
+         0x129F, // params
+    }, // 7
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2016,     95,    -41 }, // pos
+        {  0x0000,  0x216C,  0x0000 }, // rot
+         0x129F, // params
+    }, // 8
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2093,     95,    -86 }, // pos
+        {  0x0000,  0x0B61,  0x0000 }, // rot
+         0x129F, // params
+    }, // 9
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2093,     95,    245 }, // pos
+        {  0x0000,  0x749F,  0x0000 }, // rot
+         0x129F, // params
+    }, // 10
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2136,     95,   -158 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x129F, // params
+    }, // 11
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2136,     95,    318 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x129F, // params
+    }, // 12
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2178,     95,    -84 }, // pos
+        {  0x0000, -0xB61,  0x0000 }, // rot
+         0x129F, // params
+    }, // 13
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2180,     95,    245 }, // pos
+        {  0x0000, -0x7555,  0x0000 }, // rot
+         0x129F, // params
+    }, // 14
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2254,     95,   -127 }, // pos
+        {  0x0000, -0x1555,  0x0000 }, // rot
+         0x129F, // params
+    }, // 15
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2256,     95,    288 }, // pos
+        {  0x0000, -0x671C,  0x0000 }, // rot
+         0x129F, // params
+    }, // 16
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2259,     95,    -38 }, // pos
+        {  0x0000, -0x20B6,  0x0000 }, // rot
+         0x129F, // params
+    }, // 17
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2260,     95,    200 }, // pos
+        {  0x0000, -0x60B6,  0x0000 }, // rot
+         0x129F, // params
+    }, // 18
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2294,     95,     39 }, // pos
+        {  0x0000, -0x327D,  0x0000 }, // rot
+         0x129F, // params
+    }, // 19
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2302,     95,    123 }, // pos
+        {  0x0000, -0x4D83,  0x0000 }, // rot
+         0x129F, // params
+    }, // 20
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2343,     95,    -39 }, // pos
+        {  0x0000, -0x2AAB,  0x0000 }, // rot
+         0x129F, // params
+    }, // 21
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2343,     95,    199 }, // pos
+        {  0x0000, -0x5555,  0x0000 }, // rot
+         0x129F, // params
+    }, // 22
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {   2376,     95,     82 }, // pos
+        {  0x0000, -0x40B6,  0x0000 }, // rot
+         0x129F, // params
+    }, // 23
+    {
+        ACTOR_BG_SPOT02_OBJECTS,
+        {   2676,    100,     80 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x1F00, // params
+    }, // 24
+

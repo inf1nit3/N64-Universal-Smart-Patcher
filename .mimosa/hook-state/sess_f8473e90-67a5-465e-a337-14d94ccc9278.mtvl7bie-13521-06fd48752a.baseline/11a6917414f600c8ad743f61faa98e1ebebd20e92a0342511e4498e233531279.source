@@ -1,0 +1,23 @@
+#ifndef VR_FINE0_STATIC_H
+#define VR_FINE0_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gSunriseSkybox1Tex_WIDTH 128
+#define gSunriseSkybox1Tex_HEIGHT 64
+extern u64 gSunriseSkybox1Tex[TEX_LEN(u64, gSunriseSkybox1Tex_WIDTH, gSunriseSkybox1Tex_HEIGHT, 8)];
+#define gSunriseSkybox2Tex_WIDTH 128
+#define gSunriseSkybox2Tex_HEIGHT 64
+extern u64 gSunriseSkybox2Tex[TEX_LEN(u64, gSunriseSkybox2Tex_WIDTH, gSunriseSkybox2Tex_HEIGHT, 8)];
+#define gSunriseSkybox3Tex_WIDTH 128
+#define gSunriseSkybox3Tex_HEIGHT 64
+extern u64 gSunriseSkybox3Tex[TEX_LEN(u64, gSunriseSkybox3Tex_WIDTH, gSunriseSkybox3Tex_HEIGHT, 8)];
+#define gSunriseSkybox4Tex_WIDTH 128
+#define gSunriseSkybox4Tex_HEIGHT 64
+extern u64 gSunriseSkybox4Tex[TEX_LEN(u64, gSunriseSkybox4Tex_WIDTH, gSunriseSkybox4Tex_HEIGHT, 8)];
+#define gSunriseSkybox5Tex_WIDTH 128
+#define gSunriseSkybox5Tex_HEIGHT 128
+extern u64 gSunriseSkybox5Tex[TEX_LEN(u64, gSunriseSkybox5Tex_WIDTH, gSunriseSkybox5Tex_HEIGHT, 8)];
+
+#endif

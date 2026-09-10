@@ -1,0 +1,23 @@
+#ifndef VR_CLOUD1_STATIC_H
+#define VR_CLOUD1_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gDayOvercastSkybox1Tex_WIDTH 128
+#define gDayOvercastSkybox1Tex_HEIGHT 64
+extern u64 gDayOvercastSkybox1Tex[TEX_LEN(u64, gDayOvercastSkybox1Tex_WIDTH, gDayOvercastSkybox1Tex_HEIGHT, 8)];
+#define gDayOvercastSkybox2Tex_WIDTH 128
+#define gDayOvercastSkybox2Tex_HEIGHT 64
+extern u64 gDayOvercastSkybox2Tex[TEX_LEN(u64, gDayOvercastSkybox2Tex_WIDTH, gDayOvercastSkybox2Tex_HEIGHT, 8)];
+#define gDayOvercastSkybox3Tex_WIDTH 128
+#define gDayOvercastSkybox3Tex_HEIGHT 64
+extern u64 gDayOvercastSkybox3Tex[TEX_LEN(u64, gDayOvercastSkybox3Tex_WIDTH, gDayOvercastSkybox3Tex_HEIGHT, 8)];
+#define gDayOvercastSkybox4Tex_WIDTH 128
+#define gDayOvercastSkybox4Tex_HEIGHT 64
+extern u64 gDayOvercastSkybox4Tex[TEX_LEN(u64, gDayOvercastSkybox4Tex_WIDTH, gDayOvercastSkybox4Tex_HEIGHT, 8)];
+#define gDayOvercastSkybox5Tex_WIDTH 128
+#define gDayOvercastSkybox5Tex_HEIGHT 128
+extern u64 gDayOvercastSkybox5Tex[TEX_LEN(u64, gDayOvercastSkybox5Tex_WIDTH, gDayOvercastSkybox5Tex_HEIGHT, 8)];
+
+#endif

@@ -1,0 +1,20 @@
+#ifndef VR_MNVR_STATIC_H
+#define VR_MNVR_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gMarketNightBgTex_WIDTH 256
+#define gMarketNightBgTex_HEIGHT 256
+extern u64 gMarketNightBgTex[TEX_LEN(u64, gMarketNightBgTex_WIDTH, gMarketNightBgTex_HEIGHT, 8)];
+#define gMarketNight2BgTex_WIDTH 256
+#define gMarketNight2BgTex_HEIGHT 256
+extern u64 gMarketNight2BgTex[TEX_LEN(u64, gMarketNight2BgTex_WIDTH, gMarketNight2BgTex_HEIGHT, 8)];
+#define gMarketNight3BgTex_WIDTH 256
+#define gMarketNight3BgTex_HEIGHT 256
+extern u64 gMarketNight3BgTex[TEX_LEN(u64, gMarketNight3BgTex_WIDTH, gMarketNight3BgTex_HEIGHT, 8)];
+#define gMarketNight4BgTex_WIDTH 256
+#define gMarketNight4BgTex_HEIGHT 256
+extern u64 gMarketNight4BgTex[TEX_LEN(u64, gMarketNight4BgTex_WIDTH, gMarketNight4BgTex_HEIGHT, 8)];
+
+#endif

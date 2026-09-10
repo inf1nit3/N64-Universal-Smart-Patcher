@@ -1,0 +1,25 @@
+    {
+        ACTOR_EN_OSSAN,
+        {      0,      1,    -68 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x000A, // params
+    }, // 0
+    {
+        ACTOR_EN_WONDER_TALK2,
+        {   -112,     30,     31 }, // pos
+        {  0x0000,  0x0E39,  0x002A }, // rot
+        -0x7E01 /* 0x81FF */, // params
+    }, // 1
+    {
+        ACTOR_EN_GUEST,
+        {     83,      0,     66 }, // pos
+        {  0x0000, -0x5C72,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 2
+    {
+        ACTOR_EN_TANA,
+        {      0,      0,    -40 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 3
+

@@ -1,0 +1,174 @@
+#include "spot18_room_1.h"
+#include "assets/scenes/overworld/spot18/spot18_scene.h"
+
+#include "actor.h"
+#include "array_count.h"
+#include "gfx.h"
+#include "object.h"
+#include "sequence.h"
+#include "skybox.h"
+#include "sys_matrix.h"
+#include "ultra64.h"
+
+SceneCmd spot18_room_1[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1.inc.c"
+};
+
+SceneCmd* spot18_room_1_03000048_AltHeaders[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_03000048_AltHeaders.inc.c"
+};
+
+s16 spot18_room_1_0300005C_ObjectList[LENGTH_spot18_room_1_0300005C_ObjectList] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_0300005C_ObjectList.inc.c"
+};
+
+ActorEntry spot18_room_1_03000070_ActorEntryList[LENGTH_spot18_room_1_03000070_ActorEntryList] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_03000070_ActorEntryList.inc.c"
+};
+
+RoomShapeCullable spot18_room_1_030000F0_RoomShapeCullable = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable.inc.c"
+};
+
+RoomShapeCullableEntry spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries[LENGTH_spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries.inc.c"
+};
+
+u8 spot18_room_1_unaccounted_00016C[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_unaccounted_00016C.bin.inc.c"
+};
+
+SceneCmd spot18_room_1_03000048_AltHeaders_03000170_Cmds[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_03000048_AltHeaders_03000170_Cmds.inc.c"
+};
+
+s16 spot18_room_1_03000048_AltHeaders_03000170_Cmds_030001B0_ObjectList[LENGTH_spot18_room_1_03000048_AltHeaders_03000170_Cmds_030001B0_ObjectList] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_03000048_AltHeaders_03000170_Cmds_030001B0_ObjectList.inc.c"
+};
+
+ActorEntry spot18_room_1_03000048_AltHeaders_03000170_Cmds_030001C4_ActorEntryList[LENGTH_spot18_room_1_03000048_AltHeaders_03000170_Cmds_030001C4_ActorEntryList] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_03000048_AltHeaders_03000170_Cmds_030001C4_ActorEntryList.inc.c"
+};
+
+u8 spot18_room_1_zeros_000224[12] = { 0 };
+
+SceneCmd spot18_room_1_03000048_AltHeaders_03000230_Cmds[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_03000048_AltHeaders_03000230_Cmds.inc.c"
+};
+
+s16 spot18_room_1_03000048_AltHeaders_03000230_Cmds_03000270_ObjectList[LENGTH_spot18_room_1_03000048_AltHeaders_03000230_Cmds_03000270_ObjectList] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_03000048_AltHeaders_03000230_Cmds_03000270_ObjectList.inc.c"
+};
+
+ActorEntry spot18_room_1_03000048_AltHeaders_03000230_Cmds_03000280_ActorEntryList[LENGTH_spot18_room_1_03000048_AltHeaders_03000230_Cmds_03000280_ActorEntryList] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_03000048_AltHeaders_03000230_Cmds_03000280_ActorEntryList.inc.c"
+};
+
+SceneCmd spot18_room_1_03000048_AltHeaders_03000300_Cmds[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_03000048_AltHeaders_03000300_Cmds.inc.c"
+};
+
+s16 spot18_room_1_03000048_AltHeaders_03000300_Cmds_03000340_ObjectList[LENGTH_spot18_room_1_03000048_AltHeaders_03000300_Cmds_03000340_ObjectList] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_03000048_AltHeaders_03000300_Cmds_03000340_ObjectList.inc.c"
+};
+
+ActorEntry spot18_room_1_03000048_AltHeaders_03000300_Cmds_03000348_ActorEntryList[LENGTH_spot18_room_1_03000048_AltHeaders_03000300_Cmds_03000348_ActorEntryList] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_03000048_AltHeaders_03000300_Cmds_03000348_ActorEntryList.inc.c"
+};
+
+u8 spot18_room_1_zeros_0003F8[8] = { 0 };
+
+Vtx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_030007D0_DL_03000400_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_030007D0_DL_03000400_Vtx_fused_.inc.c"
+};
+
+Gfx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_030007D0_DL[89] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_030007D0_DL.inc.c"
+};
+
+Vtx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001398_DL_03000A98_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001398_DL_03000A98_Vtx_fused_.inc.c"
+};
+
+Gfx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001398_DL[87] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001398_DL.inc.c"
+};
+
+Vtx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001770_DL_03001650_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001770_DL_03001650_Vtx_fused_.inc.c"
+};
+
+Gfx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001770_DL[25] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001770_DL.inc.c"
+};
+
+Vtx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001A38_DL_03001838_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001A38_DL_03001838_Vtx_fused_.inc.c"
+};
+
+Gfx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001A38_DL[37] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001A38_DL.inc.c"
+};
+
+Vtx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001E60_DL_03001B60_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001E60_DL_03001B60_Vtx_fused_.inc.c"
+};
+
+Gfx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001E60_DL[48] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03001E60_DL.inc.c"
+};
+
+Vtx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03002660_DL_03001FE0_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03002660_DL_03001FE0_Vtx_fused_.inc.c"
+};
+
+Gfx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03002660_DL[58] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03002660_DL.inc.c"
+};
+
+u8 spot18_room_1_unaccounted_002830[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_unaccounted_002830.bin.inc.c"
+};
+
+u64 spot18_room_1_00002868_Tex[TEX_LEN(u64, spot18_room_1_00002868_Tex_WIDTH, spot18_room_1_00002868_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_00002868_Tex.rgba16.inc.c"
+};
+
+u64 spot18_room_1_00003068_Tex[TEX_LEN(u64, spot18_room_1_00003068_Tex_WIDTH, spot18_room_1_00003068_Tex_HEIGHT, 4)] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_00003068_Tex.i4.inc.c"
+};
+
+u64 spot18_room_1_00004068_CITex[TEX_LEN(u64, spot18_room_1_00004068_CITex_WIDTH, spot18_room_1_00004068_CITex_HEIGHT, 8)] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_00004068_CITex.ci8.tlut_spot18_scene_000085C0_TLUT.inc.c"
+};
+
+u64 spot18_room_1_00004868_Tex[TEX_LEN(u64, spot18_room_1_00004868_Tex_WIDTH, spot18_room_1_00004868_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_00004868_Tex.rgba16.inc.c"
+};
+
+u8 spot18_room_1_zeros_005868[8] = { 0 };
+
+Vtx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_030059F0_DL_03005870_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_030059F0_DL_03005870_Vtx_fused_.inc.c"
+};
+
+Gfx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_030059F0_DL[26] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_030059F0_DL.inc.c"
+};
+
+Vtx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03005CC0_DL_03005AC0_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03005CC0_DL_03005AC0_Vtx_fused_.inc.c"
+};
+
+Gfx spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03005CC0_DL[37] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_030000F0_RoomShapeCullable_030000FC_CullableEntries_03005CC0_DL.inc.c"
+};
+
+u8 spot18_room_1_unaccounted_005DE8[] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_unaccounted_005DE8.bin.inc.c"
+};
+
+u64 spot18_room_1_00005E00_Tex[TEX_LEN(u64, spot18_room_1_00005E00_Tex_WIDTH, spot18_room_1_00005E00_Tex_HEIGHT, 4)] = {
+#include "assets/scenes/overworld/spot18/spot18_room_1_00005E00_Tex.ia4.inc.c"
+};
+

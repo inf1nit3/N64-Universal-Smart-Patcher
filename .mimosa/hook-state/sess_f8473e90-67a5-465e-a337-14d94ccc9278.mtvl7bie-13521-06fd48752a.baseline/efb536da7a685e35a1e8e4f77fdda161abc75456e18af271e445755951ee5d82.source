@@ -1,0 +1,20 @@
+#ifndef VR_MLVR_STATIC_H
+#define VR_MLVR_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gStableBgTex_WIDTH 256
+#define gStableBgTex_HEIGHT 256
+extern u64 gStableBgTex[TEX_LEN(u64, gStableBgTex_WIDTH, gStableBgTex_HEIGHT, 8)];
+#define gStable2BgTex_WIDTH 256
+#define gStable2BgTex_HEIGHT 256
+extern u64 gStable2BgTex[TEX_LEN(u64, gStable2BgTex_WIDTH, gStable2BgTex_HEIGHT, 8)];
+#define gStable3BgTex_WIDTH 256
+#define gStable3BgTex_HEIGHT 256
+extern u64 gStable3BgTex[TEX_LEN(u64, gStable3BgTex_WIDTH, gStable3BgTex_HEIGHT, 8)];
+#define gStable4BgTex_WIDTH 256
+#define gStable4BgTex_HEIGHT 256
+extern u64 gStable4BgTex[TEX_LEN(u64, gStable4BgTex_WIDTH, gStable4BgTex_HEIGHT, 8)];
+
+#endif

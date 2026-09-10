@@ -1,0 +1,14 @@
+#ifndef VR_SP1A_STATIC_H
+#define VR_SP1A_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gBazaarBgTex_WIDTH 256
+#define gBazaarBgTex_HEIGHT 256
+extern u64 gBazaarBgTex[TEX_LEN(u64, gBazaarBgTex_WIDTH, gBazaarBgTex_HEIGHT, 8)];
+#define gBazaar2BgTex_WIDTH 256
+#define gBazaar2BgTex_HEIGHT 256
+extern u64 gBazaar2BgTex[TEX_LEN(u64, gBazaar2BgTex_WIDTH, gBazaar2BgTex_HEIGHT, 8)];
+
+#endif

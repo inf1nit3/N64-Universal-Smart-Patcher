@@ -1,0 +1,15 @@
+#ifndef VR_MLVR_PAL_STATIC_H
+#define VR_MLVR_PAL_STATIC_H
+
+#include "ultra64.h"
+
+//#define gStableBgTLUT_TLUT_COUNT 256
+extern u64 gStableBgTLUT[];
+//#define gStableBg2TLUT_TLUT_COUNT 256
+extern u64 gStableBg2TLUT[];
+//#define gStableBg3TLUT_TLUT_COUNT 256
+extern u64 gStableBg3TLUT[];
+//#define gStableBg4TLUT_TLUT_COUNT 256
+extern u64 gStableBg4TLUT[];
+
+#endif

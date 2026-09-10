@@ -1,0 +1,7 @@
+    {
+        ACTOR_PLAYER,
+        {   1086,     99,   -807 }, // pos
+        {  0x0000,  0x16C1,  0x0000 }, // rot
+         0x0FFF, // params
+    }, // 0
+

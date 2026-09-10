@@ -1,0 +1,26 @@
+#ifndef VR_HOLY0_STATIC_H
+#define VR_HOLY0_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gHoly0Skybox1Tex_WIDTH 128
+#define gHoly0Skybox1Tex_HEIGHT 64
+extern u64 gHoly0Skybox1Tex[TEX_LEN(u64, gHoly0Skybox1Tex_WIDTH, gHoly0Skybox1Tex_HEIGHT, 8)];
+#define gHoly0Skybox2Tex_WIDTH 128
+#define gHoly0Skybox2Tex_HEIGHT 64
+extern u64 gHoly0Skybox2Tex[TEX_LEN(u64, gHoly0Skybox2Tex_WIDTH, gHoly0Skybox2Tex_HEIGHT, 8)];
+#define gHoly0Skybox3Tex_WIDTH 128
+#define gHoly0Skybox3Tex_HEIGHT 64
+extern u64 gHoly0Skybox3Tex[TEX_LEN(u64, gHoly0Skybox3Tex_WIDTH, gHoly0Skybox3Tex_HEIGHT, 8)];
+#define gHoly0Skybox4Tex_WIDTH 128
+#define gHoly0Skybox4Tex_HEIGHT 64
+extern u64 gHoly0Skybox4Tex[TEX_LEN(u64, gHoly0Skybox4Tex_WIDTH, gHoly0Skybox4Tex_HEIGHT, 8)];
+#define gHoly0Skybox5Tex_WIDTH 128
+#define gHoly0Skybox5Tex_HEIGHT 128
+extern u64 gHoly0Skybox5Tex[TEX_LEN(u64, gHoly0Skybox5Tex_WIDTH, gHoly0Skybox5Tex_HEIGHT, 8)];
+#define gHoly0Skybox6Tex_WIDTH 128
+#define gHoly0Skybox6Tex_HEIGHT 128
+extern u64 gHoly0Skybox6Tex[TEX_LEN(u64, gHoly0Skybox6Tex_WIDTH, gHoly0Skybox6Tex_HEIGHT, 8)];
+
+#endif

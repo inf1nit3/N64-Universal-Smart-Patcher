@@ -1,0 +1,11 @@
+#ifndef VR_DGVR_PAL_STATIC_H
+#define VR_DGVR_PAL_STATIC_H
+
+#include "ultra64.h"
+
+//#define gKakPotionShopBgTLUT_TLUT_COUNT 256
+extern u64 gKakPotionShopBgTLUT[];
+//#define gKakPotionShopBg2TLUT_TLUT_COUNT 256
+extern u64 gKakPotionShopBg2TLUT[];
+
+#endif

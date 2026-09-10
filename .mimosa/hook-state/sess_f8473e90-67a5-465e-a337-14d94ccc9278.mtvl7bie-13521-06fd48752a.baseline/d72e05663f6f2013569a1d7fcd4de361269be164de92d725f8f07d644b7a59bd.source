@@ -1,0 +1,5 @@
+    OBJECT_RS, // 0
+    OBJECT_SHOP_DUNGEN, // 1
+    OBJECT_GI_SOLDOUT, // 2
+    OBJECT_GI_BOMB_2, // 3
+

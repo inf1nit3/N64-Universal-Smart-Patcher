@@ -1,0 +1,15 @@
+#ifndef VR_MNVR_PAL_STATIC_H
+#define VR_MNVR_PAL_STATIC_H
+
+#include "ultra64.h"
+
+//#define gMarketNightBgTLUT_TLUT_COUNT 256
+extern u64 gMarketNightBgTLUT[];
+//#define gMarketNightBg2TLUT_TLUT_COUNT 256
+extern u64 gMarketNightBg2TLUT[];
+//#define gMarketNightBg3TLUT_TLUT_COUNT 256
+extern u64 gMarketNightBg3TLUT[];
+//#define gMarketNightBg4TLUT_TLUT_COUNT 256
+extern u64 gMarketNightBg4TLUT[];
+
+#endif

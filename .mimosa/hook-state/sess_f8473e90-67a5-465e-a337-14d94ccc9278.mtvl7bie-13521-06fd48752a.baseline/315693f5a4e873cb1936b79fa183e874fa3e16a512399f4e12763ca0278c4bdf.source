@@ -1,0 +1,17 @@
+    {
+        0, // playerEntryIndex
+        3, // room
+    }, // 0
+    {
+        1, // playerEntryIndex
+        1, // room
+    }, // 1
+    {
+        2, // playerEntryIndex
+        3, // room
+    }, // 2
+    {
+        3, // playerEntryIndex
+        3, // room
+    }, // 3
+

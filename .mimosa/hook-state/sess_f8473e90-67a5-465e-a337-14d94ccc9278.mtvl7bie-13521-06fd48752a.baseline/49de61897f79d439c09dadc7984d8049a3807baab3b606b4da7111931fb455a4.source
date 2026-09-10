@@ -1,0 +1,86 @@
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[0], // bgCamFuncData
+    }, // 0
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[3], // bgCamFuncData
+    }, // 1
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[6], // bgCamFuncData
+    }, // 2
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[9], // bgCamFuncData
+    }, // 3
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[12], // bgCamFuncData
+    }, // 4
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[15], // bgCamFuncData
+    }, // 5
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[18], // bgCamFuncData
+    }, // 6
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[21], // bgCamFuncData
+    }, // 7
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[24], // bgCamFuncData
+    }, // 8
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[27], // bgCamFuncData
+    }, // 9
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[30], // bgCamFuncData
+    }, // 10
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[33], // bgCamFuncData
+    }, // 11
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot12_scene_02005030_BgCamList_02000310_BgCamFuncData[36], // bgCamFuncData
+    }, // 12
+    {
+        CAM_SET_NONE, // setting
+        0, // count
+        NULL, // bgCamFuncData
+    }, // 13
+    {
+        CAM_SET_NORMAL1, // setting
+        0, // count
+        NULL, // bgCamFuncData
+    }, // 14
+    {
+        CAM_SET_NORMAL2, // setting
+        0, // count
+        NULL, // bgCamFuncData
+    }, // 15
+    {
+        CAM_SET_DUNGEON1, // setting
+        0, // count
+        NULL, // bgCamFuncData
+    }, // 16
+

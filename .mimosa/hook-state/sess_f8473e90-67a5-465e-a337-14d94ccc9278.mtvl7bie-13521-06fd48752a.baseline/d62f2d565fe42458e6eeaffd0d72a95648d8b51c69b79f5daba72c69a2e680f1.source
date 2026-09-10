@@ -1,0 +1,19 @@
+    {
+        -5172, // x
+        -1451, // y
+        -3860, // z
+    }, // minBounds
+    {
+        4179, // x
+        5000, // y
+        4673, // z
+    }, // maxBounds
+    ARRAY_COUNT(spot08_scene_02002CE0_VtxList), // numVertices
+    spot08_scene_02002CE0_VtxList, // vtxList
+    ARRAY_COUNT(spot08_scene_02002CE0_PolyList), // numPolygons
+    spot08_scene_02002CE0_PolyList, // polyList
+    spot08_scene_02002CE0_SurfaceTypes, // surfaceTypeList
+    spot08_scene_02002CE0_BgCamList, // bgCamList
+    ARRAY_COUNT(spot08_scene_02002CE0_WaterBoxes), // numWaterBoxes
+    spot08_scene_02002CE0_WaterBoxes, // waterBoxes
+

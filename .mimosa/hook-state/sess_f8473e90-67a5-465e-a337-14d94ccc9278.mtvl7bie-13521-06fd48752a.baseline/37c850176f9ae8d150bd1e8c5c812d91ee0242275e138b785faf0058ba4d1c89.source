@@ -1,0 +1,15 @@
+#ifndef VR_KKRVR_PAL_STATIC_H
+#define VR_KKRVR_PAL_STATIC_H
+
+#include "ultra64.h"
+
+//#define gCarpentersHouseBgTLUT_TLUT_COUNT 256
+extern u64 gCarpentersHouseBgTLUT[];
+//#define gCarpentersHouseBg2TLUT_TLUT_COUNT 256
+extern u64 gCarpentersHouseBg2TLUT[];
+//#define gCarpentersHouseBg3TLUT_TLUT_COUNT 256
+extern u64 gCarpentersHouseBg3TLUT[];
+//#define gCarpentersHouseBg4TLUT_TLUT_COUNT 256
+extern u64 gCarpentersHouseBg4TLUT[];
+
+#endif

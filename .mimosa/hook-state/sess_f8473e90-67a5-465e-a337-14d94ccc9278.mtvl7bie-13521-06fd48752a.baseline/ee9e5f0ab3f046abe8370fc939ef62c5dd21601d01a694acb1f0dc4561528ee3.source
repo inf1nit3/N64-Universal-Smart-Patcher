@@ -1,0 +1,9 @@
+#ifndef VR_CLOUD0_PAL_STATIC_H
+#define VR_CLOUD0_PAL_STATIC_H
+
+#include "ultra64.h"
+
+//#define gSunriseOvercastSkyboxTLUT_TLUT_COUNT 128
+extern u64 gSunriseOvercastSkyboxTLUT[];
+
+#endif

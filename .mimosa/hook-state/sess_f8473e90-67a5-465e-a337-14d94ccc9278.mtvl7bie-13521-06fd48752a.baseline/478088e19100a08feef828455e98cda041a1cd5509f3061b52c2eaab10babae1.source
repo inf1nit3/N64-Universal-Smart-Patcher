@@ -1,0 +1,14 @@
+    OBJECT_SPOT09_OBJ, // 0
+    OBJECT_NIW, // 1
+    OBJECT_GE1, // 2
+    OBJECT_UMAJUMP, // 3
+    OBJECT_MAMENOKI, // 4
+    OBJECT_SYOKUDAI, // 5
+    OBJECT_KIBAKO2, // 6
+    OBJECT_GLA, // 7
+    OBJECT_KANBAN, // 8
+    OBJECT_GS, // 9
+    OBJECT_ST, // 10
+    OBJECT_BOMBIWA, // 11
+    OBJECT_COW, // 12
+

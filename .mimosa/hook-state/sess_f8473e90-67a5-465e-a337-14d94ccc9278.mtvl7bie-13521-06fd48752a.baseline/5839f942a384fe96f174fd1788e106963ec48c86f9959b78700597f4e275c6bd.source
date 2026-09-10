@@ -1,0 +1,29 @@
+#ifndef MESSAGE_STATIC_H
+#define MESSAGE_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gDefaultMessageBackgroundTex_WIDTH 128
+#define gDefaultMessageBackgroundTex_HEIGHT 64
+extern u64 gDefaultMessageBackgroundTex[TEX_LEN(u64, gDefaultMessageBackgroundTex_WIDTH, gDefaultMessageBackgroundTex_HEIGHT, 4)];
+#define gSignMessageBackgroundTex_WIDTH 128
+#define gSignMessageBackgroundTex_HEIGHT 64
+extern u64 gSignMessageBackgroundTex[TEX_LEN(u64, gSignMessageBackgroundTex_WIDTH, gSignMessageBackgroundTex_HEIGHT, 4)];
+#define gNoteStaffMessageBackgroundTex_WIDTH 128
+#define gNoteStaffMessageBackgroundTex_HEIGHT 64
+extern u64 gNoteStaffMessageBackgroundTex[TEX_LEN(u64, gNoteStaffMessageBackgroundTex_WIDTH, gNoteStaffMessageBackgroundTex_HEIGHT, 4)];
+#define gFadingMessageBackgroundTex_WIDTH 128
+#define gFadingMessageBackgroundTex_HEIGHT 64
+extern u64 gFadingMessageBackgroundTex[TEX_LEN(u64, gFadingMessageBackgroundTex_WIDTH, gFadingMessageBackgroundTex_HEIGHT, 4)];
+#define gMessageContinueTriangleTex_WIDTH 16
+#define gMessageContinueTriangleTex_HEIGHT 16
+extern u64 gMessageContinueTriangleTex[TEX_LEN(u64, gMessageContinueTriangleTex_WIDTH, gMessageContinueTriangleTex_HEIGHT, 4)];
+#define gMessageEndSquareTex_WIDTH 16
+#define gMessageEndSquareTex_HEIGHT 16
+extern u64 gMessageEndSquareTex[TEX_LEN(u64, gMessageEndSquareTex_WIDTH, gMessageEndSquareTex_HEIGHT, 4)];
+#define gMessageArrowTex_WIDTH 16
+#define gMessageArrowTex_HEIGHT 16
+extern u64 gMessageArrowTex[TEX_LEN(u64, gMessageArrowTex_WIDTH, gMessageArrowTex_HEIGHT, 4)];
+
+#endif

@@ -1,0 +1,813 @@
+    {
+        0, // type
+        {
+            COLPOLY_VTX(60, 0), // 0
+            COLPOLY_VTX(61, 0), // 1
+            COLPOLY_VTX(62, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.0), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(1.0), // z
+        }, // normal
+        -40, // dist
+    }, // 0
+    {
+        0, // type
+        {
+            COLPOLY_VTX(60, 0), // 0
+            COLPOLY_VTX(62, 0), // 1
+            COLPOLY_VTX(63, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.0), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(1.0), // z
+        }, // normal
+        -40, // dist
+    }, // 1
+    {
+        0, // type
+        {
+            COLPOLY_VTX(64, 0), // 0
+            COLPOLY_VTX(65, 0), // 1
+            COLPOLY_VTX(63, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(1.0), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.0), // z
+        }, // normal
+        100, // dist
+    }, // 2
+    {
+        0, // type
+        {
+            COLPOLY_VTX(64, 0), // 0
+            COLPOLY_VTX(63, 0), // 1
+            COLPOLY_VTX(62, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(1.0), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.0), // z
+        }, // normal
+        100, // dist
+    }, // 3
+    {
+        0, // type
+        {
+            COLPOLY_VTX(66, 0), // 0
+            COLPOLY_VTX(61, 0), // 1
+            COLPOLY_VTX(60, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-1.0), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.0), // z
+        }, // normal
+        100, // dist
+    }, // 4
+    {
+        0, // type
+        {
+            COLPOLY_VTX(66, 0), // 0
+            COLPOLY_VTX(60, 0), // 1
+            COLPOLY_VTX(67, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-1.0), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.0), // z
+        }, // normal
+        100, // dist
+    }, // 5
+    {
+        0, // type
+        {
+            COLPOLY_VTX(65, 0), // 0
+            COLPOLY_VTX(67, 0), // 1
+            COLPOLY_VTX(60, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.0), // x
+            COLPOLY_SNORMAL(1.0), // y
+            COLPOLY_SNORMAL(0.0), // z
+        }, // normal
+        0, // dist
+    }, // 6
+    {
+        0, // type
+        {
+            COLPOLY_VTX(65, 0), // 0
+            COLPOLY_VTX(60, 0), // 1
+            COLPOLY_VTX(63, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.0), // x
+            COLPOLY_SNORMAL(1.0), // y
+            COLPOLY_SNORMAL(0.0), // z
+        }, // normal
+        0, // dist
+    }, // 7
+    {
+        1, // type
+        {
+            COLPOLY_VTX(68, 0), // 0
+            COLPOLY_VTX(69, COLPOLY_IS_FLOOR_CONVEYOR), // 1
+            COLPOLY_VTX(70, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.0), // x
+            COLPOLY_SNORMAL(1.0), // y
+            COLPOLY_SNORMAL(0.0), // z
+        }, // normal
+        -1, // dist
+    }, // 8
+    {
+        1, // type
+        {
+            COLPOLY_VTX(68, 0), // 0
+            COLPOLY_VTX(71, COLPOLY_IS_FLOOR_CONVEYOR), // 1
+            COLPOLY_VTX(69, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.0), // x
+            COLPOLY_SNORMAL(1.0), // y
+            COLPOLY_SNORMAL(0.0), // z
+        }, // normal
+        -1, // dist
+    }, // 9
+    {
+        2, // type
+        {
+            COLPOLY_VTX(0, 0), // 0
+            COLPOLY_VTX(1, 0), // 1
+            COLPOLY_VTX(2, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.91037), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.41381), // z
+        }, // normal
+        -20, // dist
+    }, // 10
+    {
+        2, // type
+        {
+            COLPOLY_VTX(0, 0), // 0
+            COLPOLY_VTX(2, 0), // 1
+            COLPOLY_VTX(3, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.91037), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.41381), // z
+        }, // normal
+        -20, // dist
+    }, // 11
+    {
+        2, // type
+        {
+            COLPOLY_VTX(4, 0), // 0
+            COLPOLY_VTX(3, 0), // 1
+            COLPOLY_VTX(2, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.44722), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.89444), // z
+        }, // normal
+        152, // dist
+    }, // 12
+    {
+        2, // type
+        {
+            COLPOLY_VTX(4, 0), // 0
+            COLPOLY_VTX(2, 0), // 1
+            COLPOLY_VTX(5, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.44722), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.89444), // z
+        }, // normal
+        152, // dist
+    }, // 13
+    {
+        2, // type
+        {
+            COLPOLY_VTX(5, 0), // 0
+            COLPOLY_VTX(6, 0), // 1
+            COLPOLY_VTX(7, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.91037), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.41381), // z
+        }, // normal
+        -2, // dist
+    }, // 14
+    {
+        2, // type
+        {
+            COLPOLY_VTX(5, 0), // 0
+            COLPOLY_VTX(7, 0), // 1
+            COLPOLY_VTX(4, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.91037), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.41381), // z
+        }, // normal
+        -2, // dist
+    }, // 15
+    {
+        2, // type
+        {
+            COLPOLY_VTX(8, 0), // 0
+            COLPOLY_VTX(9, 0), // 1
+            COLPOLY_VTX(10, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.41381), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.91037), // z
+        }, // normal
+        191, // dist
+    }, // 16
+    {
+        2, // type
+        {
+            COLPOLY_VTX(8, 0), // 0
+            COLPOLY_VTX(10, 0), // 1
+            COLPOLY_VTX(11, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.41381), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.91037), // z
+        }, // normal
+        191, // dist
+    }, // 17
+    {
+        2, // type
+        {
+            COLPOLY_VTX(12, 0), // 0
+            COLPOLY_VTX(11, 0), // 1
+            COLPOLY_VTX(10, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.89444), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.44722), // z
+        }, // normal
+        -48, // dist
+    }, // 18
+    {
+        2, // type
+        {
+            COLPOLY_VTX(12, 0), // 0
+            COLPOLY_VTX(10, 0), // 1
+            COLPOLY_VTX(13, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.89444), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.44722), // z
+        }, // normal
+        -48, // dist
+    }, // 19
+    {
+        2, // type
+        {
+            COLPOLY_VTX(13, 0), // 0
+            COLPOLY_VTX(14, 0), // 1
+            COLPOLY_VTX(15, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.42995), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.90286), // z
+        }, // normal
+        -213, // dist
+    }, // 20
+    {
+        2, // type
+        {
+            COLPOLY_VTX(13, 0), // 0
+            COLPOLY_VTX(15, 0), // 1
+            COLPOLY_VTX(12, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.42995), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.90286), // z
+        }, // normal
+        -213, // dist
+    }, // 21
+    {
+        2, // type
+        {
+            COLPOLY_VTX(16, 0), // 0
+            COLPOLY_VTX(17, 0), // 1
+            COLPOLY_VTX(18, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.93125), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.3644), // z
+        }, // normal
+        121, // dist
+    }, // 22
+    {
+        2, // type
+        {
+            COLPOLY_VTX(16, 0), // 0
+            COLPOLY_VTX(18, 0), // 1
+            COLPOLY_VTX(19, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.93125), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.3644), // z
+        }, // normal
+        121, // dist
+    }, // 23
+    {
+        2, // type
+        {
+            COLPOLY_VTX(17, 0), // 0
+            COLPOLY_VTX(20, 0), // 1
+            COLPOLY_VTX(21, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.93125), // z
+        }, // normal
+        171, // dist
+    }, // 24
+    {
+        2, // type
+        {
+            COLPOLY_VTX(17, 0), // 0
+            COLPOLY_VTX(21, 0), // 1
+            COLPOLY_VTX(18, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.93125), // z
+        }, // normal
+        171, // dist
+    }, // 25
+    {
+        2, // type
+        {
+            COLPOLY_VTX(20, 0), // 0
+            COLPOLY_VTX(22, 0), // 1
+            COLPOLY_VTX(23, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.93125), // z
+        }, // normal
+        104, // dist
+    }, // 26
+    {
+        2, // type
+        {
+            COLPOLY_VTX(20, 0), // 0
+            COLPOLY_VTX(23, 0), // 1
+            COLPOLY_VTX(21, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.93125), // z
+        }, // normal
+        104, // dist
+    }, // 27
+    {
+        2, // type
+        {
+            COLPOLY_VTX(24, 0), // 0
+            COLPOLY_VTX(25, 0), // 1
+            COLPOLY_VTX(26, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.93125), // z
+        }, // normal
+        -231, // dist
+    }, // 28
+    {
+        2, // type
+        {
+            COLPOLY_VTX(24, 0), // 0
+            COLPOLY_VTX(26, 0), // 1
+            COLPOLY_VTX(27, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.93125), // z
+        }, // normal
+        -231, // dist
+    }, // 29
+    {
+        2, // type
+        {
+            COLPOLY_VTX(25, 0), // 0
+            COLPOLY_VTX(28, 0), // 1
+            COLPOLY_VTX(29, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.93125), // z
+        }, // normal
+        -164, // dist
+    }, // 30
+    {
+        2, // type
+        {
+            COLPOLY_VTX(25, 0), // 0
+            COLPOLY_VTX(29, 0), // 1
+            COLPOLY_VTX(26, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.93125), // z
+        }, // normal
+        -164, // dist
+    }, // 31
+    {
+        2, // type
+        {
+            COLPOLY_VTX(28, 0), // 0
+            COLPOLY_VTX(16, 0), // 1
+            COLPOLY_VTX(19, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.93125), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.3644), // z
+        }, // normal
+        -10, // dist
+    }, // 32
+    {
+        2, // type
+        {
+            COLPOLY_VTX(28, 0), // 0
+            COLPOLY_VTX(19, 0), // 1
+            COLPOLY_VTX(29, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.93125), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.3644), // z
+        }, // normal
+        -10, // dist
+    }, // 33
+    {
+        2, // type
+        {
+            COLPOLY_VTX(30, 0), // 0
+            COLPOLY_VTX(31, 0), // 1
+            COLPOLY_VTX(32, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.91037), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.41381), // z
+        }, // normal
+        -20, // dist
+    }, // 34
+    {
+        2, // type
+        {
+            COLPOLY_VTX(30, 0), // 0
+            COLPOLY_VTX(32, 0), // 1
+            COLPOLY_VTX(33, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.91037), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.41381), // z
+        }, // normal
+        -20, // dist
+    }, // 35
+    {
+        2, // type
+        {
+            COLPOLY_VTX(34, 0), // 0
+            COLPOLY_VTX(31, 0), // 1
+            COLPOLY_VTX(30, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.44722), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.89444), // z
+        }, // normal
+        152, // dist
+    }, // 36
+    {
+        2, // type
+        {
+            COLPOLY_VTX(34, 0), // 0
+            COLPOLY_VTX(30, 0), // 1
+            COLPOLY_VTX(35, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.44722), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.89444), // z
+        }, // normal
+        152, // dist
+    }, // 37
+    {
+        2, // type
+        {
+            COLPOLY_VTX(35, 0), // 0
+            COLPOLY_VTX(36, 0), // 1
+            COLPOLY_VTX(37, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.91037), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.41381), // z
+        }, // normal
+        -2, // dist
+    }, // 38
+    {
+        2, // type
+        {
+            COLPOLY_VTX(35, 0), // 0
+            COLPOLY_VTX(37, 0), // 1
+            COLPOLY_VTX(34, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.91037), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.41381), // z
+        }, // normal
+        -2, // dist
+    }, // 39
+    {
+        2, // type
+        {
+            COLPOLY_VTX(38, 0), // 0
+            COLPOLY_VTX(39, 0), // 1
+            COLPOLY_VTX(40, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.41381), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.91037), // z
+        }, // normal
+        191, // dist
+    }, // 40
+    {
+        2, // type
+        {
+            COLPOLY_VTX(38, 0), // 0
+            COLPOLY_VTX(40, 0), // 1
+            COLPOLY_VTX(41, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.41381), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.91037), // z
+        }, // normal
+        191, // dist
+    }, // 41
+    {
+        2, // type
+        {
+            COLPOLY_VTX(42, 0), // 0
+            COLPOLY_VTX(39, 0), // 1
+            COLPOLY_VTX(38, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.89444), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.44722), // z
+        }, // normal
+        -48, // dist
+    }, // 42
+    {
+        2, // type
+        {
+            COLPOLY_VTX(42, 0), // 0
+            COLPOLY_VTX(38, 0), // 1
+            COLPOLY_VTX(43, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.89444), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.44722), // z
+        }, // normal
+        -48, // dist
+    }, // 43
+    {
+        2, // type
+        {
+            COLPOLY_VTX(43, 0), // 0
+            COLPOLY_VTX(44, 0), // 1
+            COLPOLY_VTX(45, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.42995), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.90286), // z
+        }, // normal
+        -213, // dist
+    }, // 44
+    {
+        2, // type
+        {
+            COLPOLY_VTX(43, 0), // 0
+            COLPOLY_VTX(45, 0), // 1
+            COLPOLY_VTX(42, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.42995), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.90286), // z
+        }, // normal
+        -213, // dist
+    }, // 45
+    {
+        2, // type
+        {
+            COLPOLY_VTX(46, 0), // 0
+            COLPOLY_VTX(47, 0), // 1
+            COLPOLY_VTX(48, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.93125), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.3644), // z
+        }, // normal
+        121, // dist
+    }, // 46
+    {
+        2, // type
+        {
+            COLPOLY_VTX(46, 0), // 0
+            COLPOLY_VTX(48, 0), // 1
+            COLPOLY_VTX(49, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.93125), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.3644), // z
+        }, // normal
+        121, // dist
+    }, // 47
+    {
+        2, // type
+        {
+            COLPOLY_VTX(47, 0), // 0
+            COLPOLY_VTX(50, 0), // 1
+            COLPOLY_VTX(51, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.93125), // z
+        }, // normal
+        171, // dist
+    }, // 48
+    {
+        2, // type
+        {
+            COLPOLY_VTX(47, 0), // 0
+            COLPOLY_VTX(51, 0), // 1
+            COLPOLY_VTX(48, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.93125), // z
+        }, // normal
+        171, // dist
+    }, // 49
+    {
+        2, // type
+        {
+            COLPOLY_VTX(50, 0), // 0
+            COLPOLY_VTX(52, 0), // 1
+            COLPOLY_VTX(53, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.93125), // z
+        }, // normal
+        104, // dist
+    }, // 50
+    {
+        2, // type
+        {
+            COLPOLY_VTX(50, 0), // 0
+            COLPOLY_VTX(53, 0), // 1
+            COLPOLY_VTX(51, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(-0.93125), // z
+        }, // normal
+        104, // dist
+    }, // 51
+    {
+        2, // type
+        {
+            COLPOLY_VTX(54, 0), // 0
+            COLPOLY_VTX(55, 0), // 1
+            COLPOLY_VTX(56, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.93125), // z
+        }, // normal
+        -231, // dist
+    }, // 52
+    {
+        2, // type
+        {
+            COLPOLY_VTX(54, 0), // 0
+            COLPOLY_VTX(56, 0), // 1
+            COLPOLY_VTX(57, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.93125), // z
+        }, // normal
+        -231, // dist
+    }, // 53
+    {
+        2, // type
+        {
+            COLPOLY_VTX(55, 0), // 0
+            COLPOLY_VTX(58, 0), // 1
+            COLPOLY_VTX(59, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.93125), // z
+        }, // normal
+        -164, // dist
+    }, // 54
+    {
+        2, // type
+        {
+            COLPOLY_VTX(55, 0), // 0
+            COLPOLY_VTX(59, 0), // 1
+            COLPOLY_VTX(56, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.3644), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.93125), // z
+        }, // normal
+        -164, // dist
+    }, // 55
+    {
+        2, // type
+        {
+            COLPOLY_VTX(58, 0), // 0
+            COLPOLY_VTX(46, 0), // 1
+            COLPOLY_VTX(49, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.93125), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.3644), // z
+        }, // normal
+        -10, // dist
+    }, // 56
+    {
+        2, // type
+        {
+            COLPOLY_VTX(58, 0), // 0
+            COLPOLY_VTX(49, 0), // 1
+            COLPOLY_VTX(59, 0), // 2
+        }, // vtxData
+        {
+            COLPOLY_SNORMAL(-0.93125), // x
+            COLPOLY_SNORMAL(0.0), // y
+            COLPOLY_SNORMAL(0.3644), // z
+        }, // normal
+        -10, // dist
+    }, // 57
+

@@ -1711,8 +1711,7 @@ class TestH2xFlavor(unittest.TestCase):
         the reason rather than silently falling into the broken generic
         widening (the same class of hardware bug the gate exists for)."""
         table = {self.SM64: ("sm64.xdelta", "Super Mario 64 (USA)")}
-        with open(os.path.join(self.tmp.name, "sm64.xdelta"), "wb") as f:
-            f.write(b"fake")
+        self._write("sm64.xdelta", b"fake")
         with (
             mock.patch.object(core, "get_flavor_patch", return_value=None),
             mock.patch.object(core, "SUBDRAG_PATCHES", table),
@@ -1735,6 +1734,53 @@ class TestH2xFlavor(unittest.TestCase):
         result = core.patch_rom(rom, options, log=lines.append)
         self.assertEqual(result["status"], "skipped")
         self.assertIn("output of a verified recipe", "\n".join(lines).lower())
+
+    def test_default_flavor_bps_recipe_applies(self):
+        """A default-flavor (640x480) recipe delivered as BPS - like the
+        experimental OoT hi-res - applies through Stage 1 as HR, with the
+        patch file resolved from the recipe's own directory."""
+        from n64patcher.ips_bps_patcher import create_bps_patch
+
+        target = bytearray(self._rom(self.SM64))
+        target[0x80] ^= 0xFF
+        target_path = self._write("target.z64", bytes(target))
+        bps_path = os.path.join(self.tmp.name, "oot_exp.bps")
+        res = create_bps_patch(self.clean, target_path, bps_path)
+        self.assertEqual(res["status"], "created")
+
+        entry = {
+            "id": "zelda-oot-usa-rev0-640x480i-exp",
+            "name": "OoT 640x480i (EXPERIMENTAL)",
+            "source": "test",
+            "crc1": self.SM64[0],
+            "crc2": self.SM64[1],
+            "flavor": "640x480",
+            "provides": ["hires"],
+            "operations": [{"type": "bps", "file": "oot_exp.bps"}],
+            "outputs": {},
+            "origin_dir": self.tmp.name,
+        }
+        fake_db = {self.SM64: [entry]}
+        with (
+            mock.patch.object(core, "PATCH_DB", fake_db),
+            mock.patch.object(core, "SUBDRAG_PATCHES", {}),
+        ):
+            self.assertIs(core.find_patch_entry(*self.SM64, "640x480"), entry)
+            self.assertEqual(core.get_flavor_patch(*self.SM64, "640x480"), bps_path)
+            options = core.PatchOptions(
+                no_aa=False,
+                no_dither=False,
+                no_divot=False,
+                no_gamma=False,
+                hires=True,
+                hires_flavor="640x480",
+            )
+            lines = []
+            result = core.patch_rom(self.clean, options, log=lines.append)
+        self.assertEqual(result["status"], "patched", "\n".join(lines))
+        self.assertIn("HR", result["applied"])
+        with open(result["output"], "rb") as f:
+            self.assertEqual(f.read(), bytes(target))
 
 
 if __name__ == "__main__":

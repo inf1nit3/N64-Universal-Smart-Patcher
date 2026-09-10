@@ -1,0 +1,43 @@
+    {
+        ACTOR_EN_YABUSAME_MARK,
+        {   3380,   1734,  -4935 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 0
+    {
+        ACTOR_EN_YABUSAME_MARK,
+        {   3360,   1734,    485 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 1
+    {
+        ACTOR_EN_YABUSAME_MARK,
+        {   4490,   1670,  -2815 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0001, // params
+    }, // 2
+    {
+        ACTOR_EN_YABUSAME_MARK,
+        {   4490,   1670,  -1785 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0001, // params
+    }, // 3
+    {
+        ACTOR_EN_YABUSAME_MARK,
+        {   4490,   1720,  -2295 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0002, // params
+    }, // 4
+    {
+        ACTOR_EN_HORSE_GAME_CHECK,
+        {   3256,   1413,  -2571 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0002, // params
+    }, // 5
+    {
+        ACTOR_EN_HORSE_NORMAL,
+        {   3578,   1413,  -2605 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0001, // params
+    }, // 6
+

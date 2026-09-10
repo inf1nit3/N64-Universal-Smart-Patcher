@@ -1,0 +1,181 @@
+    {
+        {
+            -776, // x
+            210, // y
+            627, // z
+        }, // boundsSphereCenter
+        2703, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_030051D8_DL, // opa
+        NULL, // xlu
+    }, // 0
+    {
+        {
+            316, // x
+            176, // y
+            3146, // z
+        }, // boundsSphereCenter
+        593, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03000DB0_DL, // opa
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03007830_DL, // xlu
+    }, // 1
+    {
+        {
+            -261, // x
+            213, // y
+            -2233, // z
+        }, // boundsSphereCenter
+        901, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03001058_DL, // opa
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_030079E0_DL, // xlu
+    }, // 2
+    {
+        {
+            -2360, // x
+            136, // y
+            1108, // z
+        }, // boundsSphereCenter
+        571, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_030013A8_DL, // opa
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03007B90_DL, // xlu
+    }, // 3
+    {
+        {
+            503, // x
+            2546, // y
+            437, // z
+        }, // boundsSphereCenter
+        4505, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03005AF0_DL, // opa
+        NULL, // xlu
+    }, // 4
+    {
+        {
+            910, // x
+            439, // y
+            1963, // z
+        }, // boundsSphereCenter
+        1211, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03007468_DL, // opa
+        NULL, // xlu
+    }, // 5
+    {
+        {
+            -2298, // x
+            1280, // y
+            -2664, // z
+        }, // boundsSphereCenter
+        2319, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03001968_DL, // opa
+        NULL, // xlu
+    }, // 6
+    {
+        {
+            -1751, // x
+            1504, // y
+            3669, // z
+        }, // boundsSphereCenter
+        2327, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03002110_DL, // opa
+        NULL, // xlu
+    }, // 7
+    {
+        {
+            1990, // x
+            555, // y
+            44, // z
+        }, // boundsSphereCenter
+        612, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03002528_DL, // opa
+        NULL, // xlu
+    }, // 8
+    {
+        {
+            -9, // x
+            -716, // y
+            -284, // z
+        }, // boundsSphereCenter
+        1940, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03006110_DL, // opa
+        NULL, // xlu
+    }, // 9
+    {
+        {
+            -784, // x
+            -200, // y
+            776, // z
+        }, // boundsSphereCenter
+        2630, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_030066E8_DL, // opa
+        NULL, // xlu
+    }, // 10
+    {
+        {
+            379, // x
+            40, // y
+            2325, // z
+        }, // boundsSphereCenter
+        479, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03006C38_DL, // opa
+        NULL, // xlu
+    }, // 11
+    {
+        {
+            -1599, // x
+            16, // y
+            -49, // z
+        }, // boundsSphereCenter
+        467, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03003038_DL, // opa
+        NULL, // xlu
+    }, // 12
+    {
+        {
+            -2098, // x
+            109, // y
+            94, // z
+        }, // boundsSphereCenter
+        729, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_030015E0_DL, // opa
+        NULL, // xlu
+    }, // 13
+    {
+        {
+            -3252, // x
+            -20, // y
+            100, // z
+        }, // boundsSphereCenter
+        457, // boundsSphereRadius
+        NULL, // opa
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03007D20_DL, // xlu
+    }, // 14
+    {
+        {
+            -702, // x
+            20, // y
+            609, // z
+        }, // boundsSphereCenter
+        3394, // boundsSphereRadius
+        NULL, // opa
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_03007FD8_DL, // xlu
+    }, // 15
+    {
+        {
+            -1043, // x
+            83, // y
+            1783, // z
+        }, // boundsSphereCenter
+        977, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_030048A0_DL, // opa
+        NULL, // xlu
+    }, // 16
+    {
+        {
+            -4386, // x
+            337, // y
+            492, // z
+        }, // boundsSphereCenter
+        3585, // boundsSphereRadius
+        spot08_room_0_03000200_RoomShapeCullable_0300020C_CullableEntries_030069B0_DL, // opa
+        NULL, // xlu
+    }, // 17
+

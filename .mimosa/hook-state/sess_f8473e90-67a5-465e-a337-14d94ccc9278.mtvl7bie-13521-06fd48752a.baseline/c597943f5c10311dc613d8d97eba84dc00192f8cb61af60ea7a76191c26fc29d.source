@@ -1,0 +1,11 @@
+#include "vr_ALVR_static.h"
+
+
+u64 gMarketPotionShopBgTex[TEX_LEN(u64, gMarketPotionShopBgTex_WIDTH, gMarketPotionShopBgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gMarketPotionShopBgTex.ci8.inc.c"
+};
+
+u64 gMarketPotionShop2BgTex[TEX_LEN(u64, gMarketPotionShop2BgTex_WIDTH, gMarketPotionShop2BgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gMarketPotionShop2BgTex.ci8.inc.c"
+};
+

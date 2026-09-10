@@ -1,0 +1,12 @@
+    OBJECT_SPOT08_OBJ, // 0
+    OBJECT_JJ, // 1
+    OBJECT_NIW, // 2
+    OBJECT_KANBAN, // 3
+    OBJECT_TSUBO, // 4
+    OBJECT_SYOKUDAI, // 5
+    OBJECT_KIBAKO2, // 6
+    OBJECT_WOOD02, // 7
+    OBJECT_GS, // 8
+    OBJECT_ST, // 9
+    OBJECT_BOMBIWA, // 10
+

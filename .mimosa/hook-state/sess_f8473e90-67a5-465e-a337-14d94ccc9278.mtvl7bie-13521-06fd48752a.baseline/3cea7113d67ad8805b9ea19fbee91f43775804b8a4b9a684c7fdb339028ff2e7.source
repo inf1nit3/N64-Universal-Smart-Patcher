@@ -1,0 +1,19 @@
+    {
+        -6540, // x
+        -17, // y
+        -7966, // z
+    }, // minBounds
+    {
+        5301, // x
+        2493, // y
+        4071, // z
+    }, // maxBounds
+    ARRAY_COUNT(spot12_scene_02005030_VtxList), // numVertices
+    spot12_scene_02005030_VtxList, // vtxList
+    ARRAY_COUNT(spot12_scene_02005030_PolyList), // numPolygons
+    spot12_scene_02005030_PolyList, // polyList
+    spot12_scene_02005030_SurfaceTypes, // surfaceTypeList
+    spot12_scene_02005030_BgCamList, // bgCamList
+    0, // numWaterBoxes
+    NULL, // waterBoxes
+

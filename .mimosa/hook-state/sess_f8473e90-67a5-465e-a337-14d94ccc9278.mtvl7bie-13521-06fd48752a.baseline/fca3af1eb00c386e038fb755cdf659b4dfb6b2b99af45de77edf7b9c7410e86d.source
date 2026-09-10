@@ -1,0 +1,15 @@
+#include "vr_K3VR_static.h"
+
+
+u64 gHouseOfTwinsBgTex[TEX_LEN(u64, gHouseOfTwinsBgTex_WIDTH, gHouseOfTwinsBgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gHouseOfTwinsBgTex.ci8.inc.c"
+};
+
+u64 gHouseOfTwins2BgTex[TEX_LEN(u64, gHouseOfTwins2BgTex_WIDTH, gHouseOfTwins2BgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gHouseOfTwins2BgTex.ci8.inc.c"
+};
+
+u64 gHouseOfTwins3BgTex[TEX_LEN(u64, gHouseOfTwins3BgTex_WIDTH, gHouseOfTwins3BgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gHouseOfTwins3BgTex.ci8.inc.c"
+};
+

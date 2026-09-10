@@ -1,0 +1,73 @@
+    {
+        ACTOR_EN_RIVER_SOUND,
+        {     14,    202,     22 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0006, // params
+    }, // 0
+    {
+        ACTOR_BG_BOMBWALL,
+        {  -1342,    829,    968 }, // pos
+        {  0x0000,  0x527D,  0x0000 }, // rot
+         0x0000, // params
+    }, // 1
+    {
+        ACTOR_BG_BOMBWALL,
+        {   1302,   1476,   1566 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x0001, // params
+    }, // 2
+    {
+        ACTOR_BG_HIDAN_DALM,
+        {  -1069,    829,    934 }, // pos
+        {  0x0000, -0x6000,  0x0000 }, // rot
+        -0x100 /* 0xFF00 */, // params
+    }, // 3
+    {
+        ACTOR_BG_HIDAN_DALM,
+        {  -1055,    829,    853 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x100 /* 0xFF00 */, // params
+    }, // 4
+    {
+        ACTOR_BG_MJIN,
+        {   -820,    769,   1210 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0003, // params
+    }, // 5
+    {
+        ACTOR_BG_SPOT17_FUNEN,
+        {   -733,   1128,    132 }, // pos
+        {  0x0000,  0x038E,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 6
+    {
+        ACTOR_BG_SPOT17_FUNEN,
+        {    620,   1138,     69 }, // pos
+        {  0x0000,  0x02D8,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 7
+    {
+        ACTOR_BG_HIDAN_DALM,
+        {  -1055,    889,    853 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x100 /* 0xFF00 */, // params
+    }, // 8
+    {
+        ACTOR_EN_XC,
+        {   -821,    769,   1396 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 9
+    {
+        ACTOR_DEMO_KANKYO,
+        {   -820,    769,   1164 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0008, // params
+    }, // 10
+    {
+        ACTOR_BG_SPOT17_BAKUDANKABE,
+        {   1310,   1476,   1566 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x00FF, // params
+    }, // 11
+

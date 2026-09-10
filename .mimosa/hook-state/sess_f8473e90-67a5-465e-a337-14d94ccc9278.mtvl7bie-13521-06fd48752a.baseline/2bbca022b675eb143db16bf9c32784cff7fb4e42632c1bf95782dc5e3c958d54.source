@@ -1,0 +1,23 @@
+#include "vr_cloud0_static.h"
+
+
+u64 gSunriseOvercastSkybox1Tex[TEX_LEN(u64, gSunriseOvercastSkybox1Tex_WIDTH, gSunriseOvercastSkybox1Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gSunriseOvercastSkybox1Tex.ci8.split_lo.tlut_gSunriseOvercastSkyboxTLUT.inc.c"
+};
+
+u64 gSunriseOvercastSkybox2Tex[TEX_LEN(u64, gSunriseOvercastSkybox2Tex_WIDTH, gSunriseOvercastSkybox2Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gSunriseOvercastSkybox2Tex.ci8.split_lo.tlut_gSunriseOvercastSkyboxTLUT.inc.c"
+};
+
+u64 gSunriseOvercastSkybox3Tex[TEX_LEN(u64, gSunriseOvercastSkybox3Tex_WIDTH, gSunriseOvercastSkybox3Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gSunriseOvercastSkybox3Tex.ci8.split_lo.tlut_gSunriseOvercastSkyboxTLUT.inc.c"
+};
+
+u64 gSunriseOvercastSkybox4Tex[TEX_LEN(u64, gSunriseOvercastSkybox4Tex_WIDTH, gSunriseOvercastSkybox4Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gSunriseOvercastSkybox4Tex.ci8.split_lo.tlut_gSunriseOvercastSkyboxTLUT.inc.c"
+};
+
+u64 gSunriseOvercastSkybox5Tex[TEX_LEN(u64, gSunriseOvercastSkybox5Tex_WIDTH, gSunriseOvercastSkybox5Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gSunriseOvercastSkybox5Tex.ci8.split_lo.tlut_gSunriseOvercastSkyboxTLUT.inc.c"
+};
+

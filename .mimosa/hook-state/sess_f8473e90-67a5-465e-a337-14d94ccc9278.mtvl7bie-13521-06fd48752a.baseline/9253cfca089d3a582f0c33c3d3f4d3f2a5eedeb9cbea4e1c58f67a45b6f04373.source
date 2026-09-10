@@ -1,0 +1,12 @@
+    OBJECT_EC, // 0
+    OBJECT_NIW, // 1
+    OBJECT_ANE, // 2
+    OBJECT_OF1D_MAP, // 3
+    OBJECT_GM, // 4
+    OBJECT_DS2, // 5
+    OBJECT_OS, // 6
+    OBJECT_FISH, // 7
+    OBJECT_RS, // 8
+    OBJECT_GE1, // 9
+    OBJECT_MU, // 10
+

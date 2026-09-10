@@ -1,0 +1,8 @@
+    gsDPPipeSync(),
+    gsSPClearGeometryMode(G_FOG | G_LIGHTING),
+    gsSPVertex(&spot17_room_1_03000300_RoomShapeCullable_0300030C_CullableEntries_030019F0_DL_03001970_Vtx[0], 8, 0),
+    gsSPCullDisplayList(0, 7),
+    gsDPPipeSync(),
+    gsSPSetGeometryMode(G_FOG | G_LIGHTING),
+    gsSPDisplayList(spot17_room_1_03000300_RoomShapeCullable_0300030C_CullableEntries_030019F0_DL_03001950_DL),
+    gsSPEndDisplayList(),

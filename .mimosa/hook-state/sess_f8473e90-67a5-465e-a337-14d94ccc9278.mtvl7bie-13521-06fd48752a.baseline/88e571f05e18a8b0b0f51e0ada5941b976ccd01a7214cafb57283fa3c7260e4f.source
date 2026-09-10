@@ -1,0 +1,41 @@
+    {
+        {  86,  76, 105 }, // ambientColor
+        {    0,    0,    0 }, // light1Dir
+        {  95, 115, 125 }, // light1Color
+        {    0,    0,    0 }, // light2Dir
+        {  40,  60,  70 }, // light2Color
+        { 100,  50,  50 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 995), // blendRateAndFogNear
+        12800, // zFar
+    }, // 0
+    {
+        { 130, 125, 110 }, // ambientColor
+        {    0,    0,    0 }, // light1Dir
+        { 155, 135, 106 }, // light1Color
+        {    0,    0,    0 }, // light2Dir
+        {  50,  50,  90 }, // light2Color
+        { 130, 130, 140 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 996), // blendRateAndFogNear
+        12800, // zFar
+    }, // 1
+    {
+        {  80,  65,  55 }, // ambientColor
+        {    0,    0,    0 }, // light1Dir
+        { 215, 150,  35 }, // light1Color
+        {    0,    0,    0 }, // light2Dir
+        {  30,  30,  60 }, // light2Color
+        {  98,  78,  58 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 994), // blendRateAndFogNear
+        12800, // zFar
+    }, // 2
+    {
+        {  30,  50, 100 }, // ambientColor
+        {    0,    0,    0 }, // light1Dir
+        { 150, 150, 150 }, // light1Color
+        {    0,    0,    0 }, // light2Dir
+        {  80,  80, 180 }, // light2Color
+        {  18,  18,  18 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 970), // blendRateAndFogNear
+        12800, // zFar
+    }, // 3
+

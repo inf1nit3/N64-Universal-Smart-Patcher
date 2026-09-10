@@ -1,0 +1,20 @@
+#ifndef VR_MDVR_STATIC_H
+#define VR_MDVR_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gMarketDayBgTex_WIDTH 256
+#define gMarketDayBgTex_HEIGHT 256
+extern u64 gMarketDayBgTex[TEX_LEN(u64, gMarketDayBgTex_WIDTH, gMarketDayBgTex_HEIGHT, 8)];
+#define gMarketDay2BgTex_WIDTH 256
+#define gMarketDay2BgTex_HEIGHT 256
+extern u64 gMarketDay2BgTex[TEX_LEN(u64, gMarketDay2BgTex_WIDTH, gMarketDay2BgTex_HEIGHT, 8)];
+#define gMarketDay3BgTex_WIDTH 256
+#define gMarketDay3BgTex_HEIGHT 256
+extern u64 gMarketDay3BgTex[TEX_LEN(u64, gMarketDay3BgTex_WIDTH, gMarketDay3BgTex_HEIGHT, 8)];
+#define gMarketDay4BgTex_WIDTH 256
+#define gMarketDay4BgTex_HEIGHT 256
+extern u64 gMarketDay4BgTex[TEX_LEN(u64, gMarketDay4BgTex_WIDTH, gMarketDay4BgTex_HEIGHT, 8)];
+
+#endif

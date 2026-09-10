@@ -1,0 +1,23 @@
+#include "vr_fine2_static.h"
+
+
+u64 gSunsetSkybox1Tex[TEX_LEN(u64, gSunsetSkybox1Tex_WIDTH, gSunsetSkybox1Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gSunsetSkybox1Tex.ci8.split_hi.tlut_gSunsetSkyboxTLUT.inc.c"
+};
+
+u64 gSunsetSkybox2Tex[TEX_LEN(u64, gSunsetSkybox2Tex_WIDTH, gSunsetSkybox2Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gSunsetSkybox2Tex.ci8.split_hi.tlut_gSunsetSkyboxTLUT.inc.c"
+};
+
+u64 gSunsetSkybox3Tex[TEX_LEN(u64, gSunsetSkybox3Tex_WIDTH, gSunsetSkybox3Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gSunsetSkybox3Tex.ci8.split_hi.tlut_gSunsetSkyboxTLUT.inc.c"
+};
+
+u64 gSunsetSkybox4Tex[TEX_LEN(u64, gSunsetSkybox4Tex_WIDTH, gSunsetSkybox4Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gSunsetSkybox4Tex.ci8.split_hi.tlut_gSunsetSkyboxTLUT.inc.c"
+};
+
+u64 gSunsetSkybox5Tex[TEX_LEN(u64, gSunsetSkybox5Tex_WIDTH, gSunsetSkybox5Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gSunsetSkybox5Tex.ci8.split_hi.tlut_gSunsetSkyboxTLUT.inc.c"
+};
+

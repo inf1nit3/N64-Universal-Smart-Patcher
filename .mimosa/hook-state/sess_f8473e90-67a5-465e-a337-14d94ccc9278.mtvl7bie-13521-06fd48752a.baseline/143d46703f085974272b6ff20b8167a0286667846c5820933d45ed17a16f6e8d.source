@@ -1,0 +1,4 @@
+    ROM_FILE(spot04_room_0), // 0
+    ROM_FILE(spot04_room_1), // 1
+    ROM_FILE(spot04_room_2), // 2
+

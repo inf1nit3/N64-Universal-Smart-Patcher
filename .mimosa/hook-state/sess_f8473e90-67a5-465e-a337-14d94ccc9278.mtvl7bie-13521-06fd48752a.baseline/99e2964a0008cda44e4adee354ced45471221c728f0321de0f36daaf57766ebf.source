@@ -1,0 +1,7 @@
+#include "vr_cloud0_pal_static.h"
+
+
+u64 gSunriseOvercastSkyboxTLUT[] = {
+#include "assets/textures/skyboxes/gSunriseOvercastSkyboxTLUT.tlut.rgba16.inc.c"
+};
+

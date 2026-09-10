@@ -1,0 +1,23 @@
+    {
+        {
+            // { room, bgCamIndex }
+            { 1, -1 },
+            { 1, -1 },
+        }, // sides
+        ACTOR_EN_DOOR,
+        {   -820,      0,    599 }, // pos
+         0x4000, // rotY
+        ENDOOR_PARAMS_NODATA(DOOR_SCENEEXIT, false) /* 0x01BF */, // params
+    }, // 0
+    {
+        {
+            // { room, bgCamIndex }
+            { 0, -1 },
+            { 0, -1 },
+        }, // sides
+        ACTOR_EN_HOLL,
+        {   1519,    239,     93 }, // pos
+         0x4000, // rotY
+         0x013F, // params
+    }, // 1
+

@@ -1,0 +1,23 @@
+#include "vr_fine1_static.h"
+
+
+u64 gDaySkybox1Tex[TEX_LEN(u64, gDaySkybox1Tex_WIDTH, gDaySkybox1Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gDaySkybox1Tex.ci8.split_lo.tlut_gDaySkyboxTLUT.inc.c"
+};
+
+u64 gDaySkybox2Tex[TEX_LEN(u64, gDaySkybox2Tex_WIDTH, gDaySkybox2Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gDaySkybox2Tex.ci8.split_lo.tlut_gDaySkyboxTLUT.inc.c"
+};
+
+u64 gDaySkybox3Tex[TEX_LEN(u64, gDaySkybox3Tex_WIDTH, gDaySkybox3Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gDaySkybox3Tex.ci8.split_lo.tlut_gDaySkyboxTLUT.inc.c"
+};
+
+u64 gDaySkybox4Tex[TEX_LEN(u64, gDaySkybox4Tex_WIDTH, gDaySkybox4Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gDaySkybox4Tex.ci8.split_lo.tlut_gDaySkyboxTLUT.inc.c"
+};
+
+u64 gDaySkybox5Tex[TEX_LEN(u64, gDaySkybox5Tex_WIDTH, gDaySkybox5Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gDaySkybox5Tex.ci8.split_lo.tlut_gDaySkyboxTLUT.inc.c"
+};
+

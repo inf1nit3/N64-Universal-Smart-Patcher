@@ -1,0 +1,19 @@
+#include "vr_KHVR_pal_static.h"
+
+
+u64 gKnowItAllBrosHouseBgTLUT[] = {
+#include "assets/textures/backgrounds/gKnowItAllBrosHouseBgTex.tlut.rgba16.inc.c"
+};
+
+u64 gKnowItAllBrosHouseBg2TLUT[] = {
+#include "assets/textures/backgrounds/gKnowItAllBrosHouse2BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gKnowItAllBrosHouseBg3TLUT[] = {
+#include "assets/textures/backgrounds/gKnowItAllBrosHouse3BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gKnowItAllBrosHouseBg4TLUT[] = {
+#include "assets/textures/backgrounds/gKnowItAllBrosHouse4BgTex.tlut.rgba16.inc.c"
+};
+

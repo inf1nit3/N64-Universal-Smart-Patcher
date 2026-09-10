@@ -1,0 +1,19 @@
+    {
+        -200, // x
+        0, // y
+        -200, // z
+    }, // minBounds
+    {
+        202, // x
+        320, // y
+        320, // z
+    }, // maxBounds
+    ARRAY_COUNT(alley_shop_scene_02000584_VtxList), // numVertices
+    alley_shop_scene_02000584_VtxList, // vtxList
+    ARRAY_COUNT(alley_shop_scene_02000584_PolyList), // numPolygons
+    alley_shop_scene_02000584_PolyList, // polyList
+    alley_shop_scene_02000584_SurfaceTypes, // surfaceTypeList
+    alley_shop_scene_02000584_BgCamList, // bgCamList
+    0, // numWaterBoxes
+    NULL, // waterBoxes
+

@@ -1,0 +1,13 @@
+    OBJECT_SPOT01_OBJECTS, // 0
+    OBJECT_SD, // 1
+    OBJECT_OS_ANIME, // 2
+    OBJECT_AOB, // 3
+    OBJECT_AHG, // 4
+    OBJECT_CNE, // 5
+    OBJECT_BBA, // 6
+    OBJECT_BJI, // 7
+    OBJECT_WOOD02, // 8
+    OBJECT_NIW, // 9
+    OBJECT_ANI, // 10
+    OBJECT_EFC_DOUGHNUT, // 11
+

@@ -1,0 +1,19 @@
+#include "vr_MDVR_static.h"
+
+
+u64 gMarketDayBgTex[TEX_LEN(u64, gMarketDayBgTex_WIDTH, gMarketDayBgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gMarketDayBgTex.ci8.inc.c"
+};
+
+u64 gMarketDay2BgTex[TEX_LEN(u64, gMarketDay2BgTex_WIDTH, gMarketDay2BgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gMarketDay2BgTex.ci8.inc.c"
+};
+
+u64 gMarketDay3BgTex[TEX_LEN(u64, gMarketDay3BgTex_WIDTH, gMarketDay3BgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gMarketDay3BgTex.ci8.inc.c"
+};
+
+u64 gMarketDay4BgTex[TEX_LEN(u64, gMarketDay4BgTex_WIDTH, gMarketDay4BgTex_HEIGHT, 8)] = {
+#include "assets/textures/backgrounds/gMarketDay4BgTex.ci8.inc.c"
+};
+

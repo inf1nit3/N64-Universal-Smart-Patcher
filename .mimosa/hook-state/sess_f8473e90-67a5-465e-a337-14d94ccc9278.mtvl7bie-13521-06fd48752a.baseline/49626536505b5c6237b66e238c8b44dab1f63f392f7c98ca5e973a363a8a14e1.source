@@ -1,0 +1,15 @@
+#include "vr_K3VR_pal_static.h"
+
+
+u64 gHouseOfTwinsBgTLUT[] = {
+#include "assets/textures/backgrounds/gHouseOfTwinsBgTex.tlut.rgba16.inc.c"
+};
+
+u64 gHouseOfTwinsBg2TLUT[] = {
+#include "assets/textures/backgrounds/gHouseOfTwins2BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gHouseOfTwinsBg3TLUT[] = {
+#include "assets/textures/backgrounds/gHouseOfTwins3BgTex.tlut.rgba16.inc.c"
+};
+

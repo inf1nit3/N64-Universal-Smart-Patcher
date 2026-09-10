@@ -1,0 +1,15 @@
+#ifndef VR_RUVR_PAL_STATIC_H
+#define VR_RUVR_PAL_STATIC_H
+
+#include "ultra64.h"
+
+//#define gMarketRuinsBgTLUT_TLUT_COUNT 256
+extern u64 gMarketRuinsBgTLUT[];
+//#define gMarketRuinsBg2TLUT_TLUT_COUNT 256
+extern u64 gMarketRuinsBg2TLUT[];
+//#define gMarketRuinsBg3TLUT_TLUT_COUNT 256
+extern u64 gMarketRuinsBg3TLUT[];
+//#define gMarketRuinsBg4TLUT_TLUT_COUNT 256
+extern u64 gMarketRuinsBg4TLUT[];
+
+#endif

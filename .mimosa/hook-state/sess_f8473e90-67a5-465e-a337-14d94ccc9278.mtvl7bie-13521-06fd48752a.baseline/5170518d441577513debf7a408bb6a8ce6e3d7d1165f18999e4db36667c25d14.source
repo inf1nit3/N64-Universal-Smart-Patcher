@@ -1,0 +1,37 @@
+    {
+        ACTOR_EN_GS,
+        {   -863,    400,   1496 }, // pos
+        {  0x0000,  0x4000,  0x0000 }, // rot
+         0x3A19, // params
+    }, // 0
+    {
+        ACTOR_BG_BREAKWALL,
+        {   -508,    398,   1366 }, // pos
+        {  0x0000,  0x42D8,  0x0000 }, // rot
+         0x2005, // params
+    }, // 1
+    {
+        ACTOR_BG_BREAKWALL,
+        {   -609,    398,   1351 }, // pos
+        {  0x0000,  0x3B06,  0x0000 }, // rot
+        -0x5FFA /* 0xA006 */, // params
+    }, // 2
+    {
+        ACTOR_OBJ_TSUBO,
+        {   -694,    430,   1196 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x7101, // params
+    }, // 3
+    {
+        ACTOR_EN_LIGHT,
+        {   -821,    332,   1163 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0395, // params
+    }, // 4
+    {
+        ACTOR_EN_GM,
+        {   -951,    400,   1317 }, // pos
+        {  0x0000,  0x399A,  0x0000 }, // rot
+         0x0006, // params
+    }, // 5
+

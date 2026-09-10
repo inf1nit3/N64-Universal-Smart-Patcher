@@ -1,0 +1,959 @@
+#include "map_i_static.h"
+
+
+u64 gDekuTreeRoom0Floor1MinimapTex[TEX_LEN(u64, gDekuTreeRoom0Floor1MinimapTex_WIDTH, gDekuTreeRoom0Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom0Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gDekuTreeRoom1MinimapTex[TEX_LEN(u64, gDekuTreeRoom1MinimapTex_WIDTH, gDekuTreeRoom1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom1MinimapTex.i4.inc.c"
+};
+
+u64 gDekuTreeRoom2MinimapTex[TEX_LEN(u64, gDekuTreeRoom2MinimapTex_WIDTH, gDekuTreeRoom2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom2MinimapTex.i4.inc.c"
+};
+
+u64 gDekuTreeRoom3MinimapTex[TEX_LEN(u64, gDekuTreeRoom3MinimapTex_WIDTH, gDekuTreeRoom3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom3MinimapTex.i4.inc.c"
+};
+
+u64 gDekuTreeRoom4MinimapTex[TEX_LEN(u64, gDekuTreeRoom4MinimapTex_WIDTH, gDekuTreeRoom4MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom4MinimapTex.i4.inc.c"
+};
+
+u64 gDekuTreeRoom5MinimapTex[TEX_LEN(u64, gDekuTreeRoom5MinimapTex_WIDTH, gDekuTreeRoom5MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom5MinimapTex.i4.inc.c"
+};
+
+u64 gDekuTreeRoom6MinimapTex[TEX_LEN(u64, gDekuTreeRoom6MinimapTex_WIDTH, gDekuTreeRoom6MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom6MinimapTex.i4.inc.c"
+};
+
+u64 gDekuTreeRoom7MinimapTex[TEX_LEN(u64, gDekuTreeRoom7MinimapTex_WIDTH, gDekuTreeRoom7MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom7MinimapTex.i4.inc.c"
+};
+
+u64 gDekuTreeRoom8MinimapTex[TEX_LEN(u64, gDekuTreeRoom8MinimapTex_WIDTH, gDekuTreeRoom8MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom8MinimapTex.i4.inc.c"
+};
+
+u64 gDekuTreeRoom9MinimapTex[TEX_LEN(u64, gDekuTreeRoom9MinimapTex_WIDTH, gDekuTreeRoom9MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom9MinimapTex.i4.inc.c"
+};
+
+u64 gDekuTreeRoom10MinimapTex[TEX_LEN(u64, gDekuTreeRoom10MinimapTex_WIDTH, gDekuTreeRoom10MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom10MinimapTex.i4.inc.c"
+};
+
+u64 gDekuTreeRoom0Floor2MinimapTex[TEX_LEN(u64, gDekuTreeRoom0Floor2MinimapTex_WIDTH, gDekuTreeRoom0Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom0Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gDekuTreeRoom0Floor3MinimapTex[TEX_LEN(u64, gDekuTreeRoom0Floor3MinimapTex_WIDTH, gDekuTreeRoom0Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDekuTreeRoom0Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom0MinimapTex[TEX_LEN(u64, gDodongosCavernRoom0MinimapTex_WIDTH, gDodongosCavernRoom0MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom0MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom1MinimapTex[TEX_LEN(u64, gDodongosCavernRoom1MinimapTex_WIDTH, gDodongosCavernRoom1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom1MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom2MinimapTex[TEX_LEN(u64, gDodongosCavernRoom2MinimapTex_WIDTH, gDodongosCavernRoom2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom2MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom3MinimapTex[TEX_LEN(u64, gDodongosCavernRoom3MinimapTex_WIDTH, gDodongosCavernRoom3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom3MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom4MinimapTex[TEX_LEN(u64, gDodongosCavernRoom4MinimapTex_WIDTH, gDodongosCavernRoom4MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom4MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom5MinimapTex[TEX_LEN(u64, gDodongosCavernRoom5MinimapTex_WIDTH, gDodongosCavernRoom5MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom5MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom6MinimapTex[TEX_LEN(u64, gDodongosCavernRoom6MinimapTex_WIDTH, gDodongosCavernRoom6MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom6MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom7MinimapTex[TEX_LEN(u64, gDodongosCavernRoom7MinimapTex_WIDTH, gDodongosCavernRoom7MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom7MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom8MinimapTex[TEX_LEN(u64, gDodongosCavernRoom8MinimapTex_WIDTH, gDodongosCavernRoom8MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom8MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom9MinimapTex[TEX_LEN(u64, gDodongosCavernRoom9MinimapTex_WIDTH, gDodongosCavernRoom9MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom9MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom10MinimapTex[TEX_LEN(u64, gDodongosCavernRoom10MinimapTex_WIDTH, gDodongosCavernRoom10MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom10MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom11MinimapTex[TEX_LEN(u64, gDodongosCavernRoom11MinimapTex_WIDTH, gDodongosCavernRoom11MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom11MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom12MinimapTex[TEX_LEN(u64, gDodongosCavernRoom12MinimapTex_WIDTH, gDodongosCavernRoom12MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom12MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom13MinimapTex[TEX_LEN(u64, gDodongosCavernRoom13MinimapTex_WIDTH, gDodongosCavernRoom13MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom13MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom14MinimapTex[TEX_LEN(u64, gDodongosCavernRoom14MinimapTex_WIDTH, gDodongosCavernRoom14MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom14MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom15MinimapTex[TEX_LEN(u64, gDodongosCavernRoom15MinimapTex_WIDTH, gDodongosCavernRoom15MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom15MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom0Floor3MinimapTex[TEX_LEN(u64, gDodongosCavernRoom0Floor3MinimapTex_WIDTH, gDodongosCavernRoom0Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom0Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom2Floor3MinimapTex[TEX_LEN(u64, gDodongosCavernRoom2Floor3MinimapTex_WIDTH, gDodongosCavernRoom2Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom2Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gDodongosCavernRoom3Floor3MinimapTex[TEX_LEN(u64, gDodongosCavernRoom3Floor3MinimapTex_WIDTH, gDodongosCavernRoom3Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gDodongosCavernRoom3Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom0MinimapTex[TEX_LEN(u64, gJabuRoom0MinimapTex_WIDTH, gJabuRoom0MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom0MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom1MinimapTex[TEX_LEN(u64, gJabuRoom1MinimapTex_WIDTH, gJabuRoom1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom1MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom2MinimapTex[TEX_LEN(u64, gJabuRoom2MinimapTex_WIDTH, gJabuRoom2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom2MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom3MinimapTex[TEX_LEN(u64, gJabuRoom3MinimapTex_WIDTH, gJabuRoom3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom3MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom4MinimapTex[TEX_LEN(u64, gJabuRoom4MinimapTex_WIDTH, gJabuRoom4MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom4MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom5MinimapTex[TEX_LEN(u64, gJabuRoom5MinimapTex_WIDTH, gJabuRoom5MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom5MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom6MinimapTex[TEX_LEN(u64, gJabuRoom6MinimapTex_WIDTH, gJabuRoom6MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom6MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom7MinimapTex[TEX_LEN(u64, gJabuRoom7MinimapTex_WIDTH, gJabuRoom7MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom7MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom8MinimapTex[TEX_LEN(u64, gJabuRoom8MinimapTex_WIDTH, gJabuRoom8MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom8MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom9MinimapTex[TEX_LEN(u64, gJabuRoom9MinimapTex_WIDTH, gJabuRoom9MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom9MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom10MinimapTex[TEX_LEN(u64, gJabuRoom10MinimapTex_WIDTH, gJabuRoom10MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom10MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom11MinimapTex[TEX_LEN(u64, gJabuRoom11MinimapTex_WIDTH, gJabuRoom11MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom11MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom12MinimapTex[TEX_LEN(u64, gJabuRoom12MinimapTex_WIDTH, gJabuRoom12MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom12MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom13MinimapTex[TEX_LEN(u64, gJabuRoom13MinimapTex_WIDTH, gJabuRoom13MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom13MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom14MinimapTex[TEX_LEN(u64, gJabuRoom14MinimapTex_WIDTH, gJabuRoom14MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom14MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom1Basement1MinimapTex[TEX_LEN(u64, gJabuRoom1Basement1MinimapTex_WIDTH, gJabuRoom1Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom1Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gJabuRoom6Basement1MinimapTex[TEX_LEN(u64, gJabuRoom6Basement1MinimapTex_WIDTH, gJabuRoom6Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gJabuRoom6Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom0Floor1MinimapTex[TEX_LEN(u64, gForestTempleRoom0Floor1MinimapTex_WIDTH, gForestTempleRoom0Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom0Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom1MinimapTex[TEX_LEN(u64, gForestTempleRoom1MinimapTex_WIDTH, gForestTempleRoom1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom1MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom2MinimapTex[TEX_LEN(u64, gForestTempleRoom2MinimapTex_WIDTH, gForestTempleRoom2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom2MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom3MinimapTex[TEX_LEN(u64, gForestTempleRoom3MinimapTex_WIDTH, gForestTempleRoom3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom3MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom4MinimapTex[TEX_LEN(u64, gForestTempleRoom4MinimapTex_WIDTH, gForestTempleRoom4MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom4MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom5MinimapTex[TEX_LEN(u64, gForestTempleRoom5MinimapTex_WIDTH, gForestTempleRoom5MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom5MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom6Floor1MinimapTex[TEX_LEN(u64, gForestTempleRoom6Floor1MinimapTex_WIDTH, gForestTempleRoom6Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom6Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom7Floor1MinimapTex[TEX_LEN(u64, gForestTempleRoom7Floor1MinimapTex_WIDTH, gForestTempleRoom7Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom7Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom8Floor1MinimapTex[TEX_LEN(u64, gForestTempleRoom8Floor1MinimapTex_WIDTH, gForestTempleRoom8Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom8Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom9MinimapTex[TEX_LEN(u64, gForestTempleRoom9MinimapTex_WIDTH, gForestTempleRoom9MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom9MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom10MinimapTex[TEX_LEN(u64, gForestTempleRoom10MinimapTex_WIDTH, gForestTempleRoom10MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom10MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom11Floor1MinimapTex[TEX_LEN(u64, gForestTempleRoom11Floor1MinimapTex_WIDTH, gForestTempleRoom11Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom11Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom12MinimapTex[TEX_LEN(u64, gForestTempleRoom12MinimapTex_WIDTH, gForestTempleRoom12MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom12MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom13MinimapTex[TEX_LEN(u64, gForestTempleRoom13MinimapTex_WIDTH, gForestTempleRoom13MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom13MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom14MinimapTex[TEX_LEN(u64, gForestTempleRoom14MinimapTex_WIDTH, gForestTempleRoom14MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom14MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom15MinimapTex[TEX_LEN(u64, gForestTempleRoom15MinimapTex_WIDTH, gForestTempleRoom15MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom15MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom16MinimapTex[TEX_LEN(u64, gForestTempleRoom16MinimapTex_WIDTH, gForestTempleRoom16MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom16MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom17MinimapTex[TEX_LEN(u64, gForestTempleRoom17MinimapTex_WIDTH, gForestTempleRoom17MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom17MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom18MinimapTex[TEX_LEN(u64, gForestTempleRoom18MinimapTex_WIDTH, gForestTempleRoom18MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom18MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom19MinimapTex[TEX_LEN(u64, gForestTempleRoom19MinimapTex_WIDTH, gForestTempleRoom19MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom19MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom20MinimapTex[TEX_LEN(u64, gForestTempleRoom20MinimapTex_WIDTH, gForestTempleRoom20MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom20MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom21MinimapTex[TEX_LEN(u64, gForestTempleRoom21MinimapTex_WIDTH, gForestTempleRoom21MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom21MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom0Floor3MinimapTex[TEX_LEN(u64, gForestTempleRoom0Floor3MinimapTex_WIDTH, gForestTempleRoom0Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom0Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom6Floor3MinimapTex[TEX_LEN(u64, gForestTempleRoom6Floor3MinimapTex_WIDTH, gForestTempleRoom6Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom6Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom7Floor3MinimapTex[TEX_LEN(u64, gForestTempleRoom7Floor3MinimapTex_WIDTH, gForestTempleRoom7Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom7Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom8Floor3MinimapTex[TEX_LEN(u64, gForestTempleRoom8Floor3MinimapTex_WIDTH, gForestTempleRoom8Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom8Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gForestTempleRoom11Floor3MinimapTex[TEX_LEN(u64, gForestTempleRoom11Floor3MinimapTex_WIDTH, gForestTempleRoom11Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gForestTempleRoom11Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom0MinimapTex[TEX_LEN(u64, gFireTempleRoom0MinimapTex_WIDTH, gFireTempleRoom0MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom0MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom1MinimapTex[TEX_LEN(u64, gFireTempleRoom1MinimapTex_WIDTH, gFireTempleRoom1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom1MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom2MinimapTex[TEX_LEN(u64, gFireTempleRoom2MinimapTex_WIDTH, gFireTempleRoom2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom2MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom3MinimapTex[TEX_LEN(u64, gFireTempleRoom3MinimapTex_WIDTH, gFireTempleRoom3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom3MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom4Floor1MinimapTex[TEX_LEN(u64, gFireTempleRoom4Floor1MinimapTex_WIDTH, gFireTempleRoom4Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom4Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom5Floor1MinimapTex[TEX_LEN(u64, gFireTempleRoom5Floor1MinimapTex_WIDTH, gFireTempleRoom5Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom5Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom6Floor1MinimapTex[TEX_LEN(u64, gFireTempleRoom6Floor1MinimapTex_WIDTH, gFireTempleRoom6Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom6Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom7Floor1MinimapTex[TEX_LEN(u64, gFireTempleRoom7Floor1MinimapTex_WIDTH, gFireTempleRoom7Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom7Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom8MinimapTex[TEX_LEN(u64, gFireTempleRoom8MinimapTex_WIDTH, gFireTempleRoom8MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom8MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom9MinimapTex[TEX_LEN(u64, gFireTempleRoom9MinimapTex_WIDTH, gFireTempleRoom9MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom9MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom10Floor1MinimapTex[TEX_LEN(u64, gFireTempleRoom10Floor1MinimapTex_WIDTH, gFireTempleRoom10Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom10Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom11Floor1MinimapTex[TEX_LEN(u64, gFireTempleRoom11Floor1MinimapTex_WIDTH, gFireTempleRoom11Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom11Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom12Floor1MinimapTex[TEX_LEN(u64, gFireTempleRoom12Floor1MinimapTex_WIDTH, gFireTempleRoom12Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom12Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom13Floor1MinimapTex[TEX_LEN(u64, gFireTempleRoom13Floor1MinimapTex_WIDTH, gFireTempleRoom13Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom13Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom14MinimapTex[TEX_LEN(u64, gFireTempleRoom14MinimapTex_WIDTH, gFireTempleRoom14MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom14MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom15MinimapTex[TEX_LEN(u64, gFireTempleRoom15MinimapTex_WIDTH, gFireTempleRoom15MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom15MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom16MinimapTex[TEX_LEN(u64, gFireTempleRoom16MinimapTex_WIDTH, gFireTempleRoom16MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom16MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom17MinimapTex[TEX_LEN(u64, gFireTempleRoom17MinimapTex_WIDTH, gFireTempleRoom17MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom17MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom18MinimapTex[TEX_LEN(u64, gFireTempleRoom18MinimapTex_WIDTH, gFireTempleRoom18MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom18MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom19MinimapTex[TEX_LEN(u64, gFireTempleRoom19MinimapTex_WIDTH, gFireTempleRoom19MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom19MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom20MinimapTex[TEX_LEN(u64, gFireTempleRoom20MinimapTex_WIDTH, gFireTempleRoom20MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom20MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom21Floor1MinimapTex[TEX_LEN(u64, gFireTempleRoom21Floor1MinimapTex_WIDTH, gFireTempleRoom21Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom21Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom22MinimapTex[TEX_LEN(u64, gFireTempleRoom22MinimapTex_WIDTH, gFireTempleRoom22MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom22MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom23MinimapTex[TEX_LEN(u64, gFireTempleRoom23MinimapTex_WIDTH, gFireTempleRoom23MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom23MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom24Floor1MinimapTex[TEX_LEN(u64, gFireTempleRoom24Floor1MinimapTex_WIDTH, gFireTempleRoom24Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom24Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom25MinimapTex[TEX_LEN(u64, gFireTempleRoom25MinimapTex_WIDTH, gFireTempleRoom25MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom25MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom4Floor3MinimapTex[TEX_LEN(u64, gFireTempleRoom4Floor3MinimapTex_WIDTH, gFireTempleRoom4Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom4Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom5Floor3MinimapTex[TEX_LEN(u64, gFireTempleRoom5Floor3MinimapTex_WIDTH, gFireTempleRoom5Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom5Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom6Floor2MinimapTex[TEX_LEN(u64, gFireTempleRoom6Floor2MinimapTex_WIDTH, gFireTempleRoom6Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom6Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom6Floor3MinimapTex[TEX_LEN(u64, gFireTempleRoom6Floor3MinimapTex_WIDTH, gFireTempleRoom6Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom6Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom7Floor3MinimapTex[TEX_LEN(u64, gFireTempleRoom7Floor3MinimapTex_WIDTH, gFireTempleRoom7Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom7Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom10Floor2MinimapTex[TEX_LEN(u64, gFireTempleRoom10Floor2MinimapTex_WIDTH, gFireTempleRoom10Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom10Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom10Floor3MinimapTex[TEX_LEN(u64, gFireTempleRoom10Floor3MinimapTex_WIDTH, gFireTempleRoom10Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom10Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom11Floor3MinimapTex[TEX_LEN(u64, gFireTempleRoom11Floor3MinimapTex_WIDTH, gFireTempleRoom11Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom11Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom12Floor3MinimapTex[TEX_LEN(u64, gFireTempleRoom12Floor3MinimapTex_WIDTH, gFireTempleRoom12Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom12Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom13Floor3MinimapTex[TEX_LEN(u64, gFireTempleRoom13Floor3MinimapTex_WIDTH, gFireTempleRoom13Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom13Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom21Floor3MinimapTex[TEX_LEN(u64, gFireTempleRoom21Floor3MinimapTex_WIDTH, gFireTempleRoom21Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom21Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gFireTempleRoom24Floor3MinimapTex[TEX_LEN(u64, gFireTempleRoom24Floor3MinimapTex_WIDTH, gFireTempleRoom24Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gFireTempleRoom24Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom0Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom0Floor3MinimapTex_WIDTH, gWaterTempleRoom0Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom0Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom1Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom1Floor3MinimapTex_WIDTH, gWaterTempleRoom1Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom1Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom2MinimapTex[TEX_LEN(u64, gWaterTempleRoom2MinimapTex_WIDTH, gWaterTempleRoom2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom2MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom3Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom3Floor3MinimapTex_WIDTH, gWaterTempleRoom3Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom3Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom4Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom4Floor3MinimapTex_WIDTH, gWaterTempleRoom4Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom4Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom5Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom5Floor3MinimapTex_WIDTH, gWaterTempleRoom5Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom5Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom6MinimapTex[TEX_LEN(u64, gWaterTempleRoom6MinimapTex_WIDTH, gWaterTempleRoom6MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom6MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom7MinimapTex[TEX_LEN(u64, gWaterTempleRoom7MinimapTex_WIDTH, gWaterTempleRoom7MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom7MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom8Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom8Floor3MinimapTex_WIDTH, gWaterTempleRoom8Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom8Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom9Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom9Floor3MinimapTex_WIDTH, gWaterTempleRoom9Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom9Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom10Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom10Floor3MinimapTex_WIDTH, gWaterTempleRoom10Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom10Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom11MinimapTex[TEX_LEN(u64, gWaterTempleRoom11MinimapTex_WIDTH, gWaterTempleRoom11MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom11MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom12Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom12Floor3MinimapTex_WIDTH, gWaterTempleRoom12Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom12Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom13MinimapTex[TEX_LEN(u64, gWaterTempleRoom13MinimapTex_WIDTH, gWaterTempleRoom13MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom13MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom14Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom14Floor3MinimapTex_WIDTH, gWaterTempleRoom14Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom14Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom15Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom15Floor3MinimapTex_WIDTH, gWaterTempleRoom15Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom15Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom16MinimapTex[TEX_LEN(u64, gWaterTempleRoom16MinimapTex_WIDTH, gWaterTempleRoom16MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom16MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom17Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom17Floor3MinimapTex_WIDTH, gWaterTempleRoom17Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom17Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom18MinimapTex[TEX_LEN(u64, gWaterTempleRoom18MinimapTex_WIDTH, gWaterTempleRoom18MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom18MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom19MinimapTex[TEX_LEN(u64, gWaterTempleRoom19MinimapTex_WIDTH, gWaterTempleRoom19MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom19MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom20Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom20Floor3MinimapTex_WIDTH, gWaterTempleRoom20Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom20Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom21Floor3MinimapTex[TEX_LEN(u64, gWaterTempleRoom21Floor3MinimapTex_WIDTH, gWaterTempleRoom21Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom21Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom0Floor2MinimapTex[TEX_LEN(u64, gWaterTempleRoom0Floor2MinimapTex_WIDTH, gWaterTempleRoom0Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom0Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom0Floor1MinimapTex[TEX_LEN(u64, gWaterTempleRoom0Floor1MinimapTex_WIDTH, gWaterTempleRoom0Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom0Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom0Basement1MinimapTex[TEX_LEN(u64, gWaterTempleRoom0Basement1MinimapTex_WIDTH, gWaterTempleRoom0Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom0Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom1Floor2MinimapTex[TEX_LEN(u64, gWaterTempleRoom1Floor2MinimapTex_WIDTH, gWaterTempleRoom1Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom1Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom1Floor1MinimapTex[TEX_LEN(u64, gWaterTempleRoom1Floor1MinimapTex_WIDTH, gWaterTempleRoom1Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom1Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom1Basement1MinimapTex[TEX_LEN(u64, gWaterTempleRoom1Basement1MinimapTex_WIDTH, gWaterTempleRoom1Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom1Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom3Basement1MinimapTex[TEX_LEN(u64, gWaterTempleRoom3Basement1MinimapTex_WIDTH, gWaterTempleRoom3Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom3Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom4Floor2MinimapTex[TEX_LEN(u64, gWaterTempleRoom4Floor2MinimapTex_WIDTH, gWaterTempleRoom4Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom4Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom5Floor2MinimapTex[TEX_LEN(u64, gWaterTempleRoom5Floor2MinimapTex_WIDTH, gWaterTempleRoom5Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom5Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom5Floor1MinimapTex[TEX_LEN(u64, gWaterTempleRoom5Floor1MinimapTex_WIDTH, gWaterTempleRoom5Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom5Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom6Floor2MinimapTex[TEX_LEN(u64, gWaterTempleRoom6Floor2MinimapTex_WIDTH, gWaterTempleRoom6Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom6Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom8Basement1MinimapTex[TEX_LEN(u64, gWaterTempleRoom8Basement1MinimapTex_WIDTH, gWaterTempleRoom8Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom8Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom9Basement1MinimapTex[TEX_LEN(u64, gWaterTempleRoom9Basement1MinimapTex_WIDTH, gWaterTempleRoom9Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom9Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom10Floor2MinimapTex[TEX_LEN(u64, gWaterTempleRoom10Floor2MinimapTex_WIDTH, gWaterTempleRoom10Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom10Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom12Basement1MinimapTex[TEX_LEN(u64, gWaterTempleRoom12Basement1MinimapTex_WIDTH, gWaterTempleRoom12Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom12Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom14Basement1MinimapTex[TEX_LEN(u64, gWaterTempleRoom14Basement1MinimapTex_WIDTH, gWaterTempleRoom14Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom14Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom15Basement1MinimapTex[TEX_LEN(u64, gWaterTempleRoom15Basement1MinimapTex_WIDTH, gWaterTempleRoom15Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom15Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom17Floor2MinimapTex[TEX_LEN(u64, gWaterTempleRoom17Floor2MinimapTex_WIDTH, gWaterTempleRoom17Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom17Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom17Floor1MinimapTex[TEX_LEN(u64, gWaterTempleRoom17Floor1MinimapTex_WIDTH, gWaterTempleRoom17Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom17Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom20Floor2MinimapTex[TEX_LEN(u64, gWaterTempleRoom20Floor2MinimapTex_WIDTH, gWaterTempleRoom20Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom20Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom21Floor1MinimapTex[TEX_LEN(u64, gWaterTempleRoom21Floor1MinimapTex_WIDTH, gWaterTempleRoom21Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom21Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gWaterTempleRoom5Basement1MinimapTex[TEX_LEN(u64, gWaterTempleRoom5Basement1MinimapTex_WIDTH, gWaterTempleRoom5Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gWaterTempleRoom5Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom0MinimapTex[TEX_LEN(u64, gSpiritTempleRoom0MinimapTex_WIDTH, gSpiritTempleRoom0MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom0MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom1MinimapTex[TEX_LEN(u64, gSpiritTempleRoom1MinimapTex_WIDTH, gSpiritTempleRoom1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom1MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom2MinimapTex[TEX_LEN(u64, gSpiritTempleRoom2MinimapTex_WIDTH, gSpiritTempleRoom2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom2MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom3MinimapTex[TEX_LEN(u64, gSpiritTempleRoom3MinimapTex_WIDTH, gSpiritTempleRoom3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom3MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom4Floor1MinimapTex[TEX_LEN(u64, gSpiritTempleRoom4Floor1MinimapTex_WIDTH, gSpiritTempleRoom4Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom4Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom5Floor2MinimapTex[TEX_LEN(u64, gSpiritTempleRoom5Floor2MinimapTex_WIDTH, gSpiritTempleRoom5Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom5Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom6MinimapTex[TEX_LEN(u64, gSpiritTempleRoom6MinimapTex_WIDTH, gSpiritTempleRoom6MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom6MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom7MinimapTex[TEX_LEN(u64, gSpiritTempleRoom7MinimapTex_WIDTH, gSpiritTempleRoom7MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom7MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom8MinimapTex[TEX_LEN(u64, gSpiritTempleRoom8MinimapTex_WIDTH, gSpiritTempleRoom8MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom8MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom9MinimapTex[TEX_LEN(u64, gSpiritTempleRoom9MinimapTex_WIDTH, gSpiritTempleRoom9MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom9MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom10MinimapTex[TEX_LEN(u64, gSpiritTempleRoom10MinimapTex_WIDTH, gSpiritTempleRoom10MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom10MinimapTex.i4.inc.c"
+};
+
+u64 gBlankSpiritTempleRoom11MinimapTex[TEX_LEN(u64, gBlankSpiritTempleRoom11MinimapTex_WIDTH, gBlankSpiritTempleRoom11MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gBlankSpiritTempleRoom11MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom12MinimapTex[TEX_LEN(u64, gSpiritTempleRoom12MinimapTex_WIDTH, gSpiritTempleRoom12MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom12MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom13MinimapTex[TEX_LEN(u64, gSpiritTempleRoom13MinimapTex_WIDTH, gSpiritTempleRoom13MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom13MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom14MinimapTex[TEX_LEN(u64, gSpiritTempleRoom14MinimapTex_WIDTH, gSpiritTempleRoom14MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom14MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom15Floor1MinimapTex[TEX_LEN(u64, gSpiritTempleRoom15Floor1MinimapTex_WIDTH, gSpiritTempleRoom15Floor1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom15Floor1MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom16MinimapTex[TEX_LEN(u64, gSpiritTempleRoom16MinimapTex_WIDTH, gSpiritTempleRoom16MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom16MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom17MinimapTex[TEX_LEN(u64, gSpiritTempleRoom17MinimapTex_WIDTH, gSpiritTempleRoom17MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom17MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom18MinimapTex[TEX_LEN(u64, gSpiritTempleRoom18MinimapTex_WIDTH, gSpiritTempleRoom18MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom18MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom19MinimapTex[TEX_LEN(u64, gSpiritTempleRoom19MinimapTex_WIDTH, gSpiritTempleRoom19MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom19MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom20MinimapTex[TEX_LEN(u64, gSpiritTempleRoom20MinimapTex_WIDTH, gSpiritTempleRoom20MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom20MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom21MinimapTex[TEX_LEN(u64, gSpiritTempleRoom21MinimapTex_WIDTH, gSpiritTempleRoom21MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom21MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom22MinimapTex[TEX_LEN(u64, gSpiritTempleRoom22MinimapTex_WIDTH, gSpiritTempleRoom22MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom22MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom23Floor3MinimapTex[TEX_LEN(u64, gSpiritTempleRoom23Floor3MinimapTex_WIDTH, gSpiritTempleRoom23Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom23Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom24MinimapTex[TEX_LEN(u64, gSpiritTempleRoom24MinimapTex_WIDTH, gSpiritTempleRoom24MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom24MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom25MinimapTex[TEX_LEN(u64, gSpiritTempleRoom25MinimapTex_WIDTH, gSpiritTempleRoom25MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom25MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom26MinimapTex[TEX_LEN(u64, gSpiritTempleRoom26MinimapTex_WIDTH, gSpiritTempleRoom26MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom26MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom27MinimapTex[TEX_LEN(u64, gSpiritTempleRoom27MinimapTex_WIDTH, gSpiritTempleRoom27MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom27MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom4Floor2MinimapTex[TEX_LEN(u64, gSpiritTempleRoom4Floor2MinimapTex_WIDTH, gSpiritTempleRoom4Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom4Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom5Floor3MinimapTex[TEX_LEN(u64, gSpiritTempleRoom5Floor3MinimapTex_WIDTH, gSpiritTempleRoom5Floor3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom5Floor3MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom15Floor2MinimapTex[TEX_LEN(u64, gSpiritTempleRoom15Floor2MinimapTex_WIDTH, gSpiritTempleRoom15Floor2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom15Floor2MinimapTex.i4.inc.c"
+};
+
+u64 gSpiritTempleRoom23Floor4MinimapTex[TEX_LEN(u64, gSpiritTempleRoom23Floor4MinimapTex_WIDTH, gSpiritTempleRoom23Floor4MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gSpiritTempleRoom23Floor4MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom0MinimapTex[TEX_LEN(u64, gShadowTempleRoom0MinimapTex_WIDTH, gShadowTempleRoom0MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom0MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom1MinimapTex[TEX_LEN(u64, gShadowTempleRoom1MinimapTex_WIDTH, gShadowTempleRoom1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom1MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom2MinimapTex[TEX_LEN(u64, gShadowTempleRoom2MinimapTex_WIDTH, gShadowTempleRoom2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom2MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom3MinimapTex[TEX_LEN(u64, gShadowTempleRoom3MinimapTex_WIDTH, gShadowTempleRoom3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom3MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom4MinimapTex[TEX_LEN(u64, gShadowTempleRoom4MinimapTex_WIDTH, gShadowTempleRoom4MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom4MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom5MinimapTex[TEX_LEN(u64, gShadowTempleRoom5MinimapTex_WIDTH, gShadowTempleRoom5MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom5MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom6MinimapTex[TEX_LEN(u64, gShadowTempleRoom6MinimapTex_WIDTH, gShadowTempleRoom6MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom6MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom7MinimapTex[TEX_LEN(u64, gShadowTempleRoom7MinimapTex_WIDTH, gShadowTempleRoom7MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom7MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom8Basement2MinimapTex[TEX_LEN(u64, gShadowTempleRoom8Basement2MinimapTex_WIDTH, gShadowTempleRoom8Basement2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom8Basement2MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom9Basement3MinimapTex[TEX_LEN(u64, gShadowTempleRoom9Basement3MinimapTex_WIDTH, gShadowTempleRoom9Basement3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom9Basement3MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom10MinimapTex[TEX_LEN(u64, gShadowTempleRoom10MinimapTex_WIDTH, gShadowTempleRoom10MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom10MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom11MinimapTex[TEX_LEN(u64, gShadowTempleRoom11MinimapTex_WIDTH, gShadowTempleRoom11MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom11MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom12Basement3MinimapTex[TEX_LEN(u64, gShadowTempleRoom12Basement3MinimapTex_WIDTH, gShadowTempleRoom12Basement3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom12Basement3MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom13MinimapTex[TEX_LEN(u64, gShadowTempleRoom13MinimapTex_WIDTH, gShadowTempleRoom13MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom13MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom14Basement3MinimapTex[TEX_LEN(u64, gShadowTempleRoom14Basement3MinimapTex_WIDTH, gShadowTempleRoom14Basement3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom14Basement3MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom15MinimapTex[TEX_LEN(u64, gShadowTempleRoom15MinimapTex_WIDTH, gShadowTempleRoom15MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom15MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom16MinimapTex[TEX_LEN(u64, gShadowTempleRoom16MinimapTex_WIDTH, gShadowTempleRoom16MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom16MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom17MinimapTex[TEX_LEN(u64, gShadowTempleRoom17MinimapTex_WIDTH, gShadowTempleRoom17MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom17MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom18MinimapTex[TEX_LEN(u64, gShadowTempleRoom18MinimapTex_WIDTH, gShadowTempleRoom18MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom18MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom19MinimapTex[TEX_LEN(u64, gShadowTempleRoom19MinimapTex_WIDTH, gShadowTempleRoom19MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom19MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom20MinimapTex[TEX_LEN(u64, gShadowTempleRoom20MinimapTex_WIDTH, gShadowTempleRoom20MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom20MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom21Basement3MinimapTex[TEX_LEN(u64, gShadowTempleRoom21Basement3MinimapTex_WIDTH, gShadowTempleRoom21Basement3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom21Basement3MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom8Basement3MinimapTex[TEX_LEN(u64, gShadowTempleRoom8Basement3MinimapTex_WIDTH, gShadowTempleRoom8Basement3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom8Basement3MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom9Basement4MinimapTex[TEX_LEN(u64, gShadowTempleRoom9Basement4MinimapTex_WIDTH, gShadowTempleRoom9Basement4MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom9Basement4MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom12Basement4MinimapTex[TEX_LEN(u64, gShadowTempleRoom12Basement4MinimapTex_WIDTH, gShadowTempleRoom12Basement4MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom12Basement4MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom14Basement4MinimapTex[TEX_LEN(u64, gShadowTempleRoom14Basement4MinimapTex_WIDTH, gShadowTempleRoom14Basement4MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom14Basement4MinimapTex.i4.inc.c"
+};
+
+u64 gShadowTempleRoom21Basement4MinimapTex[TEX_LEN(u64, gShadowTempleRoom21Basement4MinimapTex_WIDTH, gShadowTempleRoom21Basement4MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gShadowTempleRoom21Basement4MinimapTex.i4.inc.c"
+};
+
+u64 gBottomOfTheWellRoom0Basement1MinimapTex[TEX_LEN(u64, gBottomOfTheWellRoom0Basement1MinimapTex_WIDTH, gBottomOfTheWellRoom0Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gBottomOfTheWellRoom0Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gBottomOfTheWellRoom1Basement1MinimapTex[TEX_LEN(u64, gBottomOfTheWellRoom1Basement1MinimapTex_WIDTH, gBottomOfTheWellRoom1Basement1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gBottomOfTheWellRoom1Basement1MinimapTex.i4.inc.c"
+};
+
+u64 gBottomOfTheWellRoom2MinimapTex[TEX_LEN(u64, gBottomOfTheWellRoom2MinimapTex_WIDTH, gBottomOfTheWellRoom2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gBottomOfTheWellRoom2MinimapTex.i4.inc.c"
+};
+
+u64 gBottomOfTheWellRoom3MinimapTex[TEX_LEN(u64, gBottomOfTheWellRoom3MinimapTex_WIDTH, gBottomOfTheWellRoom3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gBottomOfTheWellRoom3MinimapTex.i4.inc.c"
+};
+
+u64 gBottomOfTheWellRoom4MinimapTex[TEX_LEN(u64, gBottomOfTheWellRoom4MinimapTex_WIDTH, gBottomOfTheWellRoom4MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gBottomOfTheWellRoom4MinimapTex.i4.inc.c"
+};
+
+u64 gBottomOfTheWellRoom5MinimapTex[TEX_LEN(u64, gBottomOfTheWellRoom5MinimapTex_WIDTH, gBottomOfTheWellRoom5MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gBottomOfTheWellRoom5MinimapTex.i4.inc.c"
+};
+
+u64 gBottomOfTheWellRoom6MinimapTex[TEX_LEN(u64, gBottomOfTheWellRoom6MinimapTex_WIDTH, gBottomOfTheWellRoom6MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gBottomOfTheWellRoom6MinimapTex.i4.inc.c"
+};
+
+u64 gBottomOfTheWellRoom0Basement2MinimapTex[TEX_LEN(u64, gBottomOfTheWellRoom0Basement2MinimapTex_WIDTH, gBottomOfTheWellRoom0Basement2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gBottomOfTheWellRoom0Basement2MinimapTex.i4.inc.c"
+};
+
+u64 gBottomOfTheWellRoom1Basement2MinimapTex[TEX_LEN(u64, gBottomOfTheWellRoom1Basement2MinimapTex_WIDTH, gBottomOfTheWellRoom1Basement2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gBottomOfTheWellRoom1Basement2MinimapTex.i4.inc.c"
+};
+
+u64 gBottomOfTheWellRoom1Basement3MinimapTex[TEX_LEN(u64, gBottomOfTheWellRoom1Basement3MinimapTex_WIDTH, gBottomOfTheWellRoom1Basement3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gBottomOfTheWellRoom1Basement3MinimapTex.i4.inc.c"
+};
+
+u64 gIceCavernRoom0MinimapTex[TEX_LEN(u64, gIceCavernRoom0MinimapTex_WIDTH, gIceCavernRoom0MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gIceCavernRoom0MinimapTex.i4.inc.c"
+};
+
+u64 gIceCavernRoom1MinimapTex[TEX_LEN(u64, gIceCavernRoom1MinimapTex_WIDTH, gIceCavernRoom1MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gIceCavernRoom1MinimapTex.i4.inc.c"
+};
+
+u64 gIceCavernRoom2MinimapTex[TEX_LEN(u64, gIceCavernRoom2MinimapTex_WIDTH, gIceCavernRoom2MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gIceCavernRoom2MinimapTex.i4.inc.c"
+};
+
+u64 gIceCavernRoom3MinimapTex[TEX_LEN(u64, gIceCavernRoom3MinimapTex_WIDTH, gIceCavernRoom3MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gIceCavernRoom3MinimapTex.i4.inc.c"
+};
+
+u64 gIceCavernRoom4MinimapTex[TEX_LEN(u64, gIceCavernRoom4MinimapTex_WIDTH, gIceCavernRoom4MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gIceCavernRoom4MinimapTex.i4.inc.c"
+};
+
+u64 gIceCavernRoom5MinimapTex[TEX_LEN(u64, gIceCavernRoom5MinimapTex_WIDTH, gIceCavernRoom5MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gIceCavernRoom5MinimapTex.i4.inc.c"
+};
+
+u64 gIceCavernRoom6MinimapTex[TEX_LEN(u64, gIceCavernRoom6MinimapTex_WIDTH, gIceCavernRoom6MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gIceCavernRoom6MinimapTex.i4.inc.c"
+};
+
+u64 gIceCavernRoom7MinimapTex[TEX_LEN(u64, gIceCavernRoom7MinimapTex_WIDTH, gIceCavernRoom7MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gIceCavernRoom7MinimapTex.i4.inc.c"
+};
+
+u64 gIceCavernRoom8MinimapTex[TEX_LEN(u64, gIceCavernRoom8MinimapTex_WIDTH, gIceCavernRoom8MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gIceCavernRoom8MinimapTex.i4.inc.c"
+};
+
+u64 gIceCavernRoom9MinimapTex[TEX_LEN(u64, gIceCavernRoom9MinimapTex_WIDTH, gIceCavernRoom9MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gIceCavernRoom9MinimapTex.i4.inc.c"
+};
+
+u64 gIceCavernRoom10MinimapTex[TEX_LEN(u64, gIceCavernRoom10MinimapTex_WIDTH, gIceCavernRoom10MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gIceCavernRoom10MinimapTex.i4.inc.c"
+};
+
+u64 gIceCavernRoom11MinimapTex[TEX_LEN(u64, gIceCavernRoom11MinimapTex_WIDTH, gIceCavernRoom11MinimapTex_HEIGHT, 4)] = {
+#include "assets/textures/map_i_static/gIceCavernRoom11MinimapTex.i4.inc.c"
+};
+

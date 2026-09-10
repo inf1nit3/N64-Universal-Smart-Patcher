@@ -1,0 +1,7 @@
+    OBJECT_IM, // 0
+    OBJECT_RU2, // 1
+    OBJECT_NB, // 2
+    OBJECT_SA, // 3
+    OBJECT_DU, // 4
+    OBJECT_EFC_FLASH, // 5
+

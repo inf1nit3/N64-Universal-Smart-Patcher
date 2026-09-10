@@ -1,0 +1,7 @@
+    {
+        ACTOR_EN_WEATHER_TAG,
+        {      0,    421,      0 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x2804, // params
+    }, // 0
+

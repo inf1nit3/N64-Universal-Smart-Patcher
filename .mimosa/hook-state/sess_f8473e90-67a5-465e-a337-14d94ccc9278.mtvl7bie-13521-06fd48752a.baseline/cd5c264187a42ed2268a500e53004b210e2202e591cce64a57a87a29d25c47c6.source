@@ -1,0 +1,11 @@
+#ifndef VR_ALVR_PAL_STATIC_H
+#define VR_ALVR_PAL_STATIC_H
+
+#include "ultra64.h"
+
+//#define gMarketPotionShopBgTLUT_TLUT_COUNT 256
+extern u64 gMarketPotionShopBgTLUT[];
+//#define gMarketPotionShopBg2TLUT_TLUT_COUNT 256
+extern u64 gMarketPotionShopBg2TLUT[];
+
+#endif

@@ -1,0 +1,11 @@
+#include "vr_ZRVR_pal_static.h"
+
+
+u64 gZoraShopBgTLUT[] = {
+#include "assets/textures/backgrounds/gZoraShopBgTex.tlut.rgba16.inc.c"
+};
+
+u64 gZoraShopBg2TLUT[] = {
+#include "assets/textures/backgrounds/gZoraShop2BgTex.tlut.rgba16.inc.c"
+};
+

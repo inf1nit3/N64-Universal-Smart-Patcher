@@ -1,0 +1,61 @@
+    {
+        ACTOR_PLAYER,
+        {  -2093,  -1037,    705 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0FFF, // params
+    }, // 0
+    {
+        ACTOR_PLAYER,
+        {  -3921,  -1138,   2533 }, // pos
+        {  0x0000,  0x238E,  0x0000 }, // rot
+         0x0FFF, // params
+    }, // 1
+    {
+        ACTOR_PLAYER,
+        {   -917,  -2201,   6359 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x0FFF, // params
+    }, // 2
+    {
+        ACTOR_PLAYER,
+        {  -2093,  -1037,    706 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0FFF, // params
+    }, // 3
+    {
+        ACTOR_PLAYER,
+        {  -2423,  -1033,   3861 }, // pos
+        {  0x0000,  0x4000,  0x0000 }, // rot
+         0x0EFF, // params
+    }, // 4
+    {
+        ACTOR_PLAYER,
+        {  -1254,  -1243,   7361 }, // pos
+        {  0x0000,  0x4000,  0x0000 }, // rot
+         0x0DFF, // params
+    }, // 5
+    {
+        ACTOR_PLAYER,
+        {   1329,  -1218,   3872 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x0EFF, // params
+    }, // 6
+    {
+        ACTOR_PLAYER,
+        {   -918,  -1543,   3761 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0FFF, // params
+    }, // 7
+    {
+        ACTOR_PLAYER,
+        {  -1045,  -1223,   7460 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x0DFF, // params
+    }, // 8
+    {
+        ACTOR_PLAYER,
+        {  -1045,  -1223,   7460 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x0200, // params
+    }, // 9
+

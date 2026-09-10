@@ -1,0 +1,31 @@
+    {
+        ACTOR_EN_HATA,
+        {  -1696,     13,  -3424 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 0
+    {
+        ACTOR_EN_HATA,
+        {  -4228,    -18,  -3363 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 1
+    {
+        ACTOR_EN_HATA,
+        {  -4221,    -18,  -3246 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 2
+    {
+        ACTOR_BG_SPOT12_SAKU,
+        {     86,    337,  -1035 }, // pos
+        {  0x0000, -0x4000,  0x0000 }, // rot
+         0x00FF, // params
+    }, // 3
+    {
+        ACTOR_BG_SPOT12_GATE,
+        {  -1134,    112,  -3075 }, // pos
+        {  0x0000,  0x2444,  0x0000 }, // rot
+         0x00FF, // params
+    }, // 4
+

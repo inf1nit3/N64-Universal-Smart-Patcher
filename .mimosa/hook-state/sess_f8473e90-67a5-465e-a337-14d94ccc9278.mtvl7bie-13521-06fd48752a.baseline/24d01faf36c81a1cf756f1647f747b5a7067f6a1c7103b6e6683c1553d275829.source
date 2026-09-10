@@ -1,0 +1,41 @@
+    {
+        {
+            13, // x
+            615, // y
+            -1198, // z
+        }, // boundsSphereCenter
+        131, // boundsSphereRadius
+        spot17_room_0_03000070_RoomShapeCullable_0300007C_CullableEntries_03001D30_DL, // opa
+        NULL, // xlu
+    }, // 0
+    {
+        {
+            13, // x
+            245, // y
+            -1508, // z
+        }, // boundsSphereCenter
+        741, // boundsSphereRadius
+        spot17_room_0_03000070_RoomShapeCullable_0300007C_CullableEntries_03001110_DL, // opa
+        NULL, // xlu
+    }, // 1
+    {
+        {
+            147, // x
+            1400, // y
+            893, // z
+        }, // boundsSphereCenter
+        2248, // boundsSphereRadius
+        spot17_room_0_03000070_RoomShapeCullable_0300007C_CullableEntries_030027C8_DL, // opa
+        NULL, // xlu
+    }, // 2
+    {
+        {
+            341, // x
+            2230, // y
+            1462, // z
+        }, // boundsSphereCenter
+        3138, // boundsSphereRadius
+        spot17_room_0_03000070_RoomShapeCullable_0300007C_CullableEntries_03003480_DL, // opa
+        NULL, // xlu
+    }, // 3
+

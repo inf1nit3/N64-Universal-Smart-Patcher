@@ -1,0 +1,110 @@
+#include "spot10_room_7.h"
+#include "assets/scenes/overworld/spot10/spot10_scene.h"
+
+#include "actor.h"
+#include "array_count.h"
+#include "gfx.h"
+#include "object.h"
+#include "sequence.h"
+#include "skybox.h"
+#include "sys_matrix.h"
+#include "ultra64.h"
+
+SceneCmd spot10_room_7[] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7.inc.c"
+};
+
+SceneCmd* spot10_room_7_03000048_AltHeaders[] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_03000048_AltHeaders.inc.c"
+};
+
+s16 spot10_room_7_03000058_ObjectList[LENGTH_spot10_room_7_03000058_ObjectList] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_03000058_ObjectList.inc.c"
+};
+
+ActorEntry spot10_room_7_03000070_ActorEntryList[LENGTH_spot10_room_7_03000070_ActorEntryList] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_03000070_ActorEntryList.inc.c"
+};
+
+RoomShapeNormal spot10_room_7_030000D0_RoomShapeNormal = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal.inc.c"
+};
+
+RoomShapeDListsEntry spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries[LENGTH_spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries.inc.c"
+};
+
+u8 spot10_room_7_unaccounted_0000E4[] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_unaccounted_0000E4.bin.inc.c"
+};
+
+SceneCmd spot10_room_7_03000048_AltHeaders_030000F0_Cmds[] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_03000048_AltHeaders_030000F0_Cmds.inc.c"
+};
+
+s16 spot10_room_7_03000048_AltHeaders_030000F0_Cmds_03000130_ObjectList[LENGTH_spot10_room_7_03000048_AltHeaders_030000F0_Cmds_03000130_ObjectList] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_03000048_AltHeaders_030000F0_Cmds_03000130_ObjectList.inc.c"
+};
+
+ActorEntry spot10_room_7_03000048_AltHeaders_030000F0_Cmds_03000148_ActorEntryList[LENGTH_spot10_room_7_03000048_AltHeaders_030000F0_Cmds_03000148_ActorEntryList] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_03000048_AltHeaders_030000F0_Cmds_03000148_ActorEntryList.inc.c"
+};
+
+u8 spot10_room_7_zeros_0001A8[8] = { 0 };
+
+SceneCmd spot10_room_7_03000048_AltHeaders_030001B0_Cmds[] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_03000048_AltHeaders_030001B0_Cmds.inc.c"
+};
+
+Vtx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_030002A0_DL_030001E0_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_030002A0_DL_030001E0_Vtx_fused_.inc.c"
+};
+
+Gfx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_030002A0_DL[30] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_030002A0_DL.inc.c"
+};
+
+Vtx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03000820_DL_03000390_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03000820_DL_03000390_Vtx_fused_.inc.c"
+};
+
+Gfx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03000820_DL[90] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03000820_DL.inc.c"
+};
+
+Vtx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03000F80_DL_03000AF0_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03000F80_DL_03000AF0_Vtx_fused_.inc.c"
+};
+
+Gfx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03000F80_DL[90] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03000F80_DL.inc.c"
+};
+
+Vtx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03001720_DL_03001250_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03001720_DL_03001250_Vtx_fused_.inc.c"
+};
+
+Gfx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03001720_DL[93] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03001720_DL.inc.c"
+};
+
+Vtx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03001ED8_DL_03001A08_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03001ED8_DL_03001A08_Vtx_fused_.inc.c"
+};
+
+Gfx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03001ED8_DL[93] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03001ED8_DL.inc.c"
+};
+
+Vtx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03002440_DL_030021C0_Vtx_fused_[] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03002440_DL_030021C0_Vtx_fused_.inc.c"
+};
+
+Gfx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03002440_DL[41] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL_03002440_DL.inc.c"
+};
+
+Gfx spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL[7] = {
+#include "assets/scenes/overworld/spot10/spot10_room_7_030000D0_RoomShapeNormal_030000DC_DListsEntries_03002588_DL.inc.c"
+};
+

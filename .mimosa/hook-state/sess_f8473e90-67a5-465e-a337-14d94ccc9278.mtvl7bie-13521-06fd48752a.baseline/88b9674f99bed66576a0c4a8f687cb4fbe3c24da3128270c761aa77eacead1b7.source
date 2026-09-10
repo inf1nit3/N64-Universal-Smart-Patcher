@@ -1,0 +1,4 @@
+    { ARRAY_COUNT(spot09_scenePathList_002F58_02002E58_Points), spot09_scenePathList_002F58_02002E58_Points }, // 0
+    { ARRAY_COUNT(spot09_scenePathList_002F58_02002ECC_Points), spot09_scenePathList_002F58_02002ECC_Points }, // 1
+    { ARRAY_COUNT(spot09_scenePathList_002F58_02002E84_Points), spot09_scenePathList_002F58_02002E84_Points }, // 2
+

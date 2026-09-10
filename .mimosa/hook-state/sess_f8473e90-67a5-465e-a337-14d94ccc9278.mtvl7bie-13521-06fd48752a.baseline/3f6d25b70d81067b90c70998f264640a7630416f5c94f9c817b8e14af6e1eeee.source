@@ -1,0 +1,31 @@
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {    809,    857,  -1560 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x2400, // params
+    }, // 0
+    {
+        ACTOR_OBJ_SYOKUDAI,
+        {    428,    857,  -1560 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x2400, // params
+    }, // 1
+    {
+        ACTOR_EN_KANBAN,
+        {    720,    890,  -1345 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0324, // params
+    }, // 2
+    {
+        ACTOR_EN_KANBAN,
+        {    230,    857,  -1440 }, // pos
+        {  0x0000,  0x4000,  0x0000 }, // rot
+         0x032B, // params
+    }, // 3
+    {
+        ACTOR_BG_SPOT07_TAKI,
+        {    445,   1008,  -1742 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0001, // params
+    }, // 4
+

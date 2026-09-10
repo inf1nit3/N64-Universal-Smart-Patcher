@@ -1,0 +1,121 @@
+    {
+        {  80,  80,  75 }, // ambientColor
+        {   73,   73,   73 }, // light1Dir
+        {  70,  70, 130 }, // light1Color
+        {  -73,  -73,  -73 }, // light2Dir
+        {  45,  45,  65 }, // light2Color
+        {  70,  55,  75 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 994), // blendRateAndFogNear
+        12800, // zFar
+    }, // 0
+    {
+        { 150, 125, 105 }, // ambientColor
+        {   73,   73,   73 }, // light1Dir
+        { 165, 180, 165 }, // light1Color
+        {  -73,  -73,  -73 }, // light2Dir
+        {  50,  50,  90 }, // light2Color
+        { 110, 105,  85 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 995), // blendRateAndFogNear
+        12800, // zFar
+    }, // 1
+    {
+        { 150, 125,  80 }, // ambientColor
+        {   73,   73,   73 }, // light1Dir
+        {  90,  50,  50 }, // light1Color
+        {  -73,  -73,  -73 }, // light2Dir
+        {  60,  30,  45 }, // light2Color
+        {  35,  19,  19 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 993), // blendRateAndFogNear
+        12800, // zFar
+    }, // 2
+    {
+        {  64,  87, 110 }, // ambientColor
+        {   73,   73,   73 }, // light1Dir
+        {  30,  30,  60 }, // light1Color
+        {  -73,  -73,  -73 }, // light2Dir
+        {  40,  70, 100 }, // light2Color
+        {  20,  30,  40 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 990), // blendRateAndFogNear
+        12800, // zFar
+    }, // 3
+    {
+        {  60,  40,  70 }, // ambientColor
+        {    0,    0,    0 }, // light1Dir
+        {  80,  30,  60 }, // light1Color
+        {    0,    0,    0 }, // light2Dir
+        {  80,  50, 150 }, // light2Color
+        {  70,  43,  45 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(252, 978), // blendRateAndFogNear
+        12800, // zFar
+    }, // 4
+    {
+        {  75,  90, 100 }, // ambientColor
+        {    0,    0,    0 }, // light1Dir
+        {  55, 255, 240 }, // light1Color
+        {    0,    0,    0 }, // light2Dir
+        {  10, 150, 190 }, // light2Color
+        {  20,  90, 110 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(252, 978), // blendRateAndFogNear
+        12800, // zFar
+    }, // 5
+    {
+        {  60,  40,  80 }, // ambientColor
+        {    0,    0,    0 }, // light1Dir
+        {  60,  75, 150 }, // light1Color
+        {    0,    0,    0 }, // light2Dir
+        {  60,  55, 150 }, // light2Color
+        {  50,  30,  30 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(252, 978), // blendRateAndFogNear
+        12800, // zFar
+    }, // 6
+    {
+        {   0,  40,  80 }, // ambientColor
+        {    0,    0,    0 }, // light1Dir
+        {  20,  50,  75 }, // light1Color
+        {    0,    0,    0 }, // light2Dir
+        {  50, 100, 150 }, // light2Color
+        {   0,  10,  10 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(252, 978), // blendRateAndFogNear
+        12800, // zFar
+    }, // 7
+    {
+        {  96,  92,  92 }, // ambientColor
+        {    0,    0,    0 }, // light1Dir
+        { 160, 134, 118 }, // light1Color
+        {    0,    0,    0 }, // light2Dir
+        {  30,  10,  10 }, // light2Color
+        { 100,  90,  80 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 986), // blendRateAndFogNear
+        12800, // zFar
+    }, // 8
+    {
+        {  95,  80,  80 }, // ambientColor
+        {    0,    0,    0 }, // light1Dir
+        { 145, 145, 130 }, // light1Color
+        {    0,    0,    0 }, // light2Dir
+        {  40,  40,  80 }, // light2Color
+        {  95,  95,  85 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 986), // blendRateAndFogNear
+        12800, // zFar
+    }, // 9
+    {
+        {  80,  70,  70 }, // ambientColor
+        {    0,    0,    0 }, // light1Dir
+        { 150,  70,  35 }, // light1Color
+        {    0,    0,    0 }, // light2Dir
+        {  10,  10,  25 }, // light2Color
+        {  35,  10,  10 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 988), // blendRateAndFogNear
+        12800, // zFar
+    }, // 10
+    {
+        {  70,  70,  90 }, // ambientColor
+        {    0,    0,    0 }, // light1Dir
+        {   0,   0,  15 }, // light1Color
+        {    0,    0,    0 }, // light2Dir
+        {  30,  30,  80 }, // light2Color
+        {   0,   0,  10 }, // fogColor
+        BLEND_RATE_AND_FOG_NEAR(4, 988), // blendRateAndFogNear
+        12800, // zFar
+    }, // 11
+

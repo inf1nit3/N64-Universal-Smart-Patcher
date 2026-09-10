@@ -1,0 +1,79 @@
+    {
+        ACTOR_EN_HORSE_NORMAL,
+        {    124,      0,  -1343 }, // pos
+        {  0x0000, -0x24FA,  0x0001 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 0
+    {
+        ACTOR_EN_HORSE_NORMAL,
+        {   1257,      0,   -735 }, // pos
+        {  0x0000, -0x40B6,  0x0001 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 1
+    {
+        ACTOR_EN_HORSE_NORMAL,
+        {  -1316,      0,   -557 }, // pos
+        {  0x0000,  0x1BBC,  0x0001 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 2
+    {
+        ACTOR_EN_HORSE_NORMAL,
+        {     -9,      0,    111 }, // pos
+        {  0x0000,  0x4000,  0x0001 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 3
+    {
+        ACTOR_EN_HORSE_NORMAL,
+        {   -730,      0,  -1100 }, // pos
+        {  0x0000, -0x2AAB,  0x0001 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 4
+    {
+        ACTOR_EN_HORSE_NORMAL,
+        {    880,      0,  -1170 }, // pos
+        {  0x0000,  0x0E39,  0x0001 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 5
+    {
+        ACTOR_EN_HORSE_LINK_CHILD,
+        {     -4,      0,   -572 }, // pos
+        {  0x0000,  0x4000,  0x0003 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 6
+    {
+        ACTOR_EN_MA1,
+        {     61,      0,   -567 }, // pos
+        {  0x0000, -0x8000,  0x0003 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 7
+    {
+        ACTOR_EN_HORSE_NORMAL,
+        {   -780,      0,  -1175 }, // pos
+        {  0x0000,  0x5777,  0x0003 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 8
+    {
+        ACTOR_EN_HORSE_NORMAL,
+        {    750,      0,  -1076 }, // pos
+        {  0x0000,  0x305B,  0x0003 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 9
+    {
+        ACTOR_EN_HORSE_NORMAL,
+        {    821,      0,   -283 }, // pos
+        {  0x0000, -0x271C,  0x0003 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 10
+    {
+        ACTOR_EN_HORSE_NORMAL,
+        {   -723,      0,   -141 }, // pos
+        {  0x0000, -0x5E94,  0x0003 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 11
+    {
+        ACTOR_EN_OWL,
+        {     76,      0,   -664 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x003F, // params
+    }, // 12
+

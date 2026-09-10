@@ -1,0 +1,8 @@
+    SCENE_CMD_ECHO_SETTINGS(4),
+    SCENE_CMD_ROOM_BEHAVIOR(ROOM_TYPE_INDOORS, ROOM_ENV_DEFAULT, LENS_MODE_SHOW_ACTORS, false /* warp songs enabled */),
+    SCENE_CMD_SKYBOX_DISABLES(false /* skybox enabled */, true /* no sun/moon */),
+    SCENE_CMD_TIME_SETTINGS(/* don't set time */ 0xFF, 0xFF, 0 /* time doesn't move */),
+    SCENE_CMD_ROOM_SHAPE(&alley_shop_room_0_03000090_RoomShapeImageSingle),
+    SCENE_CMD_OBJECT_LIST(ARRAY_COUNT(alley_shop_room_0_03000040_ObjectList), alley_shop_room_0_03000040_ObjectList),
+    SCENE_CMD_ACTOR_LIST(ARRAY_COUNT(alley_shop_room_0_0300005C_ActorEntryList), alley_shop_room_0_0300005C_ActorEntryList),
+    SCENE_CMD_END(),

@@ -1,0 +1,305 @@
+#include "spot15_scene.h"
+#include "assets/scenes/overworld/spot15/spot15_room_0.h"
+
+#include "actor.h"
+#include "array_count.h"
+#include "camera.h"
+#include "cutscene_commands.h"
+#include "object.h"
+#include "ocarina.h"
+#include "player.h"
+#include "segment_symbols.h"
+#include "sequence.h"
+#include "skybox.h"
+#include "src/overlays/actors/ovl_En_Door/z_en_door.h"
+#include "stdbool.h"
+#include "ultra64.h"
+
+SceneCmd spot15_scene[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene.inc.c"
+};
+
+ActorEntry spot15_scene_02000068_PlayerEntryList[LENGTH_spot15_scene_02000068_PlayerEntryList] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_02000068_PlayerEntryList.inc.c"
+};
+
+TransitionActorEntry spot15_scene_020000B8_TransitionActorEntryList[LENGTH_spot15_scene_020000B8_TransitionActorEntryList] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_020000B8_TransitionActorEntryList.inc.c"
+};
+
+RomFile spot15_scene_020000C8_RoomList[LENGTH_spot15_scene_020000C8_RoomList] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_020000C8_RoomList.inc.c"
+};
+
+Spawn spot15_scene_020000D0_SpawnList[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_020000D0_SpawnList.inc.c"
+};
+
+s16 spot15_scene_020000DC_ExitList[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_020000DC_ExitList.inc.c"
+};
+
+EnvLightSettings spot15_scene_020000E4_EnvLightSettingsList[LENGTH_spot15_scene_020000E4_EnvLightSettingsList] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_020000E4_EnvLightSettingsList.inc.c"
+};
+
+Vec3s spot15_scene_02000210_PathList_020001EC_Points[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_02000210_PathList_020001EC_Points.inc.c"
+};
+
+Path spot15_scene_02000210_PathList[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_02000210_PathList.inc.c"
+};
+
+u8 spot15_scene_zeros_000218[8] = { 0 };
+
+Vec3s spot15_scene_02003CE8_BgCamList_02000220_BgCamFuncData[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_02003CE8_BgCamList_02000220_BgCamFuncData.inc.c"
+};
+
+BgCamInfo spot15_scene_02003CE8_BgCamList[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_02003CE8_BgCamList.inc.c"
+};
+
+u8 spot15_scene_unaccounted_000264[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_unaccounted_000264.bin.inc.c"
+};
+
+SurfaceType spot15_scene_02003CE8_SurfaceTypes[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_02003CE8_SurfaceTypes.inc.c"
+};
+
+CollisionPoly spot15_scene_02003CE8_PolyList[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_02003CE8_PolyList.inc.c"
+};
+
+Vec3s spot15_scene_02003CE8_VtxList[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_02003CE8_VtxList.inc.c"
+};
+
+WaterBox spot15_scene_02003CE8_WaterBoxes[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_02003CE8_WaterBoxes.inc.c"
+};
+
+CollisionHeader spot15_scene_02003CE8_Col = {
+#include "assets/scenes/overworld/spot15/spot15_scene_02003CE8_Col.inc.c"
+};
+
+u8 spot15_scene_zeros_003D14[12] = { 0 };
+
+SceneCmd spot15_scene_unused[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_unused.inc.c"
+};
+
+ActorEntry spot15_scene_unused_02003D88_PlayerEntryList[LENGTH_spot15_scene_unused_02003D88_PlayerEntryList] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_unused_02003D88_PlayerEntryList.inc.c"
+};
+
+TransitionActorEntry spot15_scene_unused_02003DD8_TransitionActorEntryList[LENGTH_spot15_scene_unused_02003DD8_TransitionActorEntryList] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_unused_02003DD8_TransitionActorEntryList.inc.c"
+};
+
+RomFile spot15_scene_unused_02003DE8_RoomList[LENGTH_spot15_scene_unused_02003DE8_RoomList] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_unused_02003DE8_RoomList.inc.c"
+};
+
+Spawn spot15_scene_unused_02003DF0_SpawnList[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_unused_02003DF0_SpawnList.inc.c"
+};
+
+s16 spot15_scene_unused_02003DFC_ExitList[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_unused_02003DFC_ExitList.inc.c"
+};
+
+EnvLightSettings spot15_scene_unused_02003E04_EnvLightSettingsList[LENGTH_spot15_scene_unused_02003E04_EnvLightSettingsList] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_unused_02003E04_EnvLightSettingsList.inc.c"
+};
+
+Vec3s spot15_scene_unused_02003F30_PathList_02003F0C_Points[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_unused_02003F30_PathList_02003F0C_Points.inc.c"
+};
+
+Path spot15_scene_unused_02003F30_PathList[] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_unused_02003F30_PathList.inc.c"
+};
+
+u8 spot15_scene_zeros_003F38[8] = { 0 };
+
+CutsceneData gHyruleCastleIntroCs[] = {
+#include "assets/scenes/overworld/spot15/gHyruleCastleIntroCs.csdata.inc.c"
+};
+
+u8 spot15_scene_zeros_0040F8[8] = { 0 };
+
+u64 spot15_scene_00004100_Tex[TEX_LEN(u64, spot15_scene_00004100_Tex_WIDTH, spot15_scene_00004100_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00004100_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00004900_Tex[TEX_LEN(u64, spot15_scene_00004900_Tex_WIDTH, spot15_scene_00004900_Tex_HEIGHT, 4)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00004900_Tex.ia4.inc.c"
+};
+
+u64 spot15_scene_00004A00_Tex[TEX_LEN(u64, spot15_scene_00004A00_Tex_WIDTH, spot15_scene_00004A00_Tex_HEIGHT, 8)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00004A00_Tex.ia8.inc.c"
+};
+
+u64 spot15_scene_00004C00_Tex[TEX_LEN(u64, spot15_scene_00004C00_Tex_WIDTH, spot15_scene_00004C00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00004C00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00005400_Tex[TEX_LEN(u64, spot15_scene_00005400_Tex_WIDTH, spot15_scene_00005400_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00005400_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00006400_Tex[TEX_LEN(u64, spot15_scene_00006400_Tex_WIDTH, spot15_scene_00006400_Tex_HEIGHT, 8)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00006400_Tex.ia8.inc.c"
+};
+
+u64 spot15_scene_00006500_Tex[TEX_LEN(u64, spot15_scene_00006500_Tex_WIDTH, spot15_scene_00006500_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00006500_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00006D00_Tex[TEX_LEN(u64, spot15_scene_00006D00_Tex_WIDTH, spot15_scene_00006D00_Tex_HEIGHT, 4)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00006D00_Tex.i4.inc.c"
+};
+
+u64 spot15_scene_00006F00_Tex[TEX_LEN(u64, spot15_scene_00006F00_Tex_WIDTH, spot15_scene_00006F00_Tex_HEIGHT, 4)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00006F00_Tex.ia4.inc.c"
+};
+
+u64 spot15_scene_00007300_Tex[TEX_LEN(u64, spot15_scene_00007300_Tex_WIDTH, spot15_scene_00007300_Tex_HEIGHT, 4)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00007300_Tex.ia4.inc.c"
+};
+
+u64 spot15_scene_00007B00_Tex[TEX_LEN(u64, spot15_scene_00007B00_Tex_WIDTH, spot15_scene_00007B00_Tex_HEIGHT, 4)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00007B00_Tex.ia4.inc.c"
+};
+
+u64 spot15_scene_00007C00_Tex[TEX_LEN(u64, spot15_scene_00007C00_Tex_WIDTH, spot15_scene_00007C00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00007C00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00007E00_Tex[TEX_LEN(u64, spot15_scene_00007E00_Tex_WIDTH, spot15_scene_00007E00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00007E00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00008E00_Tex[TEX_LEN(u64, spot15_scene_00008E00_Tex_WIDTH, spot15_scene_00008E00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00008E00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00009600_Tex[TEX_LEN(u64, spot15_scene_00009600_Tex_WIDTH, spot15_scene_00009600_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00009600_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00009800_Tex[TEX_LEN(u64, spot15_scene_00009800_Tex_WIDTH, spot15_scene_00009800_Tex_HEIGHT, 8)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00009800_Tex.ia8.inc.c"
+};
+
+u64 spot15_scene_00009900_Tex[TEX_LEN(u64, spot15_scene_00009900_Tex_WIDTH, spot15_scene_00009900_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00009900_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_0000A100_Tex[TEX_LEN(u64, spot15_scene_0000A100_Tex_WIDTH, spot15_scene_0000A100_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_0000A100_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_0000A900_Tex[TEX_LEN(u64, spot15_scene_0000A900_Tex_WIDTH, spot15_scene_0000A900_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_0000A900_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_0000B900_Tex[TEX_LEN(u64, spot15_scene_0000B900_Tex_WIDTH, spot15_scene_0000B900_Tex_HEIGHT, 8)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_0000B900_Tex.ia8.inc.c"
+};
+
+u64 spot15_scene_0000BA00_Tex[TEX_LEN(u64, spot15_scene_0000BA00_Tex_WIDTH, spot15_scene_0000BA00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_0000BA00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_0000C200_Tex[TEX_LEN(u64, spot15_scene_0000C200_Tex_WIDTH, spot15_scene_0000C200_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_0000C200_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_0000CA00_Tex[TEX_LEN(u64, spot15_scene_0000CA00_Tex_WIDTH, spot15_scene_0000CA00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_0000CA00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_0000DA00_Tex[TEX_LEN(u64, spot15_scene_0000DA00_Tex_WIDTH, spot15_scene_0000DA00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_0000DA00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_0000EA00_Tex[TEX_LEN(u64, spot15_scene_0000EA00_Tex_WIDTH, spot15_scene_0000EA00_Tex_HEIGHT, 4)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_0000EA00_Tex.i4.inc.c"
+};
+
+u64 spot15_scene_0000EC00_Tex[TEX_LEN(u64, spot15_scene_0000EC00_Tex_WIDTH, spot15_scene_0000EC00_Tex_HEIGHT, 8)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_0000EC00_Tex.i8.inc.c"
+};
+
+u64 spot15_scene_0000FC00_Tex[TEX_LEN(u64, spot15_scene_0000FC00_Tex_WIDTH, spot15_scene_0000FC00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_0000FC00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00010400_Tex[TEX_LEN(u64, spot15_scene_00010400_Tex_WIDTH, spot15_scene_00010400_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00010400_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00010C00_Tex[TEX_LEN(u64, spot15_scene_00010C00_Tex_WIDTH, spot15_scene_00010C00_Tex_HEIGHT, 4)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00010C00_Tex.i4.inc.c"
+};
+
+u64 spot15_scene_00011400_Tex[TEX_LEN(u64, spot15_scene_00011400_Tex_WIDTH, spot15_scene_00011400_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00011400_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00011C00_Tex[TEX_LEN(u64, spot15_scene_00011C00_Tex_WIDTH, spot15_scene_00011C00_Tex_HEIGHT, 4)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00011C00_Tex.ia4.inc.c"
+};
+
+u64 spot15_scene_00012400_Tex[TEX_LEN(u64, spot15_scene_00012400_Tex_WIDTH, spot15_scene_00012400_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00012400_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00013400_Tex[TEX_LEN(u64, spot15_scene_00013400_Tex_WIDTH, spot15_scene_00013400_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00013400_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00014400_Tex[TEX_LEN(u64, spot15_scene_00014400_Tex_WIDTH, spot15_scene_00014400_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00014400_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00014C00_Tex[TEX_LEN(u64, spot15_scene_00014C00_Tex_WIDTH, spot15_scene_00014C00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00014C00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00015C00_Tex[TEX_LEN(u64, spot15_scene_00015C00_Tex_WIDTH, spot15_scene_00015C00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00015C00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00015E00_Tex[TEX_LEN(u64, spot15_scene_00015E00_Tex_WIDTH, spot15_scene_00015E00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00015E00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00016600_Tex[TEX_LEN(u64, spot15_scene_00016600_Tex_WIDTH, spot15_scene_00016600_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00016600_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00016800_Tex[TEX_LEN(u64, spot15_scene_00016800_Tex_WIDTH, spot15_scene_00016800_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00016800_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00016C00_Tex[TEX_LEN(u64, spot15_scene_00016C00_Tex_WIDTH, spot15_scene_00016C00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00016C00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00017400_Tex[TEX_LEN(u64, spot15_scene_00017400_Tex_WIDTH, spot15_scene_00017400_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00017400_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00017C00_Tex[TEX_LEN(u64, spot15_scene_00017C00_Tex_WIDTH, spot15_scene_00017C00_Tex_HEIGHT, 16)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00017C00_Tex.rgba16.inc.c"
+};
+
+u64 spot15_scene_00018400_Tex[TEX_LEN(u64, spot15_scene_00018400_Tex_WIDTH, spot15_scene_00018400_Tex_HEIGHT, 8)] = {
+#include "assets/scenes/overworld/spot15/spot15_scene_00018400_Tex.ia8.inc.c"
+};
+

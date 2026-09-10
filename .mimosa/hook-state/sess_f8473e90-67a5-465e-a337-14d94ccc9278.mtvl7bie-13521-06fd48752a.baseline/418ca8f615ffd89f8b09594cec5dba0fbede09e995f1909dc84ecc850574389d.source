@@ -1,0 +1,13 @@
+    {
+        ACTOR_DEMO_EFFECT,
+        {   -230,   2262,  -2544 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x0FB /* 0xFF05 */, // params
+    }, // 0
+    {
+        ACTOR_BG_SPOT16_DOUGHNUT,
+        {    102,   5583,  -6518 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+        -0x001 /* 0xFFFF */, // params
+    }, // 1
+

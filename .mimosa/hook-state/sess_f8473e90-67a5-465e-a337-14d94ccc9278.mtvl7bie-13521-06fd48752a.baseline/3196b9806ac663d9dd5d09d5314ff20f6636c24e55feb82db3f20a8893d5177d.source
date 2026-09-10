@@ -1,0 +1,13 @@
+    {
+        ACTOR_EN_RIVER_SOUND,
+        {    287,      0,     -2 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x000C, // params
+    }, // 0
+    {
+        ACTOR_OBJECT_KANKYO,
+        {     52,      0,    -52 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 1
+

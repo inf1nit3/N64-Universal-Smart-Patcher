@@ -1,0 +1,19 @@
+    {
+        -200, // x
+        -1, // y
+        -250, // z
+    }, // minBounds
+    {
+        200, // x
+        120, // y
+        80, // z
+    }, // maxBounds
+    ARRAY_COUNT(golon_scene_02000368_VtxList), // numVertices
+    golon_scene_02000368_VtxList, // vtxList
+    ARRAY_COUNT(golon_scene_02000368_PolyList), // numPolygons
+    golon_scene_02000368_PolyList, // polyList
+    golon_scene_02000368_SurfaceTypes, // surfaceTypeList
+    golon_scene_02000368_BgCamList, // bgCamList
+    0, // numWaterBoxes
+    NULL, // waterBoxes
+

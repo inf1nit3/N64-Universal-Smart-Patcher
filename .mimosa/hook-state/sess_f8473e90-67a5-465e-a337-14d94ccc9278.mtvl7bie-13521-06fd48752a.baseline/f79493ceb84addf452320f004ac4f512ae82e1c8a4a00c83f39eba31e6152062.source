@@ -1,0 +1,22 @@
+#ifndef ZOORA_ROOM_0_H
+#define ZOORA_ROOM_0_H
+
+#include "gfx.h"
+#include "room.h"
+#include "scene.h"
+#include "ultra64.h"
+
+extern SceneCmd zoora_room_0[];
+#define LENGTH_zoora_room_0_03000040_ObjectList 10
+extern s16 zoora_room_0_03000040_ObjectList[LENGTH_zoora_room_0_03000040_ObjectList];
+#define LENGTH_zoora_room_0_03000054_ActorEntryList 3
+extern ActorEntry zoora_room_0_03000054_ActorEntryList[LENGTH_zoora_room_0_03000054_ActorEntryList];
+extern RoomShapeImageSingle zoora_room_0_03000090_RoomShapeImageSingle;
+extern RoomShapeDListsEntry zoora_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry;
+extern Vtx zoora_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry_030009C0_DL_03000840_DL_030000C0_Vtx_fused_[];
+extern Gfx zoora_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry_030009C0_DL_03000840_DL[48];
+extern Gfx zoora_room_0_03000090_RoomShapeImageSingle_030000B0_RoomShapeDListsEntry_030009C0_DL[2];
+extern u8 zoora_room_0_unaccounted_0009D0[];
+extern u64 zoora_room_0_03000090_RoomShapeImageSingle_030009E0_JFIF[SCREEN_WIDTH * SCREEN_HEIGHT * G_IM_SIZ_16b_BYTES / sizeof(u64)];
+
+#endif

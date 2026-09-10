@@ -1,0 +1,13 @@
+    {
+        ACTOR_PLAYER,
+        {      0,      0,    147 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x0E00, // params
+    }, // 0
+    {
+        ACTOR_PLAYER,
+        {      0,      0,    147 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x0EFF, // params
+    }, // 1
+

@@ -1,0 +1,23 @@
+#ifndef VR_FINE1_STATIC_H
+#define VR_FINE1_STATIC_H
+
+#include "tex_len.h"
+#include "ultra64.h"
+
+#define gDaySkybox1Tex_WIDTH 128
+#define gDaySkybox1Tex_HEIGHT 64
+extern u64 gDaySkybox1Tex[TEX_LEN(u64, gDaySkybox1Tex_WIDTH, gDaySkybox1Tex_HEIGHT, 8)];
+#define gDaySkybox2Tex_WIDTH 128
+#define gDaySkybox2Tex_HEIGHT 64
+extern u64 gDaySkybox2Tex[TEX_LEN(u64, gDaySkybox2Tex_WIDTH, gDaySkybox2Tex_HEIGHT, 8)];
+#define gDaySkybox3Tex_WIDTH 128
+#define gDaySkybox3Tex_HEIGHT 64
+extern u64 gDaySkybox3Tex[TEX_LEN(u64, gDaySkybox3Tex_WIDTH, gDaySkybox3Tex_HEIGHT, 8)];
+#define gDaySkybox4Tex_WIDTH 128
+#define gDaySkybox4Tex_HEIGHT 64
+extern u64 gDaySkybox4Tex[TEX_LEN(u64, gDaySkybox4Tex_WIDTH, gDaySkybox4Tex_HEIGHT, 8)];
+#define gDaySkybox5Tex_WIDTH 128
+#define gDaySkybox5Tex_HEIGHT 128
+extern u64 gDaySkybox5Tex[TEX_LEN(u64, gDaySkybox5Tex_WIDTH, gDaySkybox5Tex_HEIGHT, 8)];
+
+#endif

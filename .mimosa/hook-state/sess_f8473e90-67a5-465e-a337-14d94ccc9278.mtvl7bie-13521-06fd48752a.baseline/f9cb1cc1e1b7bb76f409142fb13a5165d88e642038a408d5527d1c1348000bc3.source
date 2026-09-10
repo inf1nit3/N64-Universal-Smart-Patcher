@@ -1,0 +1,11 @@
+    OBJECT_SPOT15_OBJ, // 0
+    OBJECT_TA, // 1
+    OBJECT_SD, // 2
+    OBJECT_WOOD02, // 3
+    OBJECT_KANBAN, // 4
+    OBJECT_MA1, // 5
+    OBJECT_OWL, // 6
+    OBJECT_BOMBIWA, // 7
+    OBJECT_GS, // 8
+    OBJECT_ST, // 9
+

@@ -1,0 +1,19 @@
+    {
+        -160, // x
+        0, // y
+        -120, // z
+    }, // minBounds
+    {
+        160, // x
+        144, // y
+        240, // z
+    }, // maxBounds
+    ARRAY_COUNT(night_shop_scene_02000644_VtxList), // numVertices
+    night_shop_scene_02000644_VtxList, // vtxList
+    ARRAY_COUNT(night_shop_scene_02000644_PolyList), // numPolygons
+    night_shop_scene_02000644_PolyList, // polyList
+    night_shop_scene_02000644_SurfaceTypes, // surfaceTypeList
+    night_shop_scene_02000644_BgCamList, // bgCamList
+    0, // numWaterBoxes
+    NULL, // waterBoxes
+

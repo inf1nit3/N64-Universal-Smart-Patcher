@@ -1,0 +1,26 @@
+    {
+        CAM_SET_START1, // setting
+        3, // count
+        &spot11_scene_02004EE4_BgCamList_02000220_BgCamFuncData[0], // bgCamFuncData
+    }, // 0
+    {
+        CAM_SET_NONE, // setting
+        0, // count
+        NULL, // bgCamFuncData
+    }, // 1
+    {
+        CAM_SET_NORMAL1, // setting
+        0, // count
+        NULL, // bgCamFuncData
+    }, // 2
+    {
+        CAM_SET_DUNGEON1, // setting
+        0, // count
+        NULL, // bgCamFuncData
+    }, // 3
+    {
+        CAM_SET_NORMAL0, // setting
+        0, // count
+        NULL, // bgCamFuncData
+    }, // 4
+

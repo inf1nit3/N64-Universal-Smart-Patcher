@@ -1,0 +1,13 @@
+#ifndef VR_K4VR_PAL_STATIC_H
+#define VR_K4VR_PAL_STATIC_H
+
+#include "ultra64.h"
+
+//#define gMidosHouseBgTLUT_TLUT_COUNT 256
+extern u64 gMidosHouseBgTLUT[];
+//#define gMidosHouseBg2TLUT_TLUT_COUNT 256
+extern u64 gMidosHouseBg2TLUT[];
+//#define gMidosHouseBg3TLUT_TLUT_COUNT 256
+extern u64 gMidosHouseBg3TLUT[];
+
+#endif

@@ -1,0 +1,19 @@
+#include "vr_LHVR_pal_static.h"
+
+
+u64 gLinksHouseBgTLUT[] = {
+#include "assets/textures/backgrounds/gLinksHouseBgTex.tlut.rgba16.inc.c"
+};
+
+u64 gLinksHouseBg2TLUT[] = {
+#include "assets/textures/backgrounds/gLinksHouse2BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gLinksHouseBg3TLUT[] = {
+#include "assets/textures/backgrounds/gLinksHouse3BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gLinksHouseBg4TLUT[] = {
+#include "assets/textures/backgrounds/gLinksHouse4BgTex.tlut.rgba16.inc.c"
+};
+

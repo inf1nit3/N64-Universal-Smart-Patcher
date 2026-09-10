@@ -1,0 +1,31 @@
+    {
+        ACTOR_PLAYER,
+        {  -1150,    210,   -150 }, // pos
+        {  0x0000,  0x4000,  0x0000 }, // rot
+         0x0FFF, // params
+    }, // 0
+    {
+        ACTOR_PLAYER,
+        {    537,    996,  -2501 }, // pos
+        {  0x0000,  0x18E4,  0x0000 }, // rot
+         0x0FFF, // params
+    }, // 1
+    {
+        ACTOR_PLAYER,
+        {    520,     52,    248 }, // pos
+        {  0x0000,  0x2444,  0x0000 }, // rot
+         0x0EFF, // params
+    }, // 2
+    {
+        ACTOR_PLAYER,
+        {    617,    947,  -1507 }, // pos
+        {  0x0000, -0x6FA5,  0x0000 }, // rot
+         0x0DFF, // params
+    }, // 3
+    {
+        ACTOR_PLAYER,
+        {   -208,   -210,   -280 }, // pos
+        {  0x0000, -0x71C7,  0x0000 }, // rot
+         0x0FFF, // params
+    }, // 4
+

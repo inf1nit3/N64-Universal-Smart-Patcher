@@ -1,0 +1,12 @@
+    {
+        {
+            // { room, bgCamIndex }
+            { 1, -1 },
+            { 0, -1 },
+        }, // sides
+        ACTOR_EN_HOLL,
+        {    646,   -120,  -2116 }, // pos
+         0x0000, // rotY
+         0x017F, // params
+    }, // 0
+

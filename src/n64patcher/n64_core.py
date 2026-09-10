@@ -750,13 +750,20 @@ def get_flavor_patch(crc1, crc2, flavor):
     """Path of a recipe file for an alternative hi-res build (e.g. the
     SM64 H2X 640x240 BPS), or None when this dump has no such flavor.
     The first operation's file is the patch, same convention as
-    get_subdrag_patch."""
+    get_subdrag_patch; it is resolved against the recipe's own directory
+    first (user recipes ship their patch next to the JSON), then against
+    the bundled hires_patches directory."""
     entry = find_patch_entry(crc1, crc2, flavor)
     if entry is None or not entry["operations"]:
         return None
-    candidate = os.path.join(HIRES_PATCHES_DIR, entry["operations"][0].get("file", ""))
-    if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
-        return candidate
+    fname = entry["operations"][0].get("file", "")
+    candidates = [
+        os.path.join(entry.get("origin_dir", HIRES_PATCHES_DIR), fname),
+        os.path.join(HIRES_PATCHES_DIR, fname),
+    ]
+    for candidate in candidates:
+        if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
+            return candidate
     return None
 
 
@@ -1362,6 +1369,24 @@ def patch_rom(rom_path, options, log=print, should_cancel=lambda: False, output_
                             applied.add("NoAA")
                     else:
                         hires_blocked = "the verified patch for this dump did not apply"
+                else:
+                    # default-flavor BPS recipes (e.g. the experimental
+                    # OoT 640x480i build): same gate, applied as BPS
+                    bps_patch = get_flavor_patch(info["crc1"], info["crc2"], flavor)
+                    if bps_patch:
+                        from . import ips_bps_patcher
+
+                        res = ips_bps_patcher.apply_bps_patch(temp_z64, bps_patch, patched_z64)
+                        log(f"  {flavor} BPS: {res.get('message', res.get('status'))}")
+                        if res.get("status") == "patched":
+                            subdrag_used = True
+                            flavor_used = True
+                            stage_log.append(f"bps-{flavor}:{os.path.basename(bps_patch)}")
+                            patched_exists = True
+                            base = patched_z64
+                            applied.add("HR")
+                        else:
+                            hires_blocked = "the verified patch for this dump did not apply"
             else:
                 patch = get_flavor_patch(info["crc1"], info["crc2"], flavor)
                 if patch:

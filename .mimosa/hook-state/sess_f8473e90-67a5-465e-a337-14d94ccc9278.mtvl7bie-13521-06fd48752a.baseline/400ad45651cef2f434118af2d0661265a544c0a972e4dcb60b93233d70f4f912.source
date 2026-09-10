@@ -1,0 +1,8 @@
+    OBJECT_XC, // 0
+    OBJECT_HORSE, // 1
+    OBJECT_MJIN, // 2
+    OBJECT_MJIN_ICE, // 3
+    OBJECT_EFC_FLASH, // 4
+    OBJECT_SPOT06_OBJECTS, // 5
+    OBJECT_WARP1, // 6
+

@@ -1,0 +1,11 @@
+#include "vr_KSVR_pal_static.h"
+
+
+u64 gKokiriShopBgTLUT[] = {
+#include "assets/textures/backgrounds/gKokiriShopBgTex.tlut.rgba16.inc.c"
+};
+
+u64 gKokiriShopBg2TLUT[] = {
+#include "assets/textures/backgrounds/gKokiriShop2BgTex.tlut.rgba16.inc.c"
+};
+

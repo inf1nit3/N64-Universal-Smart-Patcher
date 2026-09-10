@@ -1,0 +1,7 @@
+    OBJECT_SPOT03_OBJECT, // 0
+    OBJECT_GS, // 1
+    OBJECT_KANBAN, // 2
+    OBJECT_BOMBIWA, // 3
+    OBJECT_NIW, // 4
+    OBJECT_ST, // 5
+

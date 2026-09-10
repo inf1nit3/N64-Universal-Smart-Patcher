@@ -1,0 +1,23 @@
+#include "vr_cloud1_static.h"
+
+
+u64 gDayOvercastSkybox1Tex[TEX_LEN(u64, gDayOvercastSkybox1Tex_WIDTH, gDayOvercastSkybox1Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gDayOvercastSkybox1Tex.ci8.split_hi.tlut_gDayOvercastSkyboxTLUT.inc.c"
+};
+
+u64 gDayOvercastSkybox2Tex[TEX_LEN(u64, gDayOvercastSkybox2Tex_WIDTH, gDayOvercastSkybox2Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gDayOvercastSkybox2Tex.ci8.split_hi.tlut_gDayOvercastSkyboxTLUT.inc.c"
+};
+
+u64 gDayOvercastSkybox3Tex[TEX_LEN(u64, gDayOvercastSkybox3Tex_WIDTH, gDayOvercastSkybox3Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gDayOvercastSkybox3Tex.ci8.split_hi.tlut_gDayOvercastSkyboxTLUT.inc.c"
+};
+
+u64 gDayOvercastSkybox4Tex[TEX_LEN(u64, gDayOvercastSkybox4Tex_WIDTH, gDayOvercastSkybox4Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gDayOvercastSkybox4Tex.ci8.split_hi.tlut_gDayOvercastSkyboxTLUT.inc.c"
+};
+
+u64 gDayOvercastSkybox5Tex[TEX_LEN(u64, gDayOvercastSkybox5Tex_WIDTH, gDayOvercastSkybox5Tex_HEIGHT, 8)] = {
+#include "assets/textures/skyboxes/gDayOvercastSkybox5Tex.ci8.split_hi.tlut_gDayOvercastSkyboxTLUT.inc.c"
+};
+

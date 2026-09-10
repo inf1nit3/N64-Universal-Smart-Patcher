@@ -1,0 +1,65 @@
+#include "golon_scene.h"
+#include "assets/scenes/shops/golon/golon_room_0.h"
+
+#include "actor.h"
+#include "array_count.h"
+#include "camera.h"
+#include "object.h"
+#include "segment_symbols.h"
+#include "sequence.h"
+#include "skybox.h"
+#include "stdbool.h"
+#include "ultra64.h"
+
+SceneCmd golon_scene[] = {
+#include "assets/scenes/shops/golon/golon_scene.inc.c"
+};
+
+ActorEntry golon_scene_02000050_PlayerEntryList[LENGTH_golon_scene_02000050_PlayerEntryList] = {
+#include "assets/scenes/shops/golon/golon_scene_02000050_PlayerEntryList.inc.c"
+};
+
+RomFile golon_scene_02000060_RoomList[LENGTH_golon_scene_02000060_RoomList] = {
+#include "assets/scenes/shops/golon/golon_scene_02000060_RoomList.inc.c"
+};
+
+Spawn golon_scene_02000068_SpawnList[] = {
+#include "assets/scenes/shops/golon/golon_scene_02000068_SpawnList.inc.c"
+};
+
+s16 golon_scene_0200006C_ExitList[] = {
+#include "assets/scenes/shops/golon/golon_scene_0200006C_ExitList.inc.c"
+};
+
+EnvLightSettings golon_scene_02000070_EnvLightSettingsList[LENGTH_golon_scene_02000070_EnvLightSettingsList] = {
+#include "assets/scenes/shops/golon/golon_scene_02000070_EnvLightSettingsList.inc.c"
+};
+
+u8 golon_scene_zeros_000088[8] = { 0 };
+
+Vec3s golon_scene_02000368_BgCamList_02000090_BgCamFuncData[] = {
+#include "assets/scenes/shops/golon/golon_scene_02000368_BgCamList_02000090_BgCamFuncData.inc.c"
+};
+
+BgCamInfo golon_scene_02000368_BgCamList[] = {
+#include "assets/scenes/shops/golon/golon_scene_02000368_BgCamList.inc.c"
+};
+
+SurfaceType golon_scene_02000368_SurfaceTypes[] = {
+#include "assets/scenes/shops/golon/golon_scene_02000368_SurfaceTypes.inc.c"
+};
+
+CollisionPoly golon_scene_02000368_PolyList[] = {
+#include "assets/scenes/shops/golon/golon_scene_02000368_PolyList.inc.c"
+};
+
+Vec3s golon_scene_02000368_VtxList[] = {
+#include "assets/scenes/shops/golon/golon_scene_02000368_VtxList.inc.c"
+};
+
+CollisionHeader golon_scene_02000368_Col = {
+#include "assets/scenes/shops/golon/golon_scene_02000368_Col.inc.c"
+};
+
+u8 golon_scene_zeros_000394[12] = { 0 };
+

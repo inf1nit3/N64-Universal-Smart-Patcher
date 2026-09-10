@@ -1,0 +1,6 @@
+    OBJECT_HORSE_NORMAL, // 0
+    OBJECT_HORSE_LINK_CHILD, // 1
+    OBJECT_NIW, // 2
+    OBJECT_MA1, // 3
+    OBJECT_OWL, // 4
+

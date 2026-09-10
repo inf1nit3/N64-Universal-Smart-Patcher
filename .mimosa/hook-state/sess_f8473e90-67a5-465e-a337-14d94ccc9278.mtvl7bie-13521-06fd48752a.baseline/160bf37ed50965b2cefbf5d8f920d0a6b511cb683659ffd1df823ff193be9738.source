@@ -1,0 +1,19 @@
+#include "vr_MNVR_pal_static.h"
+
+
+u64 gMarketNightBgTLUT[] = {
+#include "assets/textures/backgrounds/gMarketNightBgTex.tlut.rgba16.inc.c"
+};
+
+u64 gMarketNightBg2TLUT[] = {
+#include "assets/textures/backgrounds/gMarketNight2BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gMarketNightBg3TLUT[] = {
+#include "assets/textures/backgrounds/gMarketNight3BgTex.tlut.rgba16.inc.c"
+};
+
+u64 gMarketNightBg4TLUT[] = {
+#include "assets/textures/backgrounds/gMarketNight4BgTex.tlut.rgba16.inc.c"
+};
+

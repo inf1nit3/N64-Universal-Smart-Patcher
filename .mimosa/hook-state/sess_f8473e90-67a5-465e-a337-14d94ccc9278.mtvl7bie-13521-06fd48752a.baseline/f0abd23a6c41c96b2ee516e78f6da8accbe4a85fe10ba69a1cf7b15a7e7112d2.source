@@ -1,0 +1,19 @@
+    {
+        -160, // x
+        0, // y
+        -120, // z
+    }, // minBounds
+    {
+        160, // x
+        144, // y
+        242, // z
+    }, // maxBounds
+    ARRAY_COUNT(drag_scene_020003C0_VtxList), // numVertices
+    drag_scene_020003C0_VtxList, // vtxList
+    ARRAY_COUNT(drag_scene_020003C0_PolyList), // numPolygons
+    drag_scene_020003C0_PolyList, // polyList
+    drag_scene_020003C0_SurfaceTypes, // surfaceTypeList
+    drag_scene_020003C0_BgCamList, // bgCamList
+    0, // numWaterBoxes
+    NULL, // waterBoxes
+

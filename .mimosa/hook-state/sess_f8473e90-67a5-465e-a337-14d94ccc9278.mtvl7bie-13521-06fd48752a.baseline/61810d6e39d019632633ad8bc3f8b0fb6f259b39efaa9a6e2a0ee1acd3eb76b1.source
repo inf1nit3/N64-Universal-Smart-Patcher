@@ -1,0 +1,25 @@
+    {
+        ACTOR_BG_MJIN,
+        {      8,    480,  -2610 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0006, // params
+    }, // 0
+    {
+        ACTOR_EN_XC,
+        {      8,    480,  -2381 }, // pos
+        {  0x0000, -0x8000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 1
+    {
+        ACTOR_DEMO_KANKYO,
+        {      9,    578,  -2613 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0007, // params
+    }, // 2
+    {
+        ACTOR_OBJECT_KANKYO,
+        {    -16,    480,  -2768 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 3
+

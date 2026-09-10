@@ -1,0 +1,19 @@
+    {
+        ACTOR_EN_OSSAN,
+        {     40,      0,    -80 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0003, // params
+    }, // 0
+    {
+        ACTOR_EN_TANA,
+        {     40,      0,    -40 }, // pos
+        {  0x0000,  0x0000,  0x0000 }, // rot
+         0x0000, // params
+    }, // 1
+    {
+        ACTOR_EN_HY,
+        {    -11,      0,     86 }, // pos
+        {  0x0000,  0x3F4A,  0x0000 }, // rot
+         0x0793, // params
+    }, // 2
+

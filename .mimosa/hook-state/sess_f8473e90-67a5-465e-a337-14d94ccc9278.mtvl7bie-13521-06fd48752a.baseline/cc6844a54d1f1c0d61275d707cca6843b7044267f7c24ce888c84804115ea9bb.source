@@ -1,0 +1,21 @@
+    {
+        {
+            147, // x
+            598, // y
+            170, // z
+        }, // boundsSphereCenter
+        1123, // boundsSphereRadius
+        spot18_room_0_03000390_RoomShapeCullable_0300039C_CullableEntries_03003238_DL, // opa
+        spot18_room_0_03000390_RoomShapeCullable_0300039C_CullableEntries_0300DC80_DL, // xlu
+    }, // 0
+    {
+        {
+            -1187, // x
+            670, // y
+            -702, // z
+        }, // boundsSphereCenter
+        780, // boundsSphereRadius
+        spot18_room_0_03000390_RoomShapeCullable_0300039C_CullableEntries_030013E0_DL, // opa
+        NULL, // xlu
+    }, // 1
+

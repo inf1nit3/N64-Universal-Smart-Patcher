@@ -1,0 +1,15 @@
+    OBJECT_EC, // 0
+    OBJECT_KM1, // 1
+    OBJECT_KW1, // 2
+    OBJECT_FU, // 3
+    OBJECT_MS, // 4
+    OBJECT_JS, // 5
+    OBJECT_MK, // 6
+    OBJECT_DS, // 7
+    OBJECT_BG, // 8
+    OBJECT_SPOT15_OBJ, // 9
+    OBJECT_OS_ANIME, // 10
+    OBJECT_BOJ, // 11
+    OBJECT_MU, // 12
+    OBJECT_MM, // 13
+

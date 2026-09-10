@@ -1,0 +1,22 @@
+#ifndef GOLON_ROOM_0_H
+#define GOLON_ROOM_0_H
+
+#include "gfx.h"
+#include "room.h"
+#include "scene.h"
+#include "ultra64.h"
+
+extern SceneCmd golon_room_0[];
+#define LENGTH_golon_room_0_03000040_ObjectList 10
+extern s16 golon_room_0_03000040_ObjectList[LENGTH_golon_room_0_03000040_ObjectList];
+#define LENGTH_golon_room_0_03000054_ActorEntryList 2
+extern ActorEntry golon_room_0_03000054_ActorEntryList[LENGTH_golon_room_0_03000054_ActorEntryList];
+extern RoomShapeImageSingle golon_room_0_03000080_RoomShapeImageSingle;
+extern RoomShapeDListsEntry golon_room_0_03000080_RoomShapeImageSingle_030000A0_RoomShapeDListsEntry;
+extern Vtx golon_room_0_03000080_RoomShapeImageSingle_030000A0_RoomShapeDListsEntry_030009B0_DL_03000830_DL_030000B0_Vtx_fused_[];
+extern Gfx golon_room_0_03000080_RoomShapeImageSingle_030000A0_RoomShapeDListsEntry_030009B0_DL_03000830_DL[48];
+extern Gfx golon_room_0_03000080_RoomShapeImageSingle_030000A0_RoomShapeDListsEntry_030009B0_DL[2];
+extern u8 golon_room_0_unaccounted_0009C0[];
+extern u64 golon_room_0_03000080_RoomShapeImageSingle_030009D0_JFIF[SCREEN_WIDTH * SCREEN_HEIGHT * G_IM_SIZ_16b_BYTES / sizeof(u64)];
+
+#endif
