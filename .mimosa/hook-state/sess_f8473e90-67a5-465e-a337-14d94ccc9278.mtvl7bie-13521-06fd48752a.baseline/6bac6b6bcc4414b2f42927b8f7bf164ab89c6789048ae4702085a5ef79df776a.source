@@ -1,7 +1,0 @@
-   
- gsSPVertex(&spot16_room_0_030003D0_RoomShapeNormal_030003DC_DListsEntries_0300A290_DL_03009B50_DL_03007ED8_DL_03007EC8_Vtx[0],
- 1, 0),
-   
- gsSPBranchLessZraw(spot16_room_0_030003D0_RoomShapeNormal_030003DC_DListsEntries_0300A290_DL_03009B50_DL_03007ED8_DL_03007D98_DL,
- 0, 0x00000960),
-    gsSPEndDisplayList(),

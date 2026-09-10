@@ -1,7 +1,0 @@
-   
- gsSPVertex(&spot17_room_1_03000300_RoomShapeCullable_0300030C_CullableEntries_030019F0_DL_03001950_DL_03001940_Vtx[0],
- 1, 0),
-   
- gsSPBranchLessZraw(spot17_room_1_03000300_RoomShapeCullable_0300030C_CullableEntries_030019F0_DL_03001950_DL_03001708_DL,
- 0, 0x000006B8),
-    gsSPEndDisplayList(),

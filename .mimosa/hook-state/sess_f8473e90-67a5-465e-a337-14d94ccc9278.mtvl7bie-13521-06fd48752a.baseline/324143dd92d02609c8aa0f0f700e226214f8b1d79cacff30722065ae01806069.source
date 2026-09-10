@@ -1,7 +1,0 @@
-#include "vr_holy0_pal_static.h"
-
-
-u64 gHoly0SkyboxTLUT[] = {
-#include "assets/textures/skyboxes/gHoly0SkyboxTLUT.tlut.rgba16.inc.c"
-};
-

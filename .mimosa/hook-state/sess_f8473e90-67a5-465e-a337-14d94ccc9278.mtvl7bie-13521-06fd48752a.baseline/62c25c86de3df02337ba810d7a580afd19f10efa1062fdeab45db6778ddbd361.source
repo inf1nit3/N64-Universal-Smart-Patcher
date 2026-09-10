@@ -1,9 +1,0 @@
-    OBJECT_BOX, // 0
-    OBJECT_HATA, // 1
-    OBJECT_HORSE, // 2
-    OBJECT_HORSE_NORMAL, // 3
-    OBJECT_NIW, // 4
-    OBJECT_UMAJUMP, // 5
-    OBJECT_GE1, // 6
-    OBJECT_TSUBO, // 7
-

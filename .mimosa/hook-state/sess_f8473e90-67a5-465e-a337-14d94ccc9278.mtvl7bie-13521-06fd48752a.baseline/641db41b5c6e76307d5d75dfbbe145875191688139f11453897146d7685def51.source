@@ -1,7 +1,0 @@
-#include "vr_cloud3_pal_static.h"
-
-
-u64 gNightOvercastSkyboxTLUT[] = {
-#include "assets/textures/skyboxes/gNightOvercastSkyboxTLUT.tlut.rgba16.inc.c"
-};
-

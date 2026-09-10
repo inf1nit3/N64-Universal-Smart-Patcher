@@ -1,9 +1,0 @@
-#ifndef VR_FINE0_PAL_STATIC_H
-#define VR_FINE0_PAL_STATIC_H
-
-#include "ultra64.h"
-
-//#define gSunriseSkyboxTLUT_TLUT_COUNT 128
-extern u64 gSunriseSkyboxTLUT[];
-
-#endif

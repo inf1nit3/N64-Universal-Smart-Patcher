@@ -1,7 +1,0 @@
-#include "vr_fine2_pal_static.h"
-
-
-u64 gSunsetSkyboxTLUT[] = {
-#include "assets/textures/skyboxes/gSunsetSkyboxTLUT.tlut.rgba16.inc.c"
-};
-

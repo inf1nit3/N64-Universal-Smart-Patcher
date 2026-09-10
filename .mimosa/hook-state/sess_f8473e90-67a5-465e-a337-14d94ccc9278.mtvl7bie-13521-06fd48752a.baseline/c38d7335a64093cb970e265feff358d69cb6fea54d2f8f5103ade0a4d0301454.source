@@ -1,9 +1,0 @@
-#ifndef VR_CLOUD3_PAL_STATIC_H
-#define VR_CLOUD3_PAL_STATIC_H
-
-#include "ultra64.h"
-
-//#define gNightOvercastSkyboxTLUT_TLUT_COUNT 128
-extern u64 gNightOvercastSkyboxTLUT[];
-
-#endif

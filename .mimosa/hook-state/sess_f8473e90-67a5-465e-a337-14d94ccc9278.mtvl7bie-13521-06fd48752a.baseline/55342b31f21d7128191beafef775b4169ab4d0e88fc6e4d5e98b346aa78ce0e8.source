@@ -1,9 +1,0 @@
-    OBJECT_SPOT18_OBJ, // 0
-    OBJECT_BOMBF, // 1
-    OBJECT_BOMBIWA, // 2
-    OBJECT_OF1D_MAP, // 3
-    OBJECT_TSUBO, // 4
-    OBJECT_BWALL, // 5
-    OBJECT_GM, // 6
-    OBJECT_GS, // 7
-

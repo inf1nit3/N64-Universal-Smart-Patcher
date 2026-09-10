@@ -1,6 +1,0 @@
-    OBJECT_IN, // 0
-    OBJECT_UMAJUMP, // 1
-    OBJECT_HORSE, // 2
-    OBJECT_HNI, // 3
-    OBJECT_INGATE, // 4
-

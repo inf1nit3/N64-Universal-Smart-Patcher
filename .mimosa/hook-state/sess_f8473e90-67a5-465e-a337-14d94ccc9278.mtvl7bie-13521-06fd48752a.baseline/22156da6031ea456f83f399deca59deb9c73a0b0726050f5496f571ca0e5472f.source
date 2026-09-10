@@ -1,5 +1,0 @@
-    gsDPLoadTextureBlock(gLButtonTex, G_IM_FMT_IA, G_IM_SIZ_8b, gLButtonTex_WIDTH, gLButtonTex_HEIGHT, 0, G_TX_NOMIRROR
- | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD),
-    gsSP1Quadrangle(8, 10, 11, 9, 0),
-    gsDPPipeSync(),
-    gsSPEndDisplayList(),

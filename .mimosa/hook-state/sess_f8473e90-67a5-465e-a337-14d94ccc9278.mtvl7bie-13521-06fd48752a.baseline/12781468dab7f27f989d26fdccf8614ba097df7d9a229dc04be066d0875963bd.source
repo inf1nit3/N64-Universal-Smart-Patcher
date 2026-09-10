@@ -1,6 +1,0 @@
-    gsDPPipeSync(),
-    gsDPLoadTextureBlock_4b(gPausePromptCursorTex, G_IM_FMT_I, gPausePromptCursorTex_WIDTH,
- gPausePromptCursorTex_HEIGHT, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK,
- G_TX_NOLOD, G_TX_NOLOD),
-    gsSP1Quadrangle(4, 6, 7, 5, 0),
-    gsSPEndDisplayList(),

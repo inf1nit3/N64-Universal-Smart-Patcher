@@ -1,9 +1,0 @@
-    {
-        534, // xMin
-        0, // ySurface
-        1887, // zMin
-        560, // xLength
-        640, // zLength
-        WATERBOX_PROPERTIES(/* bgCamIndex */ 5, /* lightIndex */ 1, /* room */ 0, /* isDisabled */ false), // properties
-    }, // 0
-

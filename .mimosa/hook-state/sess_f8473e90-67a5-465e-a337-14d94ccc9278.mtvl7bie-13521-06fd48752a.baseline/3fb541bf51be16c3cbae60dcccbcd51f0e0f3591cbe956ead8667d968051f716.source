@@ -1,8 +1,0 @@
-    SCENE_CMD_ECHO_SETTINGS(10),
-    SCENE_CMD_ROOM_BEHAVIOR(ROOM_TYPE_NORMAL, ROOM_ENV_WARM, LENS_MODE_SHOW_ACTORS, false /* warp songs enabled */),
-    SCENE_CMD_SKYBOX_DISABLES(false /* skybox enabled */, false /* sun/moon enabled */),
-    SCENE_CMD_TIME_SETTINGS(/* don't set time */ 0xFF, 0xFF, 0 /* time doesn't move */),
-    SCENE_CMD_ROOM_SHAPE(&spot12_room_0_030001D0_RoomShapeCullable),
-    SCENE_CMD_OBJECT_LIST(ARRAY_COUNT(spot12_room_0_03000048_AltHeaders_030008C0_Cmds_03000900_ObjectList), spot12_room_0_03000048_AltHeaders_030008C0_Cmds_03000900_ObjectList),
-    SCENE_CMD_ACTOR_LIST(ARRAY_COUNT(spot12_room_0_03000048_AltHeaders_030008C0_Cmds_03000910_ActorEntryList), spot12_room_0_03000048_AltHeaders_030008C0_Cmds_03000910_ActorEntryList),
-    SCENE_CMD_END(),

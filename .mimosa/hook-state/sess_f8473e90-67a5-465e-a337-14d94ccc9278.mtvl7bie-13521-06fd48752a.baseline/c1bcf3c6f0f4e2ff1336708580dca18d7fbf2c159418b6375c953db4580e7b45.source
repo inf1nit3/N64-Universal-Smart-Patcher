@@ -1,9 +1,0 @@
-    OBJECT_EC, // 0
-    OBJECT_TORYO, // 1
-    OBJECT_DAIKU, // 2
-    OBJECT_MA2, // 3
-    OBJECT_HNI, // 4
-    OBJECT_HORSE, // 5
-    OBJECT_HORSE_NORMAL, // 6
-    OBJECT_COW, // 7
-

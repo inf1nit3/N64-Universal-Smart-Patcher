@@ -1,7 +1,0 @@
-    {
-        ACTOR_BG_SPOT18_SHUTTER,
-        {    -70,     -5,   -454 }, // pos
-        {  0x0000,  0x0000,  0x0000 }, // rot
-         0x00FF, // params
-    }, // 0
-

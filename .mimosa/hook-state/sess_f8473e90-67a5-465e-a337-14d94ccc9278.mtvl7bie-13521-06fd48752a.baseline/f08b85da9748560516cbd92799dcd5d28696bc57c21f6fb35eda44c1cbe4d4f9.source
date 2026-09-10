@@ -1,6 +1,0 @@
-    gsDPPipeSync(),
-    gsDPSetPrimColor(0, 0, 0, 100, 255, 255),
-    gsDPLoadTextureBlock(gABtnSymbolTex, G_IM_FMT_IA, G_IM_SIZ_8b, gABtnSymbolTex_WIDTH, gABtnSymbolTex_HEIGHT, 0,
- G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD),
-    gsSP1Quadrangle(0, 2, 3, 1, 0),
-    gsSPEndDisplayList(),

@@ -1,7 +1,0 @@
-#include "vr_fine3_pal_static.h"
-
-
-u64 gNightSkyboxTLUT[] = {
-#include "assets/textures/skyboxes/gNightSkyboxTLUT.tlut.rgba16.inc.c"
-};
-

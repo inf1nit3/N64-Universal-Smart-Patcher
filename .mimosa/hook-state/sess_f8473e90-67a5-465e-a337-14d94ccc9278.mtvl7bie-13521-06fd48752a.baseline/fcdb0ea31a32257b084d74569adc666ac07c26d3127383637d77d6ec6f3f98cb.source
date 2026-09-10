@@ -1,7 +1,0 @@
-    {
-        ROOM_SHAPE_TYPE_NORMAL, // type
-    }, // base
-    ARRAY_COUNT(spot04_room_0_03000580_RoomShapeNormal_0300058C_DListsEntries), // numEntries
-    spot04_room_0_03000580_RoomShapeNormal_0300058C_DListsEntries, // entries
-    spot04_room_0_03000580_RoomShapeNormal_0300058C_DListsEntries + ARRAY_COUNT(spot04_room_0_03000580_RoomShapeNormal_0300058C_DListsEntries), // entriesEnd
-

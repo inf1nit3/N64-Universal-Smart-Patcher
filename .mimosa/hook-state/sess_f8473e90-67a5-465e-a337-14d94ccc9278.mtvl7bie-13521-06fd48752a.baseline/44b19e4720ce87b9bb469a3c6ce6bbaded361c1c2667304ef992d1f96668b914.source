@@ -1,9 +1,0 @@
-#ifndef VR_HOLY0_PAL_STATIC_H
-#define VR_HOLY0_PAL_STATIC_H
-
-#include "ultra64.h"
-
-//#define gHoly0SkyboxTLUT_TLUT_COUNT 128
-extern u64 gHoly0SkyboxTLUT[];
-
-#endif

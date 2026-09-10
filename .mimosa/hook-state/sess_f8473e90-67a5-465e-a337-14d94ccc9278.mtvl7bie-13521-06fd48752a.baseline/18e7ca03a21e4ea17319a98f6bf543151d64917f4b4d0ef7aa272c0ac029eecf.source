@@ -1,9 +1,0 @@
-    OBJECT_HORSE_NORMAL, // 0
-    OBJECT_HORSE_LINK_CHILD, // 1
-    OBJECT_MA1, // 2
-    OBJECT_IN, // 3
-    OBJECT_TSUBO, // 4
-    OBJECT_KIBAKO2, // 5
-    OBJECT_WOOD02, // 6
-    OBJECT_ST, // 7
-

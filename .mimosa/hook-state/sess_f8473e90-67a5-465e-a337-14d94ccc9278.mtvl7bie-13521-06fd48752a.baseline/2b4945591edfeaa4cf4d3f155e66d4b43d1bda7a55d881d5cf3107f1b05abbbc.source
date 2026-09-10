@@ -1,2 +1,0 @@
-# See requirements.txt - the real source is pyproject.toml.
--e .[dev]

@@ -1,3 +1,6 @@
+# Local security-scanner hook state
+**/.mimosa/
+
 # Python / PyInstaller
 __pycache__/
 *.py[cod]

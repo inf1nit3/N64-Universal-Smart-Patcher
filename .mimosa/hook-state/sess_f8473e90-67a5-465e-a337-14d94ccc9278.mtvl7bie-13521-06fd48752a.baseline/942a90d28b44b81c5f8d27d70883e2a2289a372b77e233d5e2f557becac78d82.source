@@ -1,7 +1,0 @@
-#include "vr_fine1_pal_static.h"
-
-
-u64 gDaySkyboxTLUT[] = {
-#include "assets/textures/skyboxes/gDaySkyboxTLUT.tlut.rgba16.inc.c"
-};
-

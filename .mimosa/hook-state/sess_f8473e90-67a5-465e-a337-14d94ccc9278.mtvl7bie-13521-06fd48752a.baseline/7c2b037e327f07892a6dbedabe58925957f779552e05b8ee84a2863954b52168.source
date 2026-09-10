@@ -1,9 +1,0 @@
-    OBJECT_SPOT18_OBJ, // 0
-    OBJECT_DU, // 1
-    OBJECT_GM, // 2
-    OBJECT_OF1D_MAP, // 3
-    OBJECT_MAMENOKI, // 4
-    OBJECT_TSUBO, // 5
-    OBJECT_BOX, // 6
-    OBJECT_DDAN_OBJECTS, // 7
-
