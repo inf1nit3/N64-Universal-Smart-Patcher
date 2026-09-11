@@ -25,17 +25,18 @@ known limitation the SubDrag patches ship with.
 - `cand_oot_*.z64` — built candidates (gitignored, ROMs never enter the
   repository).
 
-## The 640-wide progressive route (640p flavor) — status: left-half
+## The 640-wide progressive route (640p flavor) — status: hangs at boot
 
 `640p` patches the boot VI tables to a 640-wide progressive mode
 (xScale 1:1, origin 1280), widens `gScreenWidth` (.data AND Main()'s
-boot assignment — both matter, Main re-assigns at boot), the View
-viewport and the SysCfb framebuffers (640x240, same total bytes as
-stock — fits a 4 MB console). Emulator result after all that: the 3D
-scene still renders only across the left 320 columns — more 320-space
-sites (title draws, HUD, scissor paths outside gScreenWidth) exist than
-the macro grep reveals. Closing this gap is the per-renderer 2D pass
-described below; do not ship `640p` in this state.
+boot assignment), the View viewport, NOPs the scheduler's per-frame
+overwrite, and relocates the framebuffer pair into the Expansion Pak
+area (the 640-wide pair is 0x4B000 bytes larger than stock and would
+overlap the game heap otherwise). Emulator result: the Nintendo 64 boot
+logo renders full-screen at 640-wide, then the game hangs before the
+title screen — the boot-strap code between the logo and the first
+gamestate has additional 320/VI dependencies that the macro analysis
+has not covered. The hang reproduces identically across runs.
 
 `480i` (the ViMode-editor route) renders the 3D scene full-screen
 640x480i, but interlaced output on a CRT is flicker-heavy — hardware

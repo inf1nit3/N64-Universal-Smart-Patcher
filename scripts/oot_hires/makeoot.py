@@ -19,36 +19,27 @@ crunch64, edited at virtual-address offsets, recompressed (must fit the
 original slot) and spliced back. Every edit states the word it expects;
 a mismatch aborts the build.
 
-Reads `clean.z64` next to this script and always writes `cand_oot.z64`
-next to it (rename after each run; ROMs never enter the repository).
-The flavor comes from `flavor.txt`: 480i, 240p or vitables.
+The candidate ROM is written to STDOUT (binary); all logs go to stderr.
+Reads `clean.z64` and `flavor.txt` from the current directory
+(flavor.txt: 480i, 240p, vitables or 640p; ROMs never enter the
+repository).
 
-Usage: python makeoot.py
+Usage: python makeoot.py > cand_oot.z64
 """
-
-import os
 import struct
+import sys
 
 import crunch64
 
 FLAVORS = ("480i", "240p", "vitables", "640p")
 
-# All file I/O is confined to this script's own directory: every name is
-# a fixed literal, resolved and verified against the script directory
-# before any open().
-_HERE = os.path.dirname(os.path.abspath(__file__))
-
-
-def _local(name):
-    """Resolve a fixed filename inside this script's directory."""
-    path = os.path.normpath(os.path.join(_HERE, name))
-    if not path.startswith(_HERE + os.sep):
-        raise SystemExit(f"refusing to touch {path!r} outside the script directory")
-    return path
-
-
 CODE_VRAM = 0x800110A0
 CODE_PSTART, CODE_PEND = 0xA62840, 0xAFD890
+BOOT_TABLES = (0x6FC0, 0x7010)  # osViModeNtscLan1 / osViModeMpalLan1
+
+
+def _err(*a):
+    print(*a, file=sys.stderr)
 
 
 def find_seq(data, words, start=0x1000):
@@ -57,164 +48,157 @@ def find_seq(data, words, start=0x1000):
 
 
 def main():
-    with open(_local("flavor.txt")) as f:
+    with open("flavor.txt") as f:
         flavor = f.read().strip()
     if flavor not in FLAVORS:
         raise SystemExit("flavor must be one of: " + ", ".join(FLAVORS))
-    with open(_local("clean.z64"), "rb") as f:
+    with open("clean.z64", "rb") as f:
         rom = bytearray(f.read())
 
+    # --- decompressed code segment (the editing target) ------------------
     code = bytearray(crunch64.yaz0.decompress(bytes(rom[CODE_PSTART:CODE_PEND])))
     if len(code) != 0x103D30:
         raise SystemExit(f"unexpected code size {len(code):#x}")
 
-    def code_off(vram):
-        return vram - CODE_VRAM
+    def cword(off):
+        return struct.unpack_from(">I", code, off)[0]
 
-    def word(buf, off):
-        return struct.unpack_from(">I", buf, off)[0]
-
-    def edit(buf, off, new, expect, note):
-        cur = word(buf, off)
+    def cedit(off, new, expect, note):
+        cur = cword(off)
         if cur != expect:
             raise SystemExit(
-                f"MISMATCH at {off:08X}: expect {expect:08X}, found {cur:08X} ({note})"
-            )
-        struct.pack_into(">I", buf, off, new)
-        print(f"  {off:08X}: {expect:08X} -> {new:08X}  {note}")
+                f"MISMATCH at code+{off:05X}: expect {expect:08X}, found {cur:08X} ({note})")
+        struct.pack_into(">I", code, off, new)
+        _err(f"  code+{off:05X}: {expect:08X} -> {new:08X}  {note}")
 
-    # function starts in the decompressed code segment (VRAM from the map)
-    vi = code_off(0x80093550)  # ViMode_Init
-    cfb = code_off(0x800A42F0)  # SysCfb_Init
-    view = code_off(0x80091858)  # View_Init
+    def rword(off):
+        return struct.unpack_from(">I", rom, off)[0]
 
-    # verify anchors against the ELF disassembly before editing
-    expect = {
-        vi + 0x00: 0x27BDFFE8,
-        vi + 0x04: 0xAFBF0014,
-        vi + 0x08: 0x24020001,
-        vi + 0x0C: 0x240E0140,
-        vi + 0x10: 0x240F00F0,
-        vi + 0x18: 0xAC800068,
-        vi + 0x44: 0xAC820078,
-        vi + 0x4C: 0xAC820070,
-        cfb + 0x00: 0x27BDFFE8,
-        cfb + 0x08: 0x3C028000,
-        cfb + 0x40: 0x3C0F8040,
-        cfb + 0x90: 0x3C01FFFB,
-        cfb + 0x94: 0x34215000,
-        cfb + 0xA8: 0x3C01FFFD,
-        cfb + 0xAC: 0x3421A800,
-        view + 0x40: 0x240E00F0,
-        view + 0x44: 0x240F0140,
-    }
-    for off, exp in expect.items():
-        cur = word(code, off)
-        if cur != exp:
-            raise SystemExit(f"anchor verify failed at +{off:05X}: {cur:08X} != {exp:08X}")
-    print("anchors verified against ELF disassembly")
+    def redit(off, new, expect, note):
+        cur = rword(off)
+        if cur != expect:
+            raise SystemExit(
+                f"MISMATCH at {off:08X}: expect {expect:08X}, found {cur:08X} ({note})")
+        struct.pack_into(">I", rom, off, new)
+        _err(f"  {off:08X}: {expect:08X} -> {new:08X}  {note}")
+
+    # --- function anchors inside the decompressed code segment -----------
+    # (from the ELF disassembly; each anchor is a unique instruction
+    # sequence, verified word-for-word before patching)
+    vi = find_seq(code, [0x24020001, 0x240E0140, 0x240F00F0, 0x24180042])  # ViMode_Init
+    # SysCfb_Init fb-offset constant pairs (unique in the blob)
+    cfb_f0 = find_seq(code, [0x3C01FFFB, 0x34215000])   # lui at,0xfffb / ori 0x5000
+    cfb_f1 = find_seq(code, [0x3C01FFFD, 0x3421A800])   # lui at,0xfffd / ori 0xa800
+    view = find_seq(code, [0x240E00F0, 0x240F0140])     # View_Init widths
+    # Main(): boot re-assignment gScreenWidth/gScreenHeight = 320/240
+    main_gsw = find_seq(code, [0x240E0140, 0x3C018010, 0xAC2EE500])
+    # Scheduler's per-frame gScreenWidth store (lw t7,0x54(s0) first)
+    sched_nop = find_seq(code, [0x8E0F0054, 0x3C018010, 0xAC2FE500]) + 0x8
+    # gScreenWidth/gScreenHeight .data initializers
+    gsw_data = 0x800FE500 - CODE_VRAM
+    gsh_data = 0x800FE504 - CODE_VRAM
+    for name, off in (("ViMode_Init", vi), ("SysCfb fb0", cfb_f0), ("SysCfb fb1", cfb_f1), ("View_Init", view)):
+        if off < 0:
+            raise SystemExit(f"anchor not found: {name}")
+        _err(f"{name}: code+{off:05X}")
 
     # store offsets relative to the anchors, from the ELF disassembly:
     # ViMode_Init: +0x18 sw zero,0x68 (editState); +0x48 sw v0,0x78
-    # (modeN); +0x4C sw v0,0x70 (loRes); +0x08 li t6,320; +0x0C li t7,240
-    vi_state, vi_lores, vi_moden = vi + 0x18, vi + 0x4C, vi + 0x44
+    # (modeN); +0x4C sw v0,0x70 (loRes); +0x0C li t6,320; +0x10 li t7,240
+    vi_state, vi_lores, vi_moden = vi + 0x18, vi + 0x4C, vi + 0x48
     vi_w, vi_h = vi + 0x0C, vi + 0x10
-    # SysCfb_Init: +0x40 lui t6 (8MB fb end); +0x90/+0x94 fb0 offset;
-    # +0xA8/+0xAC fb1 offset
-    cfb_end, cfb_f0h, cfb_f0l = cfb + 0x40, cfb + 0x90, cfb + 0x94
-    cfb_f1h, cfb_f1l = cfb + 0xA8, cfb + 0xAC
-    # View_Init: +0x40 li t6,240 (bottomY); +0x44 li t7,320 (rightX)
-    view_h, view_w = view + 0x40, view + 0x44
-    # gScreenWidth/.data init (verified: 0x140 at code+0xED460, height 0xF0 at +4)
-    gsw_off = code_off(0x800FE500)
-    # Main()'s boot re-assignment: li t6,320 at code+0x90BC4 (before sw t6,0xE500)
-    main_gsw = code_off(0x800A1C64)
-    # Scheduler's per-frame store to gScreenWidth: sw t7,0xE500 at code+0x825F0
-    sched_nop = code_off(0x800825F0)
+    # SysCfb_Init fb-offset pair words: hi at cfb_f0, lo at cfb_f0+4
+    cfb_f0h, cfb_f0l = cfb_f0, cfb_f0 + 4
+    cfb_f1h, cfb_f1l = cfb_f1, cfb_f1 + 4
+    # View_Init: +0x00 li t6,240 (bottomY); +0x04 li t7,320 (rightX)
+    view_h, view_w = view + 0x00, view + 0x04
 
-    edits = []
+    edits = []  # (kind, offset, new, expect, note)
     if flavor == "480i":
         edits += [
-            (vi_w, 0x240E0280, "viWidth 320->640"),
-            (vi_h, 0x240F01E0, "viHeight 240->480"),
-            (vi_lores, 0xAC800070, "loRes 1->0"),
-            (vi_state, 0xAC820068, "editState 0->ACTIVE(1)"),
-            (cfb_end, 0x3C0F8060, "8MB fb end moves to expansion"),
-            (cfb_f0h, 0x3C01FFED, "fb0 offset hi"),
-            (cfb_f0l, 0x34214000, "fb0 offset lo"),
-            (cfb_f1h, 0x3C01FFF6, "fb1 offset hi"),
-            (cfb_f1l, 0x3421A000, "fb1 offset lo"),
-            (view_h, 0x240E01E0, "viewport bottomY 240->480"),
-            (view_w, 0x240F0280, "viewport rightX 320->640"),
+            ("c", vi_w, 0x240E0280, 0x240E0140, "viWidth 320->640"),
+            ("c", vi_h, 0x240F01E0, 0x240F00F0, "viHeight 240->480"),
+            ("c", vi_lores, 0xAC800070, 0xAC820070, "loRes 1->0"),
+            ("c", vi_state, 0xAC820068, 0xAC800068, "editState 0->ACTIVE(1)"),
+            # 8MB fb end moves to expansion: lui t6,0x8040 (at +0x40 in
+            # SysCfb_Init = cfb_f0 - 0x50) -> lui t6,0x8060
+            ("c", cfb_f0 - 0x50, 0x3C0F8060, 0x3C0F8040, "8MB fb end moves to expansion"),
+            ("c", cfb_f0h, 0x3C01FFED, 0x3C01FFFB, "fb0 offset hi"),
+            ("c", cfb_f0l, 0x34214000, 0x34215000, "fb0 offset lo"),
+            ("c", cfb_f1h, 0x3C01FFF6, 0x3C01FFFD, "fb1 offset hi"),
+            ("c", cfb_f1l, 0x3421A000, 0x3421A800, "fb1 offset lo"),
+            ("c", view_h, 0x240E01E0, 0x240E00F0, "viewport bottomY 240->480"),
+            ("c", view_w, 0x240F0280, 0x240F0140, "viewport rightX 320->640"),
         ]
     elif flavor == "240p":
         edits += [
-            (vi_w, 0x240E0280, "viWidth 320->640"),
-            (vi_lores, 0xAC800070, "loRes 1->0"),
-            (vi_moden, 0xAC800078, "modeN 1->0 (progressive)"),
-            (vi_state, 0xAC820068, "editState 0->ACTIVE(1)"),
-            (cfb_f0h, 0x3C01FFF6, "fb0 offset hi"),
-            (cfb_f0l, 0x3421A000, "fb0 offset lo"),
-            (cfb_f1h, 0x3C01FFFB, "fb1 offset hi"),
-            (cfb_f1l, 0x34215000, "fb1 offset lo"),
-            (view_w, 0x240F0280, "viewport rightX 320->640"),
+            ("c", vi_w, 0x240E0280, 0x240E0140, "viWidth 320->640"),
+            ("c", vi_lores, 0xAC800070, 0xAC820070, "loRes 1->0"),
+            ("c", vi_moden, 0xAC800078, 0xAC820078, "modeN 1->0 (progressive)"),
+            ("c", vi_state, 0xAC820068, 0xAC800068, "editState 0->ACTIVE(1)"),
+            ("c", cfb_f0h, 0x3C01FFF6, 0x3C01FFFB, "fb0 offset hi"),
+            ("c", cfb_f0l, 0x3421A000, 0x34215000, "fb0 offset lo"),
+            ("c", cfb_f1h, 0x3C01FFFB, 0x3C01FFFD, "fb1 offset hi"),
+            ("c", cfb_f1l, 0x34215000, 0x3421A800, "fb1 offset lo"),
+            ("c", view_w, 0x240F0280, 0x240F0140, "viewport rightX 320->640"),
         ]
     elif flavor == "vitables":
         for base in (0x6FC0, 0x7010):
             edits += [
-                (base + 0x08, 0x00000280, "table width 320->640"),
-                (base + 0x20, 0x00000400, "table xScale 2.0->1.0"),
-                (base + 0x28, 0x00000500, "table f0 origin 1280"),
-                (base + 0x3C, 0x00000500, "table f1 origin 1280"),
+                ("r", base + 0x08, 0x00000280, 0x00000140, "table width 320->640"),
+                ("r", base + 0x20, 0x00000400, 0x00000200, "table xScale 2.0->1.0"),
+                ("r", base + 0x28, 0x00000500, 0x00000280, "table f0 origin 640->1280"),
+                ("r", base + 0x3C, 0x00000500, 0x00000280, "table f1 origin 640->1280"),
             ]
     elif flavor == "640p":
         # 640x240 PROGRESSIVE without the ViMode editor hack (480i is
         # dead per hardware verdict - interlace unusable). Retail VI
         # path: the boot's static osViModeNtscLan1/MpalLan1 tables drive
-        # the display (viMode stays NULL in the scheduler), so the tables
-        # carry the 640-wide progressive mode; the game renders 640-wide
-        # because gScreenWidth's .data init and View_Init's viewport are
-        # widened; SysCfb framebuffers grow to 640x240 (same total as
-        # stock - fits a 4 MB console, no Expansion Pak needed).
+        # the display, so the tables carry the 640-wide progressive
+        # mode; the game renders 640-wide because gScreenWidth's .data
+        # init AND Main()'s boot re-assignment are widened; SysCfb
+        # framebuffers grow to 640x240 (same total bytes as stock -
+        # fits a 4 MB console, no Expansion Pak needed); View viewport
+        # widens so the 3D fills the framebuffer.
         for base in (0x6FC0, 0x7010):
             edits += [
-                (base + 0x08, 0x00000280, "table width 320->640"),
-                (base + 0x20, 0x00000400, "table xScale 2.0->1.0"),
-                (base + 0x28, 0x00000500, "table f0 origin 640->1280"),
-                (base + 0x3C, 0x00000500, "table f1 origin 640->1280"),
+                ("r", base + 0x08, 0x00000280, 0x00000140, "table width 320->640"),
+                ("r", base + 0x20, 0x00000400, 0x00000200, "table xScale 2.0->1.0"),
+                ("r", base + 0x28, 0x00000500, 0x00000280, "table f0 origin 640->1280"),
+                ("r", base + 0x3C, 0x00000500, 0x00000280, "table f1 origin 640->1280"),
             ]
-        # SysCfb_Init fb offsets: fb0 -0x4B000 -> -0x96000, fb1 -0x25800 -> -0x4B000
         edits += [
-            (cfb_f0h, 0x3C01FFF6, "fb0 offset hi"),
-            (cfb_f0l, 0x3421A000, "fb0 offset lo"),
-            (cfb_f1h, 0x3C01FFFB, "fb1 offset hi"),
-            (cfb_f1l, 0x34215000, "fb1 offset lo"),
-            (view_w, 0x240F0280, "viewport rightX 320->640"),
-            (gsw_off, 0x00000280, "gScreenWidth .data init 320->640"),
-            # Main() re-assigns gScreenWidth at boot (main.c:98): li t6,320
-            # feeding sw t6,0xE500 -> widen to 640. Height stays 240 (240p).
-            (main_gsw, 0x240E0280, "boot gScreenWidth 320->640"),
-            # The SCHEDULER overwrites gScreenWidth every frame from its
-            # own state (lw +0x54(s0) -> sw 0xE500, code+0x825F0). NOP the
-            # store or the boot value 640 is clobbered back to 320 each
-            # frame - that was the left-half failure mode.
-            (sched_nop, 0x00000000, "scheduler gScreenWidth overwrite -> NOP"),
+            # 8MB fb end 0x80400000 -> 0x80600000: the 640-wide framebuffer
+            # pair is 0x4B000 bytes larger than stock and would otherwise
+            # overlap the top of the game heap (boot hang)
+            ("c", cfb_f0 - 0x50, 0x3C0F8060, 0x3C0F8040, "8MB fb end moves to expansion"),
+            ("c", cfb_f0h, 0x3C01FFF6, 0x3C01FFFB, "fb0 offset hi"),
+            ("c", cfb_f0l, 0x3421A000, 0x34215000, "fb0 offset lo"),
+            ("c", cfb_f1h, 0x3C01FFFB, 0x3C01FFFD, "fb1 offset hi"),
+            ("c", cfb_f1l, 0x34215000, 0x3421A800, "fb1 offset lo"),
+            ("c", view_w, 0x240F0280, 0x240F0140, "viewport rightX 320->640"),
+            ("c", gsw_data, 0x00000280, 0x00000140, "gScreenWidth .data 320->640"),
+            ("c", main_gsw, 0x240E0280, 0x240E0140, "boot gScreenWidth 320->640"),
+            ("c", sched_nop, 0x00000000, 0xAC2FE500, "scheduler overwrite -> NOP"),
         ]
 
-    for off, new, note in edits:
-        if off < 0x8000:  # the static VI tables live in the boot segment
-            edit(rom, off, new, word(rom, off), note)
+    # --- apply -------------------------------------------------------------
+    n = 0
+    for kind, off, new, expect, note in edits:
+        if kind == "r":
+            redit(off, new, expect, note)
+            n += 1
         else:
-            edit(code, off, new, word(code, off), note)
+            cedit(off, new, expect, note)
+            n += 1
 
-    if flavor in ("480i", "240p"):
+    if flavor in ("480i", "240p", "640p"):
         comp = bytes(crunch64.yaz0.compress(bytes(code)))
         if len(comp) > CODE_PEND - CODE_PSTART:
             raise SystemExit(
-                f"recompressed code {len(comp)} exceeds slot {CODE_PEND - CODE_PSTART}"
-            )
-        rom[CODE_PSTART : CODE_PSTART + len(comp)] = comp
-        print(f"code recompressed: {len(comp)} bytes (slot {CODE_PEND - CODE_PSTART})")
+                f"recompressed code {len(comp)} exceeds slot {CODE_PEND - CODE_PSTART}")
+        rom[CODE_PSTART:CODE_PSTART + len(comp)] = comp
+        _err(f"code recompressed: {len(comp)} bytes (slot {CODE_PEND - CODE_PSTART})")
 
     from n64patcher import n64_core as core
 
@@ -223,9 +207,8 @@ def main():
         raise SystemExit("CIC not identified - refusing to stamp")
     struct.pack_into(">II", rom, 0x10, crc[0], crc[1])
 
-    with open("cand_oot.z64", "wb") as f:
-        f.write(bytes(rom))
-    print(f"wrote cand_oot.z64 ({flavor}, {len(edits)} edits)")
+    sys.stdout.buffer.write(bytes(rom))
+    _err(f"wrote candidate to stdout ({flavor}, {n} rom-segment edits)")
 
 
 if __name__ == "__main__":
