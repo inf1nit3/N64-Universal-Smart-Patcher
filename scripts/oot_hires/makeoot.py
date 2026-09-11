@@ -129,6 +129,8 @@ def main():
     gsw_off = code_off(0x800FE500)
     # Main()'s boot re-assignment: li t6,320 at code+0x90BC4 (before sw t6,0xE500)
     main_gsw = code_off(0x800A1C64)
+    # Scheduler's per-frame store to gScreenWidth: sw t7,0xE500 at code+0x825F0
+    sched_nop = code_off(0x800825F0)
 
     edits = []
     if flavor == "480i":
@@ -192,6 +194,11 @@ def main():
             # Main() re-assigns gScreenWidth at boot (main.c:98): li t6,320
             # feeding sw t6,0xE500 -> widen to 640. Height stays 240 (240p).
             (main_gsw, 0x240E0280, "boot gScreenWidth 320->640"),
+            # The SCHEDULER overwrites gScreenWidth every frame from its
+            # own state (lw +0x54(s0) -> sw 0xE500, code+0x825F0). NOP the
+            # store or the boot value 640 is clobbered back to 320 each
+            # frame - that was the left-half failure mode.
+            (sched_nop, 0x00000000, "scheduler gScreenWidth overwrite -> NOP"),
         ]
 
     for off, new, note in edits:
