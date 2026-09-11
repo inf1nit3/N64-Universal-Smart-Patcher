@@ -31,7 +31,7 @@ import struct
 
 import crunch64
 
-FLAVORS = ("480i", "240p", "vitables")
+FLAVORS = ("480i", "240p", "vitables", "640p")
 
 # All file I/O is confined to this script's own directory: every name is
 # a fixed literal, resolved and verified against the script directory
@@ -125,6 +125,10 @@ def main():
     cfb_f1h, cfb_f1l = cfb + 0xA8, cfb + 0xAC
     # View_Init: +0x40 li t6,240 (bottomY); +0x44 li t7,320 (rightX)
     view_h, view_w = view + 0x40, view + 0x44
+    # gScreenWidth/.data init (verified: 0x140 at code+0xED460, height 0xF0 at +4)
+    gsw_off = code_off(0x800FE500)
+    # Main()'s boot re-assignment: li t6,320 at code+0x90BC4 (before sw t6,0xE500)
+    main_gsw = code_off(0x800A1C64)
 
     edits = []
     if flavor == "480i":
@@ -161,6 +165,34 @@ def main():
                 (base + 0x28, 0x00000500, "table f0 origin 1280"),
                 (base + 0x3C, 0x00000500, "table f1 origin 1280"),
             ]
+    elif flavor == "640p":
+        # 640x240 PROGRESSIVE without the ViMode editor hack (480i is
+        # dead per hardware verdict - interlace unusable). Retail VI
+        # path: the boot's static osViModeNtscLan1/MpalLan1 tables drive
+        # the display (viMode stays NULL in the scheduler), so the tables
+        # carry the 640-wide progressive mode; the game renders 640-wide
+        # because gScreenWidth's .data init and View_Init's viewport are
+        # widened; SysCfb framebuffers grow to 640x240 (same total as
+        # stock - fits a 4 MB console, no Expansion Pak needed).
+        for base in (0x6FC0, 0x7010):
+            edits += [
+                (base + 0x08, 0x00000280, "table width 320->640"),
+                (base + 0x20, 0x00000400, "table xScale 2.0->1.0"),
+                (base + 0x28, 0x00000500, "table f0 origin 640->1280"),
+                (base + 0x3C, 0x00000500, "table f1 origin 640->1280"),
+            ]
+        # SysCfb_Init fb offsets: fb0 -0x4B000 -> -0x96000, fb1 -0x25800 -> -0x4B000
+        edits += [
+            (cfb_f0h, 0x3C01FFF6, "fb0 offset hi"),
+            (cfb_f0l, 0x3421A000, "fb0 offset lo"),
+            (cfb_f1h, 0x3C01FFFB, "fb1 offset hi"),
+            (cfb_f1l, 0x34215000, "fb1 offset lo"),
+            (view_w, 0x240F0280, "viewport rightX 320->640"),
+            (gsw_off, 0x00000280, "gScreenWidth .data init 320->640"),
+            # Main() re-assigns gScreenWidth at boot (main.c:98): li t6,320
+            # feeding sw t6,0xE500 -> widen to 640. Height stays 240 (240p).
+            (main_gsw, 0x240E0280, "boot gScreenWidth 320->640"),
+        ]
 
     for off, new, note in edits:
         if off < 0x8000:  # the static VI tables live in the boot segment
