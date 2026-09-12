@@ -1,23 +1,27 @@
-# oot_hires — Zelda: Ocarina of Time (USA) Rev 0, 640x480i (EXPERIMENTAL)
+# oot_hires — Zelda: Ocarina of Time (USA) Rev 0, 640-wide hi-res
 
-Development workspace for the in-project OoT hi-res build. The patch
-enables the game's own runtime-width machinery (found via the
-zeldaret/oot decompilation, which targets this exact revision) and moves
-the framebuffer pair into the Expansion Pak area. Verified in mupen64plus
-at 640x480i: 3D renders full-screen with no corruption. Menus/HUD keep
-the original 320-space layout (upper-left quadrant) for now — the same
-known limitation the SubDrag patches ship with.
+Development workspace for the in-project OoT hi-res build. The main
+route is the **640p flavor**: 640x240 PROGRESSIVE via the game's own
+static VI tables (found via the zeldaret/oot decompilation, which
+targets this exact revision) — no interlace, which is unusable on this
+setup. Verified in mupen64plus through the whole boot chain (logo ->
+title -> File Select) with the 3D scene full-width. HUD/dialogs keep
+the original 320-space layout where their positions are compile-time
+constants (per-renderer 2D pass = future work, same known limitation
+the SubDrag patches ship with).
 
 ## Files
 
 - `findsites.py` — scans the ROM for the compiled store patterns of
   ViMode_Init / SysCfb_Init / View_Init (reads `clean.z64` here).
 - `makeoot.py` — builds a candidate from `clean.z64` (Yaz0-decompress
-  code segment, expected-word edits, recompress, splice, CRC restamp).
-  The flavor comes from `flavor.txt`: `480i` (shipped candidate), `240p`
-  (not functional yet — Nintendo's Configure math produces a frozen video
-  state for hi-res + non-interlaced), `vitables` (VI-tables-only
-  diagnostic).
+  code segment, expected-word edits, recompress, splice, CRC restamp),
+  written to STDOUT; logs go to stderr. The flavor comes from
+  `flavor.txt`: `480i` (interlaced reference route, rejected),
+  `240p` (not functional yet — Nintendo's Configure math produces a
+  frozen video state for hi-res + non-interlaced), `vitables`
+  (VI-tables-only diagnostic), `640p` (**the working route**), and
+  `640pdbg` (640p + title auto-advance for unattended emulator runs).
 - `sites.txt` — the scan output that pinned the anchors.
 - `recipe.oot-hires-exp.json` + `zelda-oot-usa-rev0-640x480i-exp.bps` —
   the user-installable pair: JSON into `~/.n64patcher/patches/`, BPS
@@ -25,32 +29,59 @@ known limitation the SubDrag patches ship with.
 - `cand_oot_*.z64` — built candidates (gitignored, ROMs never enter the
   repository).
 
-## The 640-wide progressive route (640p flavor) — status: hangs at boot
+## The 640-wide progressive route (640p flavor) — status: WORKS
 
-`640p` patches the boot VI tables to a 640-wide progressive mode
-(xScale 1:1, origin 1280), widens `gScreenWidth` (.data AND Main()'s
-boot assignment), the View viewport, NOPs the scheduler's per-frame
-overwrite, and relocates the framebuffer pair into the Expansion Pak
-area (the 640-wide pair is 0x4B000 bytes larger than stock and would
-overlap the game heap otherwise). Emulator result: the Nintendo 64 boot
-logo renders full-screen at 640-wide, then the game hangs before the
-title screen — the boot-strap code between the logo and the first
-gamestate has additional 320/VI dependencies that the macro analysis
-has not covered. The hang reproduces identically across runs.
+`640p` patches the boot VI tables (osViModeNtscLan1/MpalLan1) to a
+640-wide progressive mode (xScale 1:1, origin 1280) — on NTSC 1.0 the
+scheduler never re-issues `osViSetMode` (the per-frame `viMode` pointer
+stays NULL), so those static tables drive the display for the whole
+session. The game renders 640-wide because `gScreenWidth` is widened
+both in its `.data` initializer and in Main()'s boot assignment; the
+only other runtime writer of `gScreenWidth` is ViMode_Update, which is
+dead code unless the SREG VI editor is on (its store is NOPed anyway).
+SysCfb's framebuffer pair grows to 2x 640x240 and the 8MB fb-end moves
+to 0x80600000 so the game heap keeps its stock size — **the Expansion
+Pak is required** (on 4 MB the console would take the 4MB branch and
+the shrunken heap is likely to starve the game).
+
+Key sites (all asserted word-for-word, anchors resolved against the
+zeldaret/oot ntsc-1.0 map):
+
+- boot VI tables at ROM 0x6FC0/0x7010 (width/xScale/origins)
+- SysCfb_Init fb-offset constants + the 8MB fb-end lui
+- View_Init viewport rightX — the `li 240/li 320` pair appears TWICE in
+  the code segment (View_Init and func_800A994-area code), so the anchor
+  is View_Init's unique 4-word window; the first-hit anchor used earlier
+  patched the WRONG site and left the 3D in the left half
+- gScreenWidth `.data` + Main() boot assignment
+- ViMode_Update's width/height copy -> NOP
+
+Emulator verification (mupen64plus 2.6.0, `--testshots`, 8 MB):
+
+- frame 120: N64 logo, frame 900: title screen (3D scene full-width)
+- `640pdbg` (title START checks forced true, andi->ori) auto-advances:
+  frames 1000-2000 show File Select full-width and stable
+- no interlace anywhere (progressive 640x240p)
+
+Known risk: gZBuffer stays 320x240, so a 640-wide scissor overflows
+0x25800 bytes into gGfxSPTaskOutputBuffer (survived in the emulator;
+hardware verdict pending). HUD/menus keep the 320-space layout where
+their positions are compile-time constants — the per-renderer 2D pass
+is future work (the title/File Select screens already derive their
+positions from the runtime viewport and land correctly).
 
 `480i` (the ViMode-editor route) renders the 3D scene full-screen
-640x480i, but interlaced output on a CRT is flicker-heavy — hardware
-verdict pending; per-renderer 2D pass needed either way.
+640x480i, but interlaced output is rejected on this setup (hardware
+verdict: unusable) — kept for reference only.
 
 ## Status
 
-- **480i**: emulator-verified (mupen64plus, title + attract scenes
-  full-screen, stable across 4800+ frames). NOT yet verified on real
-  hardware — do not bundle until a SummerCart64 run confirms it.
-- **HUD / File Select / dialogs**: render with the original 320-space
-  positions (upper-left quadrant). The name-entry screen scales wide
-  (its positions derive from runtime screen dimensions). A per-renderer
-  2D pass over the decomp map is future work.
+- **640p**: emulator-verified through logo -> title -> File Select
+  (frames 120/900/1000-2000), progressive, no interlace. NOT yet on
+  real hardware — SummerCart64 run pending before bundling.
+- **HUD / dialogs**: compile-time 320 positions stay upper-left; the
+  per-renderer 2D pass over the decomp map is future work. Title and
+  File Select already land correctly (runtime-viewport positions).
 - The Stage 1b game-fix mechanism deliberately does NOT fire for BPS
   builds (fixes are built against the SubDrag image).
 
@@ -59,4 +90,13 @@ verdict pending; per-renderer 2D pass needed either way.
 Requires `clean.z64` (big-endian US Rev 0 dump, symlinked or copied
 here) and the n64patcher package on `sys.path` (for the CRC engine):
 
-    python makeoot.py            # reads flavor.txt, writes cand_oot.z64
+    python makeoot.py            # reads flavor.txt, writes candidate to stdout
+
+`flavor.txt` holds one of: `480i`, `240p`, `vitables`, `640p`,
+`640pdbg`. Emulator test loop:
+
+    python makeoot.py > cand.z64
+    mupen64plus --testshots 120,900 --sshotdir /tmp/shots cand.z64
+    # 640pdbg for the unattended run into File Select:
+    echo 640pdbg > flavor.txt && python makeoot.py > cand_dbg.z64
+    mupen64plus --testshots 800,1100,1500 --sshotdir /tmp/shots cand_dbg.z64

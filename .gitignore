@@ -53,3 +53,6 @@ work/
 # Local working copies of user-supplied dumps - never tracked, any format.
 roms/
 *.7z
+
+# oot_hires local build input (which flavor to build)
+scripts/oot_hires/flavor.txt

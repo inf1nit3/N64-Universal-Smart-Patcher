@@ -21,8 +21,10 @@ a mismatch aborts the build.
 
 The candidate ROM is written to STDOUT (binary); all logs go to stderr.
 Reads `clean.z64` and `flavor.txt` from the current directory
-(flavor.txt: 480i, 240p, vitables or 640p; ROMs never enter the
-repository).
+(flavor.txt: 480i, 240p, vitables, 640p or 640pdbg; ROMs never enter the
+repository). `640pdbg` is the emulator-test variant of `640p`: it also
+forces the title screen's START checks true so `mupen64plus --testshots`
+runs unattended into File Select.
 
 Usage: python makeoot.py > cand_oot.z64
 """
@@ -31,7 +33,7 @@ import sys
 
 import crunch64
 
-FLAVORS = ("480i", "240p", "vitables", "640p")
+FLAVORS = ("480i", "240p", "vitables", "640p", "640pdbg")
 
 CODE_VRAM = 0x800110A0
 CODE_PSTART, CODE_PEND = 0xA62840, 0xAFD890
@@ -45,6 +47,35 @@ def _err(*a):
 def find_seq(data, words, start=0x1000):
     blob = b"".join(struct.pack(">I", w) for w in words)
     return data.find(blob, start)
+
+
+def find_en_mag(rom):
+    """Locate the ovl_En_Mag file via the dmadata table (0x7430, 1526 entries)."""
+    for k in range(1526):
+        vs, ve, rs, re_ = struct.unpack_from(">IIII", rom, 0x7430 + k * 16)
+        if vs == 0xE6C0D0 and rom[rs:rs + 4] == b"Yaz0":
+            return rs, re_
+    raise SystemExit("ovl_En_Mag not found in dmadata")
+
+
+def patch_en_mag_autoadvance(rom):
+    """Debug patch: force the title screen's START checks true so the boot
+    runs on into File Select without input (mupen --testshots runs). Both
+    `andi tX, v1, 0x1000` words become `ori` (press | 0x1000 is always
+    equal to the mask, so CHECK_BTN_ALL passes every frame)."""
+    rs, re_ = find_en_mag(rom)
+    data = bytearray(crunch64.yaz0.decompress(bytes(rom[rs:re_])))
+    for expect in (0x30781000, 0x306F1000):  # andi t8,v1,0x1000 / andi t7,v1,0x1000
+        off = data.find(struct.pack(">I", expect))
+        if off < 0:
+            raise SystemExit(f"En_Mag START check {expect:08X} not found")
+        struct.pack_into(">I", data, off, expect | 0x04000000)
+        _err(f"  En_Mag +{off:04X}: {expect:08X} -> {expect | 0x04000000:08X}  START press forced")
+    comp = bytes(crunch64.yaz0.compress(bytes(data)))
+    if len(comp) > re_ - rs:
+        raise SystemExit(f"En_Mag recompress {len(comp)} exceeds slot {re_ - rs}")
+    rom[rs:rs + len(comp)] = comp
+    _err(f"En_Mag recompressed: {len(comp)} bytes (slot {re_ - rs})")
 
 
 def main():
@@ -89,11 +120,18 @@ def main():
     # SysCfb_Init fb-offset constant pairs (unique in the blob)
     cfb_f0 = find_seq(code, [0x3C01FFFB, 0x34215000])   # lui at,0xfffb / ori 0x5000
     cfb_f1 = find_seq(code, [0x3C01FFFD, 0x3421A800])   # lui at,0xfffd / ori 0xa800
-    view = find_seq(code, [0x240E00F0, 0x240F0140])     # View_Init widths
+    # View_Init: the plain li-pair also appears in func_8008A994, so anchor
+    # on View_Init's unique 4-word window (lui t8,0x5649 / li t6,240 /
+    # li t7,320 / ori t8,t8,0x4557); pair sits at +0x04/+0x08
+    view = find_seq(code, [0x3C185649, 0x240E00F0, 0x240F0140, 0x37184557])
+    if find_seq(code, [0x3C185649, 0x240E00F0, 0x240F0140, 0x37184557], view + 4) >= 0:
+        raise SystemExit("View_Init anchor is not unique")
     # Main(): boot re-assignment gScreenWidth/gScreenHeight = 320/240
     main_gsw = find_seq(code, [0x240E0140, 0x3C018010, 0xAC2EE500])
-    # Scheduler's per-frame gScreenWidth store (lw t7,0x54(s0) first)
-    sched_nop = find_seq(code, [0x8E0F0054, 0x3C018010, 0xAC2FE500]) + 0x8
+    # ViMode_Update's gScreenWidth/gScreenHeight = viWidth/viHeight copy
+    # (dead on stock NTSC 1.0 - only runs when the SREG VI editor is on;
+    # NOPed so the editor can never shrink the width back)
+    vimode_nop = find_seq(code, [0x8E0F0054, 0x3C018010, 0xAC2FE500]) + 0x8
     # gScreenWidth/gScreenHeight .data initializers
     gsw_data = 0x800FE500 - CODE_VRAM
     gsh_data = 0x800FE504 - CODE_VRAM
@@ -110,10 +148,11 @@ def main():
     # SysCfb_Init fb-offset pair words: hi at cfb_f0, lo at cfb_f0+4
     cfb_f0h, cfb_f0l = cfb_f0, cfb_f0 + 4
     cfb_f1h, cfb_f1l = cfb_f1, cfb_f1 + 4
-    # View_Init: +0x00 li t6,240 (bottomY); +0x04 li t7,320 (rightX)
-    view_h, view_w = view + 0x00, view + 0x04
+    # View_Init: +0x04 li t6,240 (bottomY); +0x08 li t7,320 (rightX)
+    view_h, view_w = view + 0x04, view + 0x08
 
     edits = []  # (kind, offset, new, expect, note)
+    dbg_autoadvance = flavor == "640pdbg"  # 640p edits + title auto-advance
     if flavor == "480i":
         edits += [
             ("c", vi_w, 0x240E0280, 0x240E0140, "viWidth 320->640"),
@@ -150,16 +189,22 @@ def main():
                 ("r", base + 0x28, 0x00000500, 0x00000280, "table f0 origin 640->1280"),
                 ("r", base + 0x3C, 0x00000500, 0x00000280, "table f1 origin 640->1280"),
             ]
-    elif flavor == "640p":
+    elif flavor in ("640p", "640pdbg"):
         # 640x240 PROGRESSIVE without the ViMode editor hack (480i is
         # dead per hardware verdict - interlace unusable). Retail VI
-        # path: the boot's static osViModeNtscLan1/MpalLan1 tables drive
-        # the display, so the tables carry the 640-wide progressive
-        # mode; the game renders 640-wide because gScreenWidth's .data
-        # init AND Main()'s boot re-assignment are widened; SysCfb
-        # framebuffers grow to 640x240 (same total bytes as stock -
-        # fits a 4 MB console, no Expansion Pak needed); View viewport
-        # widens so the 3D fills the framebuffer.
+        # path: osViSetMode is never re-issued on NTSC 1.0 (viMode stays
+        # NULL), so the boot's static osViModeNtscLan1/MpalLan1 tables
+        # drive the display the whole session; the tables carry the
+        # 640-wide progressive mode. The game renders 640-wide because
+        # gScreenWidth's .data init AND Main()'s boot re-assignment are
+        # widened (nothing else writes gScreenWidth at runtime); the
+        # SysCfb framebuffer pair grows to 2x 640x240 (0x96000 total,
+        # +0x4B000 vs stock) and the fb end moves to the Expansion Pak
+        # area so the game heap keeps its stock size - REQUIRES 8 MB.
+        # View_Init widens the viewport so the 3D fills the framebuffer.
+        # Known risk: gZBuffer stays 320x240, so 640-wide scissor
+        # overflows 0x25800 bytes into gGfxSPTaskOutputBuffer
+        # (survived in mupen64plus; hardware verdict pending).
         for base in (0x6FC0, 0x7010):
             edits += [
                 ("r", base + 0x08, 0x00000280, 0x00000140, "table width 320->640"),
@@ -179,7 +224,7 @@ def main():
             ("c", view_w, 0x240F0280, 0x240F0140, "viewport rightX 320->640"),
             ("c", gsw_data, 0x00000280, 0x00000140, "gScreenWidth .data 320->640"),
             ("c", main_gsw, 0x240E0280, 0x240E0140, "boot gScreenWidth 320->640"),
-            ("c", sched_nop, 0x00000000, 0xAC2FE500, "scheduler overwrite -> NOP"),
+            ("c", vimode_nop, 0x00000000, 0xAC2FE500, "ViMode_Update width copy -> NOP"),
         ]
 
     # --- apply -------------------------------------------------------------
@@ -192,13 +237,16 @@ def main():
             cedit(off, new, expect, note)
             n += 1
 
-    if flavor in ("480i", "240p", "640p"):
+    if flavor in ("480i", "240p", "640p", "640pdbg"):
         comp = bytes(crunch64.yaz0.compress(bytes(code)))
         if len(comp) > CODE_PEND - CODE_PSTART:
             raise SystemExit(
                 f"recompressed code {len(comp)} exceeds slot {CODE_PEND - CODE_PSTART}")
         rom[CODE_PSTART:CODE_PSTART + len(comp)] = comp
         _err(f"code recompressed: {len(comp)} bytes (slot {CODE_PEND - CODE_PSTART})")
+
+    if dbg_autoadvance:
+        patch_en_mag_autoadvance(rom)
 
     from n64patcher import n64_core as core
 
