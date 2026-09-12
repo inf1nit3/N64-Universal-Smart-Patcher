@@ -34,12 +34,14 @@ the patch makes it permanent.
 - **Loop status**: emulator sweeps (frames 8000-120000) still cycle
   menu-bg day/night, DayTelop and cutscene-sky states - no gameplay-HUD
   window observed even with the Sram_OpenSave forces (not-owl +
-  first-cycle -> South Clock Town day 0), the 37 forced A-checks and
-  the seeded ZELDA3 File-1 flash slot. The remaining block sits
-  downstream (DayTelop -> Play handoff, or the forced-A interfering
-  with the hudVisibility transition). Next steps: mupen savestate +
-  memory inspection of gSaveContext/PlayState at the DayTelop handoff,
-  or the DayTelop -> Play code-path analysis in the decomp.
+  first-cycle -> South Clock Town day 0), the 37 forced A-checks, the
+  nor-folded START/A bit-test forces and the seeded ZELDA3 File-1 flash
+  slot. The remaining block sits downstream (DayTelop -> Play handoff,
+  or the forced-A interfering with the hudVisibility transition). Next
+  steps: mupen savestate + memory inspection of gSaveContext/PlayState
+  at the DayTelop handoff, or the DayTelop -> Play code-path analysis
+  in the decomp. NOTE: mupen rewrites the .fla on exit, so re-run the
+  seed (or restore .fla.bak) before every verification run.
 - **Nameset forces (latest)**: the name-entry keyboard's nor-folded
   START/A bit tests (overlay +0x55D0/+0x5920) are forced and the
   validName gate at +0x5B80 NOPed, so an empty name registers. The

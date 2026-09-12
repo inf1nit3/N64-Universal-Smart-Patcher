@@ -54,6 +54,11 @@ EDITS = [
     (0x9F624, 0x156000A2, 0x00000000, "Sram_OpenSave: force not-owl path"),
     (0x9F884, 0x11600006, 0x00000000, "Sram_OpenSave: force first-cycle entrance"),
     (0x9F894, 0xACE00018, 0x00000000, "Sram_OpenSave: keep seeded day (no day=0 reset)"),
+    # nor-folded START checks in wait loops: cutscene skip, prompt wait,
+    # timer display - each nor rd,press,at becomes addiu rd,1 (pressed)
+    (0x4F2C0, 0x01E1C027, 0x24180001, "wait loop: START forced"),
+    (0xB1DC8, 0x00417027, 0x240E0001, "skip wait: START forced"),
+    (0xC2394, 0x00414027, 0x24080001, "prompt wait: START forced"),
 ]
 
 
