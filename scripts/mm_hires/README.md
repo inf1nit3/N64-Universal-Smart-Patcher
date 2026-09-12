@@ -40,6 +40,12 @@ the patch makes it permanent.
   with the hudVisibility transition). Next steps: mupen savestate +
   memory inspection of gSaveContext/PlayState at the DayTelop handoff,
   or the DayTelop -> Play code-path analysis in the decomp.
+- **Nameset forces (latest)**: the name-entry keyboard's nor-folded
+  START/A bit tests (overlay +0x55D0/+0x5920) are forced and the
+  validName gate at +0x5B80 NOPed, so an empty name registers. The
+  nor-folding (nor reg, press, at with at=~mask instead of andi) is
+  why andi-scans keep missing MM input checks - always disassemble
+  with capstone.
 - Mapping aids: overlay vrom 0xC7E4F0 (yaz0, rom 0xB28DA0..0xB326E0,
   decompressed 0x10E70); FileSelectState fields live at state+0x20000 +
   regs-style offsets (buttonIndex 0x4480, configMode 0x4486, selectMode

@@ -92,6 +92,9 @@ FS_DBG_EDITS = [
     (0x83C8, 0x0041C027, 0x24180001, "UpdateMainMenu: A bit forced"),
     (0x0E848, 0x01C17827, 0x240F1000, "ConfirmFile: START bit forced"),
     (0x0E860, 0x0041C027, 0x24180001, "ConfirmFile: A bit forced -> YES"),
+    (0x55D0, 0x00416827, 0x240D1000, "nameset: START bit forced"),
+    (0x5920, 0x01E16827, 0x240D8000, "nameset: A bit forced"),
+    (0x5B80, 0x10A00053, 0x00000000, "nameset: validName gate NOPed"),
 ]
 
 
