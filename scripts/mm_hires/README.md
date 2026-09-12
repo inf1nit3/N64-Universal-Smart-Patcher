@@ -31,16 +31,15 @@ the patch makes it permanent.
   cutscene prompts auto-advance (a 107-byte ASCII note-table donates
   the recompression bytes; ocarina note rendering degrades in this
   throwaway build).
-- **Loop status**: emulator sweeps (frames 8000-120000) still cycle
-  menu-bg day/night, DayTelop and cutscene-sky states - no gameplay-HUD
-  window observed even with the Sram_OpenSave forces (not-owl +
-  first-cycle -> South Clock Town day 0), the 37 forced A-checks, the
-  nor-folded START/A bit-test forces and the seeded ZELDA3 File-1 flash
-  slot. The remaining block sits downstream (DayTelop -> Play handoff,
-  or the forced-A interfering with the hudVisibility transition). Next
-  steps: mupen savestate + memory inspection of gSaveContext/PlayState
-  at the DayTelop handoff, or the DayTelop -> Play code-path analysis
-  in the decomp. NOTE: mupen rewrites the .fla on exit, so re-run the
+- **Loop status**: with all forces the flow now reaches and idles in a
+  live Play state at the Clock Tower (animated sky; frames 20000-45000
+  nearly static = camera idle). The gameplay HUD does not appear
+  because gSaveContext.hudVisibility starts at none/idle after
+  LoadGame and the z_parameter.c visibility state machine only fades
+  the HUD in through its own transition chain (z_parameter.c:1837+,
+  4080+). Remaining: force that visibility chain (or patch Interface
+  alphas) - after that the unattended run ends in visible day-1
+  gameplay. NOTE: mupen rewrites the .fla on exit, so re-run the
   seed (or restore .fla.bak) before every verification run.
 - **Nameset forces (latest)**: the name-entry keyboard's nor-folded
   START/A bit tests (overlay +0x55D0/+0x5920) are forced and the
