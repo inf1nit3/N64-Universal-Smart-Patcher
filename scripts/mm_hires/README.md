@@ -31,12 +31,15 @@ the patch makes it permanent.
   cutscene prompts auto-advance (a 107-byte ASCII note-table donates
   the recompression bytes; ocarina note rendering degrades in this
   throwaway build).
-- **Loop status**: emulator sweeps (frames 8000-50000) still cycle
-  menu-bg day/night and cutscene states. Sram_OpenSave's not-owl and
-  first-cycle branches are now forced (entrance = South Clock Town,
-  day 0), so the remaining block is further downstream (DayTelop ->
-  Play transition or HUD visibility timing). Next steps: fine frame
-  sweep 50000-120000, or seed the flash save.
+- **Loop status**: emulator sweeps (frames 8000-120000) still cycle
+  menu-bg day/night, DayTelop and cutscene-sky states - no gameplay-HUD
+  window observed even with the Sram_OpenSave forces (not-owl +
+  first-cycle -> South Clock Town day 0), the 37 forced A-checks and
+  the seeded ZELDA3 File-1 flash slot. The remaining block sits
+  downstream (DayTelop -> Play handoff, or the forced-A interfering
+  with the hudVisibility transition). Next steps: mupen savestate +
+  memory inspection of gSaveContext/PlayState at the DayTelop handoff,
+  or the DayTelop -> Play code-path analysis in the decomp.
 - Mapping aids: overlay vrom 0xC7E4F0 (yaz0, rom 0xB28DA0..0xB326E0,
   decompressed 0x10E70); FileSelectState fields live at state+0x20000 +
   regs-style offsets (buttonIndex 0x4480, configMode 0x4486, selectMode
