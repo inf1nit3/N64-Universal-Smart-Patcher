@@ -58,6 +58,74 @@ def find_en_mag(rom):
     raise SystemExit("ovl_En_Mag not found in dmadata")
 
 
+FILESELECT_VROM = 0xBA12C0
+FILESELECT_VRAM = 0x80803880
+
+
+def find_fileselect(rom):
+    """Locate ovl_file_choose via the gamestate overlay table in the code
+    segment (gGameStateOverlayTable @0x800F1340, FileSelect entry vrom)."""
+    for k in range(1526):
+        vs, ve, rs, re_ = struct.unpack_from(">IIII", rom, 0x7430 + k * 16)
+        if vs == FILESELECT_VROM and rom[rs:rs + 4] == b"Yaz0":
+            return rs, re_
+    raise SystemExit("ovl_file_choose not found in dmadata")
+
+
+def patch_fileselect_autoadvance(rom):
+    """Debug patch: force the File Select inputs so an unattended run
+    registers File 1 ("Link") and launches the game. All sites are
+    `andi rX, rY, mask` turned into `ori` (press|mask always equals the
+    mask, so CHECK_BTN_ALL passes every frame):
+
+    - FileSelect_UpdateMainMenu 0x8080C2AC/C2C0: START/A on the file
+      list (z_file_choose.c "START || A") -> selects File 1
+    - nameset keyboard 0x80808DC4: START = END shortcut (z_file_nameset
+      line 651); 0x80808FD4/0x80809088/0x80809280/0x80809470: the A
+      decides of the keyboard states -> name registers, game loads
+    """
+    rs, re_ = find_fileselect(rom)
+    data = bytearray(crunch64.yaz0.decompress(bytes(rom[rs:re_])))
+    sites = [
+        (0x8080C2AC, 0x31CF1000, "main menu START"),
+        (0x8080C2C0, 0x33198000, "main menu A"),
+    ]
+    for vaddr, expect, note in sites:
+        off = vaddr - FILESELECT_VRAM
+        cur = struct.unpack_from(">I", data, off)[0]
+        if cur != expect:
+            raise SystemExit(
+                f"FileSelect MISMATCH at 0x{vaddr:08X}: expect {expect:08X}, found {cur:08X} ({note})")
+        struct.pack_into(">I", data, off, expect | 0x04000000)
+        _err(f"  FileSelect 0x{vaddr:08X}: {expect:08X} -> {expect | 0x04000000:08X}  {note}")
+    # The keyboard state machine stays stuck on an unattended run (the
+    # forced presses alone do not walk it to the confirm), so skip it
+    # entirely: FileSelect_StartNameEntry jumps straight into
+    # FileSelect_LoadGame, which opens File 1 with the default save.
+    # (The compressed overlay only just fits its ROM slot, so this
+    # replaces the five keyboard `andi->ori` patches used before.)
+    # The keyboard state machine stays stuck on an unattended run (the
+    # forced presses alone do not walk it to the confirm), so skip it
+    # entirely: in sFileSelectUpdateFuncs[] the name-entry mode's
+    # FileSelect_StartNameEntry is swapped for FileSelect_LoadGame, which
+    # opens File 1 with the default save as soon as that mode starts.
+    # (The compressed overlay only just fits its ROM slot, so the patch
+    # site matters: a single .data table word compresses smaller than
+    # in-place code edits.)
+    loadgame = 0x8081117C
+    startname = struct.pack(">I", 0x80809B64)
+    off = data.find(startname)
+    if off < 0 or data.find(startname, off + 1) >= 0:
+        raise SystemExit("FileSelect: StartNameEntry table word not unique")
+    struct.pack_into(">I", data, off, loadgame)
+    _err(f"  FileSelect +{off:05X}: update-func StartNameEntry -> FileSelect_LoadGame")
+    comp = bytes(crunch64.yaz0.compress(bytes(data)))
+    if len(comp) > re_ - rs:
+        raise SystemExit(f"FileSelect recompress {len(comp)} exceeds slot {re_ - rs}")
+    rom[rs:rs + len(comp)] = comp
+    _err(f"FileSelect recompressed: {len(comp)} bytes (slot {re_ - rs})")
+
+
 def patch_en_mag_autoadvance(rom):
     """Debug patch: force the title screen's START checks true so the boot
     runs on into File Select without input (mupen --testshots runs). Both
@@ -247,6 +315,7 @@ def main():
 
     if dbg_autoadvance:
         patch_en_mag_autoadvance(rom)
+        patch_fileselect_autoadvance(rom)
 
     from n64patcher import n64_core as core
 

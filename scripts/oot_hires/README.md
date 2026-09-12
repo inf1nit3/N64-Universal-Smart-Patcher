@@ -61,7 +61,16 @@ Emulator verification (mupen64plus 2.6.0, `--testshots`, 8 MB):
 - frame 120: N64 logo, frame 900: title screen (3D scene full-width)
 - `640pdbg` (title START checks forced true, andi->ori) auto-advances:
   frames 1000-2000 show File Select full-width and stable
+- `640pdbg` also swaps the File Select name-entry update func for
+  FileSelect_LoadGame (one .data word in sFileSelectUpdateFuncs[]):
+  the unattended run opens File 1 with the default save and lands in
+  gameplay — frames 3000..16000 show Link's house full-width 640x240p,
+  stable, no corruption. HUD elements render in their 320-space
+  positions (left half, full height) as documented above.
 - no interlace anywhere (progressive 640x240p)
+- note: ovl_file_choose recompresses to 36374 bytes against a 36384-byte
+  ROM slot — only 10 bytes of headroom, so debug edits there must stay
+  minimal (a .data table word compresses smaller than code edits)
 
 Known risk: gZBuffer stays 320x240, so a 640-wide scissor overflows
 0x25800 bytes into gGfxSPTaskOutputBuffer (survived in the emulator;
