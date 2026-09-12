@@ -47,7 +47,35 @@ EDITS = [
     (0x0C331C, 0x10600025, 0x14600025, "Play_Draw: notebook-branch always taken"),
     (0x09946C, 0x240E00F0, 0x240E01C6, "View_Init: viewport bottomY 240->454"),
     (0x099470, 0x240F0140, 0x240F0240, "View_Init: viewport rightX 320->576"),
+    # Sram_OpenSave: force the not-owl path and the first-cycle entrance
+    # (South Clock Town, day 0, time 6:00-1) so every load - including
+    # the auto-confirmed File 1 - starts playable instead of looping
+    # through the intro cutscene entrance.
+    (0x9F624, 0x156000A2, 0x00000000, "Sram_OpenSave: force not-owl path"),
+    (0x9F884, 0x11600006, 0x00000000, "Sram_OpenSave: force first-cycle entrance"),
 ]
+
+
+def force_all_a_presses(code):
+    """Debug: turn every `andi rt, rs, 0x8000` (A-button checks, 37
+    sites incl. the message text-advance) into `ori` so A reads pressed
+    everywhere - dialogs and cutscene prompts auto-advance."""
+    n = len(code) // 4
+    ws = list(struct.unpack_from(">%dI" % n, code, 0))
+    count = 0
+    for p in range(n):
+        w = ws[p]
+        if (w >> 26) == 0x0C and (w & 0xFFFF) == 0x8000:
+            ws[p] = w | 0x04000000
+            count += 1
+    _err(f"  A-press forced at {count} andi sites")
+    # compression donation: zero the ASCII-to-charcode table head
+    # (code+0x133084); ocarina note rendering degrades, fine for a
+    # throwaway emulator run
+    code[:] = struct.pack(">%dI" % n, *ws)
+    donate_at, donate_len = 0x133084, 0x6B
+    code[donate_at:donate_at + donate_len] = b"\x00" * donate_len
+    _err(f"  compression donation: zeroed {donate_len} bytes at code+{donate_at:06X}")
 
 # Debug (unattended-run) patches inside ovl_file_choose:
 # 1. andi-masked press&(START|A) checks -> press|(START|A) (4 sites).
@@ -96,6 +124,13 @@ def main():
     _err(f"code recompressed: {len(comp)} bytes (slot {slot})")
 
     if dbg:
+        force_all_a_presses(code)
+        comp = bytes(crunch64.yaz0.compress(bytes(code)))
+        slot = CODE_ROM_END - CODE_ROM_START
+        if len(comp) > slot:
+            raise SystemExit(f"recompressed code {len(comp)} exceeds slot {slot}")
+        rom[CODE_ROM_START:CODE_ROM_START + len(comp)] = comp
+        _err(f"code recompressed (dbg): {len(comp)} bytes (slot {slot})")
         fs = bytearray(crunch64.yaz0.decompress(bytes(rom[FS_ROM_START:FS_ROM_END])))
         for off, expect, new, note in FS_DBG_EDITS:
             cur = struct.unpack_from(">I", fs, off)[0]

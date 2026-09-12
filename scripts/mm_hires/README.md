@@ -21,17 +21,22 @@ the patch makes it permanent.
   outside the CIC window).
 - **Auto-input (--dbg)**: the file-select overlay's press&(START|A)
   andi checks are forced (4 sites, two handler families at +0x1B8/0x1D4
-  and +0x8B4/0x8D0). The file-select background then cycles day/night
-  full-width and clean; the flow advances into deeper menu states.
-  Reaching actual gameplay still needs the name-entry chain forced
-  (MM requires a non-empty name: validName check) or a seeded flash
-  save - mupen's .fla lives under
-  ~/Library/Application Support/mupen64plus/save/.
-- **Open**: the title/file-select UI elements themselves draw with
-  320-space positions into the hi-res framebuffer (per-renderer 2D
-  pass pending). mupen64plus exits with SIGSEGV at the end of
-  `--testshots` runs (renderer quirk with the 454-line mode;
-  screenshots are unaffected).
+  and +0x8B4/0x8D0), and the nor-folded START/A bit tests in
+  FileSelect_UpdateMainMenu (code+0x83B0/0x83C8) and
+  FileSelect_ConfirmFile (code+0x0E848/0x0E860) are forced nonzero -
+  so UpdateMainMenu takes the occupied branch (File 1, the real save
+  inside mupen's .fla) and ConfirmFile answers YES, chaining
+  SM_FADE_OUT -> FileSelect_LoadGame. Every A-check in the code
+  segment (37 andi sites) is additionally ori-forced so dialogs and
+  cutscene prompts auto-advance (a 107-byte ASCII note-table donates
+  the recompression bytes; ocarina note rendering degrades in this
+  throwaway build).
+- **Loop status**: emulator sweeps (frames 8000-50000) still cycle
+  menu-bg day/night and cutscene states. Sram_OpenSave's not-owl and
+  first-cycle branches are now forced (entrance = South Clock Town,
+  day 0), so the remaining block is further downstream (DayTelop ->
+  Play transition or HUD visibility timing). Next steps: fine frame
+  sweep 50000-120000, or seed the flash save.
 - Mapping aids: overlay vrom 0xC7E4F0 (yaz0, rom 0xB28DA0..0xB326E0,
   decompressed 0x10E70); FileSelectState fields live at state+0x20000 +
   regs-style offsets (buttonIndex 0x4480, configMode 0x4486, selectMode
