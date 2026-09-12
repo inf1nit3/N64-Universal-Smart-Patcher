@@ -61,6 +61,72 @@ def find_en_mag(rom):
 FILESELECT_VROM = 0xBA12C0
 FILESELECT_VRAM = 0x80803880
 
+# HUD x-position registers (640/320 = 2x scale). Each entry is
+# (sh byte-offset into gRegEditor->data, compile-time value); the
+# offset pins down the register:
+#   ZREG(r) = data[960+r], XREG(r) = data[1344+r], VREG(r) = data[1920+r]
+# (byte offset = index * 2). Values from include/interface.h via
+# z_construct.c's Regs_Init / Regs_InitDataImpl assignments.
+HUD_SCALE_EDITS = [
+    (0x80C, 160),  # R_ITEM_BTN_X(0)  = B_BUTTON_X
+    (0x80E, 227),  # R_ITEM_BTN_X(1)  = C_LEFT_BUTTON_X
+    (0x810, 249),  # R_ITEM_BTN_X(2)  = C_DOWN_BUTTON_X
+    (0x812, 271),  # R_ITEM_BTN_X(3)  = C_RIGHT_BUTTON_X
+    (0x824, 160),  # R_ITEM_ICON_X(0)
+    (0x826, 227),  # R_ITEM_ICON_X(1)
+    (0x828, 249),  # R_ITEM_ICON_X(2)
+    (0x82A, 271),  # R_ITEM_ICON_X(3)
+    (0xF80, 162),  # R_ITEM_AMMO_X(0) = B_BUTTON_X + 2
+    (0xF82, 228),  # R_ITEM_AMMO_X(1) = C_LEFT_BUTTON_X + 1
+    (0xF84, 250),  # R_ITEM_AMMO_X(2) = C_DOWN_BUTTON_X + 1
+    (0xF86, 272),  # R_ITEM_AMMO_X(3) = C_RIGHT_BUTTON_X + 1
+    (0xAA2, 186),  # R_A_BTN_X        = A_BUTTON_X
+    (0xAB0, 186),  # R_A_ICON_X       = A_BUTTON_X
+    (0x7FC, 254),  # R_C_UP_BTN_X     = C_UP_BUTTON_X
+    (0x830, 247),  # R_C_UP_ICON_X    = C_UP_BUTTON_X - 7
+    (0x808, 132),  # R_START_BTN_X    = 132
+    (0xAE2, 18),   # R_MAGIC_METER_X  = 18
+]
+
+
+def patch_hud_scale(code):
+    """Scale the 320-space HUD x-positions to 640. The registers are
+    assigned with `sh rt, off(gRegEditor)` stores whose offset pins down
+    the register; the stored value comes from a `li rt2, value` a few
+    instructions earlier (sometimes shared between two stores of the
+    same value, sometimes moved through registers), so each li feeding a
+    matched store is doubled once."""
+    n = len(code) // 4
+    ws = list(struct.unpack_from(">%dI" % n, code, 0))
+
+    li_patches = {}  # li index -> (old, new)
+    for off, old in HUD_SCALE_EDITS:
+        new = old * 2
+        stores = 0
+        for p in range(n):
+            y = ws[p]
+            if (y >> 26) != 0x29 or (y & 0xFFFF) != off:
+                continue
+            stores += 1
+            for q in range(max(0, p - 16), p):
+                w = ws[q]
+                if (w >> 26) in (9, 13) and (w & 0xFFFF) == old and ((w >> 16) & 31) != 0:
+                    prev = li_patches.get(q)
+                    if prev is None:
+                        li_patches[q] = (old, new)
+                    elif prev != (old, new):
+                        raise SystemExit(
+                            f"HUD scale: li at code+{q*4:06X} feeds conflicting scales")
+                    break
+        if stores == 0:
+            _err(f"  HUD scale: WARNING no store for sh {off:#06x} (value {old})")
+
+    for q, (old, new) in sorted(li_patches.items()):
+        ws[q] = (ws[q] & 0xFFFF0000) | new
+        _err(f"  HUD scale: code+{q*4:06X}: li {old} -> {new}")
+    _err(f"  HUD scale: {len(li_patches)} li sites patched for {len(HUD_SCALE_EDITS)} registers")
+    return struct.pack(">%dI" % n, *ws)
+
 
 def find_fileselect(rom):
     """Locate ovl_file_choose via the gamestate overlay table in the code
@@ -304,6 +370,17 @@ def main():
         else:
             cedit(off, new, expect, note)
             n += 1
+
+    if flavor in ("640p", "640pdbg"):
+        code = bytearray(patch_hud_scale(code))
+        n += len(HUD_SCALE_EDITS)
+        # Compression donation: the JP message table is dead in US
+        # retail; zeroing its head gives the recompressor back the bytes
+        # the HUD edits cost (the yaz0 stream only just fits the slot).
+        donate_at, donate_len = 0xFF8AC, 0x40
+        code[donate_at:donate_at + donate_len] = b"\x00" * donate_len
+        n += 1
+        _err(f"  compression donation: zeroed {donate_len:#x} bytes at code+{donate_at:06X} (dead JP table)")
 
     if flavor in ("480i", "240p", "640p", "640pdbg"):
         comp = bytes(crunch64.yaz0.compress(bytes(code)))

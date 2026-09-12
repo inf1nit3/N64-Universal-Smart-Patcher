@@ -79,6 +79,30 @@ their positions are compile-time constants — the per-renderer 2D pass
 is future work (the title/File Select screens already derive their
 positions from the runtime viewport and land correctly).
 
+## The 2D pass (HUD scaling) — first slice works
+
+The HUD's x-positions live in REG editor entries assigned by
+Regs_Init / Regs_InitDataImpl / Interface_Init as
+`li rt, value; sh rt, off(gRegEditor)` — the sh offset pins down the
+register (ZREG(r)=data[960+r], XREG(r)=data[1344+r],
+VREG(r)=data[1920+r], byte offset = index*2; see include/regs.h).
+
+`makeoot.py`'s 640p flavors double the li immediates feeding those
+stores (patch_hud_scale). First slice: B/C button, item icon, ammo,
+A button, C-up, start and magic-meter x positions — verified in the
+emulator: the C buttons land on the right side of the 640-wide screen.
+
+Slice 2 (open): entries whose values come from the .data init table
+via lw (R_ITEM_BTN_X(0)/R_START_BTN_X among them) — the table walk
+needs order-based matching instead of li tracking. Hearts/rupee
+counters draw from z_parameter.c hardcoded vertices (separate sites).
+Dialog textboxes use R_TEXTBOX_* (same mechanism, slice 3).
+
+Slot note: the recompressed code segment only just fits (634960
+bytes); the HUD edits cost ~11, so the 640p flavors zero 0x40 bytes
+of the dead-in-US JP message table (code+0xFF8AC) as a compression
+donation. Keep an eye on headroom for further edits.
+
 `480i` (the ViMode-editor route) renders the 3D scene full-screen
 640x480i, but interlaced output is rejected on this setup (hardware
 verdict: unusable) — kept for reference only.
