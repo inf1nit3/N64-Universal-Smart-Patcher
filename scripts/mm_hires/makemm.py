@@ -50,14 +50,20 @@ EDITS = [
 ]
 
 # Debug (unattended-run) patches inside ovl_file_choose:
-# press & (START|A) checks turned into press | (START|A) so the file
-# select auto-advances. Two handler families carry such checks (main
-# menu and the select/confirm path); both pairs are forced.
+# 1. andi-masked press&(START|A) checks -> press|(START|A) (4 sites).
+# 2. The nor-folded A/START bit tests in FileSelect_UpdateMainMenu and
+#    FileSelect_ConfirmFile forced nonzero, so the occupied-file path
+#    auto-selects File 1 (the real save in the .fla) and the confirm
+#    dialog answers YES -> SM_FADE_OUT -> FileSelect_LoadGame -> Play.
 FS_DBG_EDITS = [
     (0x1B8, 0x31CF9000, 0x35CF9000, "press START|A forced (handler 1)"),
     (0x1D4, 0x304B9000, 0x344B9000, "press START|A forced (handler 1b)"),
     (0x8B4, 0x31CF9000, 0x35CF9000, "press START|A forced (handler 2)"),
     (0x8D0, 0x304B9000, 0x344B9000, "press START|A forced (handler 2b)"),
+    (0x83B0, 0x01C17827, 0x240F1000, "UpdateMainMenu: START bit forced"),
+    (0x83C8, 0x0041C027, 0x24180001, "UpdateMainMenu: A bit forced"),
+    (0x0E848, 0x01C17827, 0x240F1000, "ConfirmFile: START bit forced"),
+    (0x0E860, 0x0041C027, 0x24180001, "ConfirmFile: A bit forced -> YES"),
 ]
 
 
