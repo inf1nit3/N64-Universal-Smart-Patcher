@@ -97,9 +97,12 @@ HUD_SCALE_EDITS = [
 #   R_ITEM_ICON_X(0) stores (sh v0, 0x820/0x838) -> 320
 # - code+0xD14EC li t9,132: feeds the R_START_BTN_X store
 #   (sh t9, 0x81C) -> 264
+# - code+0xD1C40 li a2,250: feeds the R_ITEM_AMMO_X(2) store
+#   (sh a2, 0xF98) -> 500 (unique li a2,250 in Regs_InitDataImpl)
 HUD_EXTRA_SITES = [
     (0xD0EEC, 0x240200A0, 0x24020140),
     (0xD14EC, 0x24190084, 0x24190108),
+    (0xD1C40, 0x240600FA, 0x240601F4),
 ]
 
 

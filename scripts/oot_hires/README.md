@@ -90,17 +90,22 @@ against the decomp: the runtime reg-data pointer is gRegEditor->data
 `makeoot.py`'s patch_hud_scale doubles the li immediates feeding those
 stores, pairing strictly by the sh rt field.
 
-Slice 1+2 (14 li sites): B/C button, item icon, ammo, A button, C-up,
-start and magic-meter x positions — verified in the emulator: the C
-buttons land on the right side of the 640-wide screen, gameplay stable.
-Two entries (R_ITEM_BTN_X(0) 160 and R_START_BTN_X 132) need
-hand-pinned extra sites (their li serves two stores or sits far from
-the store): code+0xD0EEC and code+0xD14EC.
+Slice 1+2+3 (15 li sites): B/C button, item icon, ammo, A button,
+C-up, start and magic-meter x positions — verified in the emulator:
+the C buttons land on the right side of the 640-wide screen, gameplay
+stable. Three entries need hand-pinned extra sites (li serves two
+stores, sits far from the store, or the value register is shared):
+R_ITEM_BTN_X(0) (code+0xD0EEC), R_START_BTN_X (code+0xD14EC) and
+R_ITEM_AMMO_X(2) (code+0xD1C40).
 
-Slice 3 (open): a few registers still unmatched (R_ITEM_AMMO_X(2),
-R_C_UP_ICON_X, R_MAGIC_METER_X - different codegen, warnings printed)
-plus hearts/rupee counters drawing from z_parameter.c hardcoded
-vertices. Dialog textboxes use R_TEXTBOX_* (same mechanism).
+Slice 4 (open): R_C_UP_ICON_X and R_MAGIC_METER_X are fed from shared
+constant registers (s1=18 serves several y-positions too), so naive
+value scaling would corrupt neighbours — they need per-consumer patch
+sites. Hearts/rupee counters draw through Health_DrawMeter's float
+literal pool (30.0f/10.0f/-130.0f x-positions) — the pool lives in
+.rodata and is shared, so scaling means either pool splitting or a
+matrix-scale injection. Dialog textboxes use R_TEXTBOX_* (mechanism
+proven, sites not yet enumerated).
 
 Slot note: the recompressed code segment only just fits (634960
 bytes); the HUD edits cost ~11, so the 640p flavors zero 0x40 bytes
