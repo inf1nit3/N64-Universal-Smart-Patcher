@@ -19,12 +19,25 @@ the patch makes it permanent.
 - **Verified in mupen64plus**: the intro cutscene renders full-screen
   576x454 progressive (frames 900+). ROM CRCs unchanged (code segment
   outside the CIC window).
-- **Open**: the title/file-select gamestates run after the switch and
-  render 320-space UI into the hi-res framebuffer (garbled until the
-  per-renderer 2D pass). Unattended input patches (file select ->
-  gameplay) are not built yet. mupen64plus exits with SIGSEGV at the
-  end of `--testshots` runs (renderer quirk with the 454-line mode;
+- **Auto-input (--dbg)**: the file-select overlay's press&(START|A)
+  andi checks are forced (4 sites, two handler families at +0x1B8/0x1D4
+  and +0x8B4/0x8D0). The file-select background then cycles day/night
+  full-width and clean; the flow advances into deeper menu states.
+  Reaching actual gameplay still needs the name-entry chain forced
+  (MM requires a non-empty name: validName check) or a seeded flash
+  save - mupen's .fla lives under
+  ~/Library/Application Support/mupen64plus/save/.
+- **Open**: the title/file-select UI elements themselves draw with
+  320-space positions into the hi-res framebuffer (per-renderer 2D
+  pass pending). mupen64plus exits with SIGSEGV at the end of
+  `--testshots` runs (renderer quirk with the 454-line mode;
   screenshots are unaffected).
+- Mapping aids: overlay vrom 0xC7E4F0 (yaz0, rom 0xB28DA0..0xB326E0,
+  decompressed 0x10E70); FileSelectState fields live at state+0x20000 +
+  regs-style offsets (buttonIndex 0x4480, configMode 0x4486, selectMode
+  0x448C, kbdX 0x4518, kbdY 0x451A); sSelectModeUpdateFuncs = 8 words at
+  file+0x1076C (last entry = FileSelect_LoadGame), sConfigModeUpdateFuncs
+  = 45 words at file+0x10558.
 
 ## Facts worth keeping
 
