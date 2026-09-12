@@ -59,11 +59,12 @@ EDITS = [
     (0x4F2C0, 0x01E1C027, 0x24180001, "wait loop: START forced"),
     (0xB1DC8, 0x00417027, 0x240E0001, "skip wait: START forced"),
     (0xC2394, 0x00414027, 0x24080001, "prompt wait: START forced"),
-    # hudVisibility force: Interface_Update reads gSaveContext.nextHudVisibility
-    # (0x3F20) to drive the HUD fade machine; after LoadGame it sits at
-    # IDLE/none and the HUD stays hidden. Forcing the read to
-    # HUD_VISIBILITY_ALL (50) keeps the machine fading everything in.
-    (0x69708, 0x94C23F20, 0x24020032, "Interface_Update: nextHudVisibility forced to ALL"),
+    # hudVisibility force: both nextHudVisibility reads (Interface_Update
+    # and Interface_UpdateHudAlphas's own switch) are forced to
+    # HUD_VISIBILITY_HEARTS_MAGIC (9) - a handled rising case that fades
+    # buttons, health and magic in (ALL/50 is NOT a switch case).
+    (0x69708, 0x94C23F20, 0x24020009, "Interface_Update: nextHudVisibility forced to HEARTS_MAGIC"),
+    (0x7B690, 0x95023F20, 0x24020009, "UpdateHudAlphas: nextHudVisibility forced to HEARTS_MAGIC"),
 ]
 
 

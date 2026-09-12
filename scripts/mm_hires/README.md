@@ -39,10 +39,15 @@ the patch makes it permanent.
   the HUD in through its own transition chain (z_parameter.c:1837+,
   4080+). Attempted: forcing the Interface_Update nextHudVisibility
   read (code+0x69708, lhu -> addiu HUD_VISIBILITY_ALL) keeps the
-  machine pointed at ALL, but the HUD still does not surface - the
-  per-element alphas are driven by Interface_UpdateHudAlphas's
-  dimming/rising chain, so the next step is forcing dimmingAlpha to
-  the rising value or patching the element alphas directly. NOTE: mupen rewrites the .fla on exit, so re-run the
+  machine pointed at ALL, but the HUD still does not surface - ALL(50)
+  is not even a case in Interface_UpdateHudAlphas's own switch (16
+  cases; HEARTS_MAGIC=9 is the handled show-everything rising case).
+  Forcing BOTH nextHudVisibility reads (code+0x69708 and +0x7B690) to
+  9 also does not surface the HUD, so the block sits deeper: either
+  the Interface_UpdateButtonsPart1/alpha gating depends on state the
+  forced inputs corrupt, or the flow never actually reaches Play with
+  the seeded save. Next tool: mupen savestate + gSaveContext dump
+  (scene/day/entrance/hudVisibility) at the static state. NOTE: mupen rewrites the .fla on exit, so re-run the
   seed (or restore .fla.bak) before every verification run.
 - **Nameset forces (latest)**: the name-entry keyboard's nor-folded
   START/A bit tests (overlay +0x55D0/+0x5920) are forced and the
