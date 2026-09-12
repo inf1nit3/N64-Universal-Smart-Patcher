@@ -37,9 +37,12 @@ the patch makes it permanent.
   because gSaveContext.hudVisibility starts at none/idle after
   LoadGame and the z_parameter.c visibility state machine only fades
   the HUD in through its own transition chain (z_parameter.c:1837+,
-  4080+). Remaining: force that visibility chain (or patch Interface
-  alphas) - after that the unattended run ends in visible day-1
-  gameplay. NOTE: mupen rewrites the .fla on exit, so re-run the
+  4080+). Attempted: forcing the Interface_Update nextHudVisibility
+  read (code+0x69708, lhu -> addiu HUD_VISIBILITY_ALL) keeps the
+  machine pointed at ALL, but the HUD still does not surface - the
+  per-element alphas are driven by Interface_UpdateHudAlphas's
+  dimming/rising chain, so the next step is forcing dimmingAlpha to
+  the rising value or patching the element alphas directly. NOTE: mupen rewrites the .fla on exit, so re-run the
   seed (or restore .fla.bak) before every verification run.
 - **Nameset forces (latest)**: the name-entry keyboard's nor-folded
   START/A bit tests (overlay +0x55D0/+0x5920) are forced and the
