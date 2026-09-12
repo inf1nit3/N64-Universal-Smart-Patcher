@@ -54,17 +54,17 @@ EDITS = [
     (0x9F624, 0x156000A2, 0x00000000, "Sram_OpenSave: force not-owl path"),
     (0x9F884, 0x11600006, 0x00000000, "Sram_OpenSave: force first-cycle entrance"),
     (0x9F894, 0xACE00018, 0x00000000, "Sram_OpenSave: keep seeded day (no day=0 reset)"),
-    # nor-folded START checks in wait loops: cutscene skip, prompt wait,
-    # timer display - each nor rd,press,at becomes addiu rd,1 (pressed)
-    (0x4F2C0, 0x01E1C027, 0x24180001, "wait loop: START forced"),
-    (0xB1DC8, 0x00417027, 0x240E0001, "skip wait: START forced"),
-    (0xC2394, 0x00414027, 0x24080001, "prompt wait: START forced"),
     # hudVisibility force: both nextHudVisibility reads (Interface_Update
     # and Interface_UpdateHudAlphas's own switch) are forced to
     # HUD_VISIBILITY_HEARTS_MAGIC (9) - a handled rising case that fades
     # buttons, health and magic in (ALL/50 is NOT a switch case).
     (0x69708, 0x94C23F20, 0x24020009, "Interface_Update: nextHudVisibility forced to HEARTS_MAGIC"),
     (0x7B690, 0x95023F20, 0x24020009, "UpdateHudAlphas: nextHudVisibility forced to HEARTS_MAGIC"),
+    # nor-folded START checks in wait loops: cutscene skip, prompt wait,
+    # timer display - each nor rd,press,at becomes addiu rd,1 (pressed)
+    (0x4F2C0, 0x01E1C027, 0x24180001, "wait loop: START forced"),
+    (0xB1DC8, 0x00417027, 0x240E0001, "skip wait: START forced"),
+    (0xC2394, 0x00414027, 0x24080001, "prompt wait: START forced"),
 ]
 
 
