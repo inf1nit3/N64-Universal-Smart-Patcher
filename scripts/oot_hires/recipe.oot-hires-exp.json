@@ -1,19 +1,20 @@
 {
  "schema_version": 1,
- "description": "User-installable hi-res recipe for Zelda - Ocarina of Time (USA) Rev 0. EMULATOR-VERIFIED ONLY: renders 640x480i in mupen64plus; not yet validated on real N64 hardware. Copy this file into ~/.n64patcher/patches/ and the .bps into the bundled hires_patches directory (or adjust the path) to enable it. Requires an Expansion Pak.",
+ "description": "User-installable hi-res recipe for Zelda - Ocarina of Time (USA) Rev 0. EMULATOR-VERIFIED ONLY: 640x240 PROGRESSIVE (no interlace) verified through the whole boot chain (logo -> title -> File Select) in mupen64plus; not yet validated on real N64 hardware. Copy this file into ~/.n64patcher/patches/ and the .bps into the bundled hires_patches directory (or adjust the path) to enable it. Requires an Expansion Pak.",
  "patches": [
   {
-   "id": "zelda-oot-usa-rev0-640x480i-exp",
-   "name": "Zelda - Ocarina of Time (USA) Rev 0 - 640x480i (EXPERIMENTAL)",
+   "id": "zelda-oot-usa-rev0-640x240p-exp",
+   "name": "Zelda - Ocarina of Time (USA) Rev 0 - 640x240p (EXPERIMENTAL)",
    "source": "N64-Universal-Smart-Patcher project - built from the zeldaret/oot decomp, see scripts/oot_hires/",
-   "notes": "Runtime-width machinery enabled: ViMode 640x480i, framebuffers relocated to the Expansion Pak area, 3D viewport 640x480. Menus/HUD keep the original 320-space layout (upper-left quadrant), the same known limitation the SubDrag patches have. Needs an Expansion Pak. Hardware validation pending.",
-   "flavor": "640x480",
+   "notes": "640x240 progressive: the boot VI tables (osViModeNtscLan1/MpalLan1) carry a 640-wide 1:1 mode (NTSC 1.0 never re-issues osViSetMode), gScreenWidth is widened (.data + Main boot + ViMode_Update NOP), the framebuffer pair grows to 2x 640x240 and the 8MB fb-end moves to the Expansion Pak area so the game heap keeps its stock size. View_Init widens the viewport so the 3D fills the width. Title and File Select land correctly; dialogs/HUD with compile-time 320 positions stay upper-left (per-renderer 2D pass pending). Known risk: gZBuffer stays 320x240, so the 640-wide scissor overflows into gGfxSPTaskOutputBuffer (survived in the emulator). Needs an Expansion Pak. Hardware validation pending.",
+   "flavor": "640x240",
    "match": {"crc1": "EC7011B7", "crc2": "7616D72B"},
    "provides": ["hires"],
    "operations": [
-    {"type": "bps", "file": "zelda-oot-usa-rev0-640x480i-exp.bps"}
+    {"type": "bps", "file": "zelda-oot-usa-rev0-640x240p-exp.bps"}
    ],
-   "outputs_note": "Deliberately NOT declared: the CIC-6102 checksum window does not cover the patched code segment, so the output ROM keeps the clean dump's boot checksums. Declaring outputs here would key the clean dump as a hi-res output and make --hires skip it."
+   "outputs": {"crc1": "EC700137", "crc2": "75F8FA0E"},
+   "outputs_note": "Declared safely here (unlike the code-segment-only routes): the 640p patch edits the boot VI tables inside the CIC-6102 checksum window, so the restamped output ROM has its own CRC pair and cannot self-key the clean dump."
   }
  ]
 }
