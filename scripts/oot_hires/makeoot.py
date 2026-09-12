@@ -62,30 +62,44 @@ FILESELECT_VROM = 0xBA12C0
 FILESELECT_VRAM = 0x80803880
 
 # HUD x-position registers (640/320 = 2x scale). Each entry is
-# (sh byte-offset into gRegEditor->data, compile-time value); the
-# offset pins down the register:
+# (sh byte-offset, compile-time value); the sh offset pins down the
+# register. The runtime reg-data pointer is gRegEditor->data + 0x14
+# (verified: C_UP_BTN_X=254 stores at 0x810, not 0x7FC), so every
+# offset here is the regs.h byte offset + 0x14:
 #   ZREG(r) = data[960+r], XREG(r) = data[1344+r], VREG(r) = data[1920+r]
-# (byte offset = index * 2). Values from include/interface.h via
-# z_construct.c's Regs_Init / Regs_InitDataImpl assignments.
+# (regs.h byte offset = index * 2; values from include/interface.h via
+# z_construct.c's Regs_InitDataImpl / Interface_Init assignments).
+# R_ITEM_BTN_X(0) / R_ITEM_ICON_X(0) / R_START_BTN_X are covered by
+# HUD_EXTRA_SITES below (their li serves two stores or sits far away).
 HUD_SCALE_EDITS = [
-    (0x80C, 160),  # R_ITEM_BTN_X(0)  = B_BUTTON_X
-    (0x80E, 227),  # R_ITEM_BTN_X(1)  = C_LEFT_BUTTON_X
-    (0x810, 249),  # R_ITEM_BTN_X(2)  = C_DOWN_BUTTON_X
-    (0x812, 271),  # R_ITEM_BTN_X(3)  = C_RIGHT_BUTTON_X
-    (0x824, 160),  # R_ITEM_ICON_X(0)
-    (0x826, 227),  # R_ITEM_ICON_X(1)
-    (0x828, 249),  # R_ITEM_ICON_X(2)
-    (0x82A, 271),  # R_ITEM_ICON_X(3)
-    (0xF80, 162),  # R_ITEM_AMMO_X(0) = B_BUTTON_X + 2
-    (0xF82, 228),  # R_ITEM_AMMO_X(1) = C_LEFT_BUTTON_X + 1
-    (0xF84, 250),  # R_ITEM_AMMO_X(2) = C_DOWN_BUTTON_X + 1
-    (0xF86, 272),  # R_ITEM_AMMO_X(3) = C_RIGHT_BUTTON_X + 1
-    (0xAA2, 186),  # R_A_BTN_X        = A_BUTTON_X
-    (0xAB0, 186),  # R_A_ICON_X       = A_BUTTON_X
-    (0x7FC, 254),  # R_C_UP_BTN_X     = C_UP_BUTTON_X
-    (0x830, 247),  # R_C_UP_ICON_X    = C_UP_BUTTON_X - 7
-    (0x808, 132),  # R_START_BTN_X    = 132
-    (0xAE2, 18),   # R_MAGIC_METER_X  = 18
+    (0x822, 227),  # R_ITEM_BTN_X(1)  = C_LEFT_BUTTON_X
+    (0x824, 249),  # R_ITEM_BTN_X(2)  = C_DOWN_BUTTON_X
+    (0x826, 271),  # R_ITEM_BTN_X(3)  = C_RIGHT_BUTTON_X
+    (0x838, 160),  # R_ITEM_ICON_X(0) = B_BUTTON_X (Interface_Init li)
+    (0x83A, 227),  # R_ITEM_ICON_X(1) = C_LEFT_BUTTON_X
+    (0x83C, 249),  # R_ITEM_ICON_X(2) = C_DOWN_BUTTON_X
+    (0x83E, 271),  # R_ITEM_ICON_X(3) = C_RIGHT_BUTTON_X
+    (0xF94, 162),  # R_ITEM_AMMO_X(0) = B_BUTTON_X + 2
+    (0xF96, 228),  # R_ITEM_AMMO_X(1) = C_LEFT_BUTTON_X + 1
+    (0xF98, 250),  # R_ITEM_AMMO_X(2) = C_DOWN_BUTTON_X + 1
+    (0xF9A, 272),  # R_ITEM_AMMO_X(3) = C_RIGHT_BUTTON_X + 1
+    (0xAB6, 186),  # R_A_BTN_X        = A_BUTTON_X
+    (0xAC4, 186),  # R_A_ICON_X       = A_BUTTON_X
+    (0x810, 254),  # R_C_UP_BTN_X     = C_UP_BUTTON_X
+    (0x844, 247),  # R_C_UP_ICON_X    = C_UP_BUTTON_X - 7
+    (0xAF6, 18),   # R_MAGIC_METER_X  = 18
+]
+
+# Two assignments the generic matcher cannot pin down (their li sits far
+# from the store or shares it), patched by exact instruction context
+# (file offset, expected word, new immediate):
+# - code+0xD0EEC li v0,160: feeds both R_ITEM_BTN_X(0) and
+#   R_ITEM_ICON_X(0) stores (sh v0, 0x820/0x838) -> 320
+# - code+0xD14EC li t9,132: feeds the R_START_BTN_X store
+#   (sh t9, 0x81C) -> 264
+HUD_EXTRA_SITES = [
+    (0xD0EEC, 0x240200A0, 0x24020140),
+    (0xD14EC, 0x24190084, 0x24190108),
 ]
 
 
@@ -107,10 +121,13 @@ def patch_hud_scale(code):
             y = ws[p]
             if (y >> 26) != 0x29 or (y & 0xFFFF) != off:
                 continue
+            rt = (y >> 16) & 31  # sh rt, off(rs): rt holds the value
+            if rt == 0:
+                continue
             stores += 1
             for q in range(max(0, p - 16), p):
                 w = ws[q]
-                if (w >> 26) in (9, 13) and (w & 0xFFFF) == old and ((w >> 16) & 31) != 0:
+                if (w >> 26) in (9, 13) and (w & 0xFFFF) == old and ((w >> 16) & 31) == rt:
                     prev = li_patches.get(q)
                     if prev is None:
                         li_patches[q] = (old, new)
@@ -121,10 +138,17 @@ def patch_hud_scale(code):
         if stores == 0:
             _err(f"  HUD scale: WARNING no store for sh {off:#06x} (value {old})")
 
+    for off, expect, new in HUD_EXTRA_SITES:
+        cur = ws[off // 4]
+        if cur != expect:
+            raise SystemExit(
+                f"HUD extra site code+{off:06X}: expect {expect:08X}, found {cur:08X}")
+        ws[off // 4] = new
+        _err(f"  HUD scale: code+{off:06X}: {expect:08X} -> {new:08X} (extra site)")
     for q, (old, new) in sorted(li_patches.items()):
         ws[q] = (ws[q] & 0xFFFF0000) | new
         _err(f"  HUD scale: code+{q*4:06X}: li {old} -> {new}")
-    _err(f"  HUD scale: {len(li_patches)} li sites patched for {len(HUD_SCALE_EDITS)} registers")
+    _err(f"  HUD scale: {len(li_patches) + len(HUD_EXTRA_SITES)} li sites patched for {len(HUD_SCALE_EDITS)} registers")
     return struct.pack(">%dI" % n, *ws)
 
 

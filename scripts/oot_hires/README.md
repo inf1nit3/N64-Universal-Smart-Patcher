@@ -79,24 +79,28 @@ their positions are compile-time constants — the per-renderer 2D pass
 is future work (the title/File Select screens already derive their
 positions from the runtime viewport and land correctly).
 
-## The 2D pass (HUD scaling) — first slice works
+## The 2D pass (HUD scaling) — slices 1+2 work
 
 The HUD's x-positions live in REG editor entries assigned by
-Regs_Init / Regs_InitDataImpl / Interface_Init as
-`li rt, value; sh rt, off(gRegEditor)` — the sh offset pins down the
-register (ZREG(r)=data[960+r], XREG(r)=data[1344+r],
-VREG(r)=data[1920+r], byte offset = index*2; see include/regs.h).
+Regs_InitDataImpl / Interface_Init as `li rt, value` ... `sh rt, off`
+pairs — the sh offset pins down the register. Verified with capstone
+against the decomp: the runtime reg-data pointer is gRegEditor->data
++ 0x14, so true store offsets are the regs.h byte offsets + 0x14
+(e.g. R_C_UP_BTN_X=254 stores at 0x810, R_ITEM_BTN_X(1)=227 at 0x822).
+`makeoot.py`'s patch_hud_scale doubles the li immediates feeding those
+stores, pairing strictly by the sh rt field.
 
-`makeoot.py`'s 640p flavors double the li immediates feeding those
-stores (patch_hud_scale). First slice: B/C button, item icon, ammo,
-A button, C-up, start and magic-meter x positions — verified in the
-emulator: the C buttons land on the right side of the 640-wide screen.
+Slice 1+2 (14 li sites): B/C button, item icon, ammo, A button, C-up,
+start and magic-meter x positions — verified in the emulator: the C
+buttons land on the right side of the 640-wide screen, gameplay stable.
+Two entries (R_ITEM_BTN_X(0) 160 and R_START_BTN_X 132) need
+hand-pinned extra sites (their li serves two stores or sits far from
+the store): code+0xD0EEC and code+0xD14EC.
 
-Slice 2 (open): entries whose values come from the .data init table
-via lw (R_ITEM_BTN_X(0)/R_START_BTN_X among them) — the table walk
-needs order-based matching instead of li tracking. Hearts/rupee
-counters draw from z_parameter.c hardcoded vertices (separate sites).
-Dialog textboxes use R_TEXTBOX_* (same mechanism, slice 3).
+Slice 3 (open): a few registers still unmatched (R_ITEM_AMMO_X(2),
+R_C_UP_ICON_X, R_MAGIC_METER_X - different codegen, warnings printed)
+plus hearts/rupee counters drawing from z_parameter.c hardcoded
+vertices. Dialog textboxes use R_TEXTBOX_* (same mechanism).
 
 Slot note: the recompressed code segment only just fits (634960
 bytes); the HUD edits cost ~11, so the 640p flavors zero 0x40 bytes
