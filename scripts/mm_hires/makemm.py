@@ -53,6 +53,7 @@ EDITS = [
     # through the intro cutscene entrance.
     (0x9F624, 0x156000A2, 0x00000000, "Sram_OpenSave: force not-owl path"),
     (0x9F884, 0x11600006, 0x00000000, "Sram_OpenSave: force first-cycle entrance"),
+    (0x9F894, 0xACE00018, 0x00000000, "Sram_OpenSave: keep seeded day (no day=0 reset)"),
 ]
 
 
