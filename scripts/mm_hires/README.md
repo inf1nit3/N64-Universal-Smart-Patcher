@@ -47,8 +47,16 @@ the patch makes it permanent.
   the Interface_UpdateButtonsPart1/alpha gating depends on state the
   forced inputs corrupt, or the flow never actually reaches Play with
   the seeded save. Next tool: mupen savestate + gSaveContext dump
-  (scene/day/entrance/hudVisibility) at the static state. NOTE: mupen rewrites the .fla on exit, so re-run the
-  seed (or restore .fla.bak) before every verification run.
+  (scene/day/entrance/hudVisibility) at the static state.
+- **Long-run finding (320k frames)**: the flash slot 0 stays
+  byte-identical to the seed after 320000 frames - the game never
+  writes the flash, so no file is ever created and the flow cycles
+  file-select/load/cutscene indefinitely. MM's nameset state machine
+  does not reach the flash write under forced input alone; tracing it
+  needs the decomp build with debug printf, or a state-machine
+  trace against the z_file_nameset_NES.c sources. NOTE: mupen
+  rewrites the .fla on exit, so re-run the seed (or restore .fla.bak)
+  before every verification run.
 - **Nameset forces (latest)**: the name-entry keyboard's nor-folded
   START/A bit tests (overlay +0x55D0/+0x5920) are forced and the
   validName gate at +0x5B80 NOPed, so an empty name registers. The
