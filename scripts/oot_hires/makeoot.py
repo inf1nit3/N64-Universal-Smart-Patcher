@@ -467,11 +467,20 @@ def main():
         # View_Init widens the viewport so the 3D fills the framebuffer.
         # Known risk: gZBuffer stays 320x240, so 640-wide scissor
         # overflows 0x25800 bytes into gGfxSPTaskOutputBuffer
-        # (survived in mupen64plus; hardware verdict pending).
+        # (survived in mupen64plus; fixed by --zrel, see below).
+        #
+        # Table semantics per n64brew VI documentation: VI_WIDTH counts
+        # framebuffer pixels (640 -> 0x280), VI_X_SCALE is the horizontal
+        # up-scale in 1/256ths (stock 0x200 = 2x for 320-wide, 1:1 for
+        # 640-wide -> 0x100), VI_H_START stays at the stock NTSC
+        # 108/748 active window (640 screen pixels). The earlier 0x400
+        # xScale was the hardware killer of the 2026-09-13 round:
+        # mupen's VI barely models the scaler, a real VI does (destroyed
+        # right/bottom, unstable picture).
         for base in (0x6FC0, 0x7010):
             edits += [
                 ("r", base + 0x08, 0x00000280, 0x00000140, "table width 320->640"),
-                ("r", base + 0x20, 0x00000400, 0x00000200, "table xScale 2.0->1.0"),
+                ("r", base + 0x20, 0x00000100, 0x00000200, "table xScale 2x->1x"),
                 ("r", base + 0x28, 0x00000500, 0x00000280, "table f0 origin 640->1280"),
                 ("r", base + 0x3C, 0x00000500, 0x00000280, "table f1 origin 640->1280"),
             ]
