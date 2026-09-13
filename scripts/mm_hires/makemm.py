@@ -73,7 +73,10 @@ EDITS = [
 def force_all_a_presses(code):
     """Debug: turn every `andi rt, rs, 0x8000` (A-button checks, 37
     sites incl. the message text-advance) into `ori` so A reads pressed
-    everywhere - dialogs and cutscene prompts auto-advance."""
+    everywhere - dialogs and cutscene prompts auto-advance. Also force
+    every `lh rt, 0x270(base)` (interfaceCtx->healthAlpha reads) to 255
+    so the HUD elements draw opaque regardless of the visibility
+    machine."""
     n = len(code) // 4
     ws = list(struct.unpack_from(">%dI" % n, code, 0))
     count = 0
@@ -83,6 +86,15 @@ def force_all_a_presses(code):
             ws[p] = w | 0x04000000
             count += 1
     _err(f"  A-press forced at {count} andi sites")
+    # healthAlpha reads (lh rt, 0x270(base)) -> force 255 so the HUD
+    # elements (hearts/magic/buttons) draw opaque
+    acount = 0
+    for p in range(n):
+        w = ws[p]
+        if (w >> 26) == 0x21 and (w & 0xFFFF) == 0x0270:
+            ws[p] = 0x24000000 | ((w >> 16) & 31) << 16 | 255
+            acount += 1
+    _err(f"  healthAlpha loads forced to 255: {acount} sites")
     # compression donation: zero the ASCII-to-charcode table head
     # (code+0x133084); ocarina note rendering degrades, fine for a
     # throwaway emulator run
