@@ -105,6 +105,19 @@ anchor refinement — 480i/240p flavors asserted-mismatched on rebuild.
 All five offsets re-derived word-for-word; `240pdbg` (auto-chain on the
 standard 320 signal, fits 4MB) now builds for the hardware bisect
 ladder documented in scripts/hi-res-hardware-testplan.md.
+
+## Hardware round 2 (2026-09-13): baseline ✓, 240pdbg ✓, 640p picture destroyed
+
+The bisect ladder worked: cart/console fine (baseline), all gameplay
+patches fine (240pdbg), and the 640p failure isolated to the VI table
+values. Per the n64brew VI documentation the xScale table edit was
+wrong: VI_X_SCALE is the horizontal upscale factor (stock 0x200 = 2x
+for 320-wide); a 640-wide 1:1 framebuffer needs **0x100**, not 0x400
+(the old value came from conflating Nintendo's ViMode_Configure 2.10
+formula with the register encoding). VI_WIDTH=0x280 and the stock
+108/748 H_START window are confirmed correct. mupen barely models the
+scaler, which is why every emulator verification looked perfect.
+Fix: one word per table, commit e135705.
 - note: ovl_file_choose recompresses to 36374 bytes against a 36384-byte
   ROM slot — only 10 bytes of headroom, so debug edits there must stay
   minimal (a .data table word compresses smaller than code edits)
