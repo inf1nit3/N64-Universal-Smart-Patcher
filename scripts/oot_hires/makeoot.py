@@ -33,7 +33,7 @@ import sys
 
 import crunch64
 
-FLAVORS = ("480i", "240p", "vitables", "640p", "640pdbg")
+FLAVORS = ("480i", "240p", "240pdbg", "vitables", "640p", "640pdbg")
 
 CODE_VRAM = 0x800110A0
 CODE_PSTART, CODE_PEND = 0xA62840, 0xAFD890
@@ -104,6 +104,106 @@ HUD_EXTRA_SITES = [
     (0xD14EC, 0x24190084, 0x24190108),
     (0xD1C40, 0x240600FA, 0x240601F4),
 ]
+
+# gZBuffer relocation (640p hardware-safety). The stock 320x240 z-buffer
+# (0x25800 bytes at 0x8012BE40, gGfxSPTaskOutputBuffer follows at
+# 0x80151640) is 0x25800 bytes too small for the 640-wide scissor: the
+# RDP's depth writes span 0x4B000 bytes and overflow into the SPTask
+# output buffer and beyond (mupen64plus survived this; real hardware
+# hangs). The fix moves gZBuffer into the 0x4B000 gap between the fb0
+# image end and fb1, which exists once fb0 is lowered to end-0xE1000:
+#   end=0x80600000 (8MB): fb0 image 0x8051F000..0x8056A000,
+#   gZBuffer 0x8056A000..0x805B5000, fb1 0x805B5000..0x80600000.
+# The heap ends at fb0 (Main: gSystemHeapSize = fb - systemHeapStart),
+# so lowering fb0 automatically keeps the z-buffer region heap-free.
+# Still REQUIRES 8MB (same as 640p before). CPU-side readers keep their
+# 320 stride (cosmetic: sun depth/glow sampling, pause prerender width).
+ZBUF_OLD_HI, ZBUF_OLD_LO = 0x8013, 0xBE40   # (%hi/%lo of 0x8012BE40)
+ZBUF_NEW_HI, ZBUF_NEW_LO = 0x8056, 0xA000   # (%hi/%lo of 0x8056A000)
+# Every gZBuffer reference in the code segment, verified against the
+# decomp ELF symbols (window-32 scan, addiu/ori and load-offset forms):
+ZBUF_EXPECT_SITES = (
+    (0x04AE4C, 0x04AE54, "Environment_GetPixelDepth (lhu offset)"),
+    (0x0557AC, 0x0557B0, "Lights_GlowCheck"),
+    (0x06E040, 0x06E044, "Gfx_SetupFrame (gDPSetDepthImage x3)"),
+    (0x06E450, 0x06E454, "func_80095974 (gDPSetColorImage/gDPSetDepthImage)"),
+    (0x06EB58, 0x06EB6C, "Room_DecodeJpeg (scratch arg)"),
+    (0x06EB88, 0x06EB94, "Room_DecodeJpeg (bcopy src)"),
+    (0x089F6C, 0x089F7C, "Play_Update (gTransitionTile.zBuffer)"),
+    (0x08B4C8, 0x08B4CC, "Play_Draw (PreRender_SetValues)"),
+    (0x08B8E4, 0x08B8E8, "Play_Draw (fbufSave)"),
+    (0x08F95C, 0x08F99C, "GameState_SetFrameBuffer (gSPSegment 0xE x3)"),
+)
+
+
+def patch_zbuffer_relocation(code):
+    """Rewrite every gZBuffer reference from 0x8012BE40 to 0x8056A000.
+
+    Two compiler patterns occur (the scheduler interleaves heavily, so
+    each site is matched with a 16-word window and register-liveness
+    stop):
+    - `lui rX,%hi` ... `addiu/ori rX,rX,%lo`
+    - `lui rX,%hi` ... (addu index) ... `lhu rX,%lo(rX)` (the %lo rides
+      as the load offset)
+    Each patched lui also patches its paired lo word; for the load-offset
+    form the load immediate carries the new %lo."""
+    n = len(code) // 4
+    ws = list(struct.unpack_from(">%dI" % n, code, 0))
+    loads = {0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26}
+
+    def redefine(w, rt):
+        op, rs, rt2, rd = w >> 26, (w >> 21) & 31, (w >> 16) & 31, (w >> 11) & 31
+        fun = w & 0x3F
+        if op == 0x09 and rt2 == rt and rs == rt:
+            return False  # addiu rX,rX,imm
+        if op in (0x0C, 0x0D, 0x0E) and rt2 == rt and rs == rt:
+            return False  # andi/ori/xori rX,rX,imm
+        if op == 0x00:
+            if fun == 0x08:
+                return rt == 31
+            if fun in (0x21, 0x24, 0x25) and rd == rt and (rs == rt or rt2 == rt):
+                return False  # addu/and/or accumulate
+            return rd == rt
+        if op == 0x03:
+            return rt == 31
+        if op in (0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x28, 0x29, 0x2A, 0x2B, 0x38, 0x39, 0x3A, 0x3B):
+            return False  # stores/co-ops use rt as source
+        if op in (0x01, 0x04, 0x05, 0x06, 0x07):
+            return rt2 == rt  # branches read rt
+        if op in (0x31, 0x39):
+            return False  # lwc1/swc1 don't touch GPR rt
+        return rt2 == rt  # remaining I-types write rt
+
+    found = []
+    for i in range(n):
+        w = ws[i]
+        if (w >> 26) != 0x0F or ((w >> 21) & 31) != 0 or (w & 0xFFFF) != ZBUF_OLD_HI:
+            continue
+        rt = (w >> 16) & 31
+        for j in range(i + 1, min(i + 65, n)):
+            w2 = ws[j]
+            op2, rs2, rt2, imm2 = w2 >> 26, (w2 >> 21) & 31, (w2 >> 16) & 31, w2 & 0xFFFF
+            if op2 in (0x09, 0x0D) and rs2 == rt and rt2 == rt and imm2 == ZBUF_OLD_LO:
+                ws[i] = (w & 0xFFFF0000) | ZBUF_NEW_HI
+                ws[j] = (w2 & 0xFFFF0000) | ZBUF_NEW_LO
+                found.append((i * 4, j * 4))
+                break
+            if op2 in loads and rs2 == rt and rt2 == rt and imm2 == ZBUF_OLD_LO:
+                ws[i] = (w & 0xFFFF0000) | ZBUF_NEW_HI
+                ws[j] = (w2 & 0xFFFF0000) | ZBUF_NEW_LO
+                found.append((i * 4, j * 4))
+                break
+            if redefine(w2, rt):
+                break
+
+    if sorted(found) != sorted((a, b) for a, b, _ in ZBUF_EXPECT_SITES):
+        raise SystemExit(
+            "zrel: site list mismatch\n"
+            f"  found:    {[f'code+{a:06X}->code+{b:06X}' for a, b in sorted(found)]}\n"
+            f"  expected: {[f'code+{a:06X}->code+{b:06X}' for a, b, _ in ZBUF_EXPECT_SITES]}")
+    for a, b, note in ZBUF_EXPECT_SITES:
+        _err(f"  zrel: code+{a:06X}/code+{b:06X} -> 0x8056A000  ({note})")
+    return struct.pack(">%dI" % n, *ws)
 
 
 def patch_hud_scale(code):
@@ -301,11 +401,12 @@ def main():
             raise SystemExit(f"anchor not found: {name}")
         _err(f"{name}: code+{off:05X}")
 
-    # store offsets relative to the anchors, from the ELF disassembly:
-    # ViMode_Init: +0x18 sw zero,0x68 (editState); +0x48 sw v0,0x78
-    # (modeN); +0x4C sw v0,0x70 (loRes); +0x0C li t6,320; +0x10 li t7,240
-    vi_state, vi_lores, vi_moden = vi + 0x18, vi + 0x4C, vi + 0x48
-    vi_w, vi_h = vi + 0x0C, vi + 0x10
+    # store offsets relative to the anchor, verified word-for-word in the
+    # decompressed code (anchor words: +04 li t6,320 / +08 li t7,240 /
+    # +0C li t8,0x42; stores: +10 sw zero,0x68 editState, +3C sw v0,0x78
+    # modeN, +44 sw v0,0x70 loRes)
+    vi_state, vi_lores, vi_moden = vi + 0x10, vi + 0x44, vi + 0x3C
+    vi_w, vi_h = vi + 0x04, vi + 0x08
     # SysCfb_Init fb-offset pair words: hi at cfb_f0, lo at cfb_f0+4
     cfb_f0h, cfb_f0l = cfb_f0, cfb_f0 + 4
     cfb_f1h, cfb_f1l = cfb_f1, cfb_f1 + 4
@@ -313,7 +414,8 @@ def main():
     view_h, view_w = view + 0x04, view + 0x08
 
     edits = []  # (kind, offset, new, expect, note)
-    dbg_autoadvance = flavor == "640pdbg"  # 640p edits + title auto-advance
+    zrel = "--zrel" in sys.argv  # 640p/640pdbg + gZBuffer relocation (hardware safety)
+    dbg_autoadvance = flavor in ("640pdbg", "240pdbg")  # + title auto-advance
     if flavor == "480i":
         edits += [
             ("c", vi_w, 0x240E0280, 0x240E0140, "viWidth 320->640"),
@@ -330,7 +432,7 @@ def main():
             ("c", view_h, 0x240E01E0, 0x240E00F0, "viewport bottomY 240->480"),
             ("c", view_w, 0x240F0280, 0x240F0140, "viewport rightX 320->640"),
         ]
-    elif flavor == "240p":
+    elif flavor in ("240p", "240pdbg"):
         edits += [
             ("c", vi_w, 0x240E0280, 0x240E0140, "viWidth 320->640"),
             ("c", vi_lores, 0xAC800070, 0xAC820070, "loRes 1->0"),
@@ -376,10 +478,13 @@ def main():
         edits += [
             # 8MB fb end 0x80400000 -> 0x80600000: the 640-wide framebuffer
             # pair is 0x4B000 bytes larger than stock and would otherwise
-            # overlap the top of the game heap (boot hang)
+            # overlap the top of the game heap (boot hang). With --zrel the
+            # fb0 constant is lowered to end-0xE1000 instead of end-0x96000:
+            # the extra 0x4B000 below fb0 leaves a heap-free gap for the
+            # relocated gZBuffer (patch_zbuffer_relocation below).
             ("c", cfb_f0 - 0x50, 0x3C0F8060, 0x3C0F8040, "8MB fb end moves to expansion"),
-            ("c", cfb_f0h, 0x3C01FFF6, 0x3C01FFFB, "fb0 offset hi"),
-            ("c", cfb_f0l, 0x3421A000, 0x34215000, "fb0 offset lo"),
+            ("c", cfb_f0h, 0x3C01FFF1 if zrel else 0x3C01FFF6, 0x3C01FFFB, "fb0 offset hi"),
+            ("c", cfb_f0l, 0x3421F000 if zrel else 0x3421A000, 0x34215000, "fb0 offset lo"),
             ("c", cfb_f1h, 0x3C01FFFB, 0x3C01FFFD, "fb1 offset hi"),
             ("c", cfb_f1l, 0x34215000, 0x3421A800, "fb1 offset lo"),
             ("c", view_w, 0x240F0280, 0x240F0140, "viewport rightX 320->640"),
@@ -401,6 +506,9 @@ def main():
     if flavor in ("640p", "640pdbg"):
         code = bytearray(patch_hud_scale(code))
         n += len(HUD_SCALE_EDITS)
+        if zrel:
+            code = bytearray(patch_zbuffer_relocation(code))
+            n += len(ZBUF_EXPECT_SITES)
         # Compression donation: the JP message table is dead in US
         # retail; zeroing its head gives the recompressor back the bytes
         # the HUD edits cost (the yaz0 stream only just fits the slot).

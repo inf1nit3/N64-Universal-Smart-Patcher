@@ -19,9 +19,12 @@ the SubDrag patches ship with).
   written to STDOUT; logs go to stderr. The flavor comes from
   `flavor.txt`: `480i` (interlaced reference route, rejected),
   `240p` (not functional yet — Nintendo's Configure math produces a
-  frozen video state for hi-res + non-interlaced), `vitables`
+  frozen video state for hi-res + non-interlaced), `240pdbg` (240p +
+  auto-chain; hardware bisect rung: standard 320-signal, fits 4MB),
+  `vitables`
   (VI-tables-only diagnostic), `640p` (**the working route**), and
   `640pdbg` (640p + title auto-advance for unattended emulator runs).
+  `--zrel` (with `640p`/`640pdbg`) relocates gZBuffer — see below.
 - `sites.txt` — the scan output that pinned the anchors.
 - `recipe.oot-hires-exp.json` + `zelda-oot-usa-rev0-640x480i-exp.bps` —
   the user-installable pair: JSON into `~/.n64patcher/patches/`, BPS
@@ -68,6 +71,40 @@ Emulator verification (mupen64plus 2.6.0, `--testshots`, 8 MB):
   stable, no corruption. HUD elements render in their 320-space
   positions (left half, full height) as documented above.
 - no interlace anywhere (progressive 640x240p)
+
+## gZBuffer relocation (`--zrel`) — status: first hardware verdict
+
+The 2026-09-13 hardware round returned "black screen, no boot" for the
+plain `640pdbg` candidate (CRCs verified fine). The builder comment had
+flagged the cause: the 640-wide scissor makes the RDP write 0x4B000
+bytes of depth into the stock 320x240 z-buffer (0x25800 bytes at
+0x8012BE40, `gGfxSPTaskOutputBuffer` follows directly at 0x80151640) —
+0x25800 bytes of overflow into the SPTask output buffer and beyond.
+mupen survives that; real hardware does not.
+
+`--zrel` moves gZBuffer to 0x8056A000: fb0's constant is lowered to
+end-0xE1000 (the heap ends at fb0, so the region below fb0 stays
+heap-free), and the z-buffer sits in the resulting 0x4B000 gap between
+the fb0 image end (0x8056A000) and fb1 (0x805B5000). All 10 reference
+sites in the code segment are rewritten (`lui %hi` + `addiu/ori %lo`
+pairs and the `lhu %lo(rX)` load-offset form in
+Environment_GetPixelDepth), each site pinned against the decomp ELF
+symbol table (see ZBUF_EXPECT_SITES in makeoot.py — the builder refuses
+to build if the site list drifts). Known cosmetic leftovers: the CPU
+depth readers keep their 320 stride (sun glare/glow falloff sample
+wrong pixels), and the pause-menu prerender saves 320-wide into the
+wide framebuffer (squeezed pause background).
+
+Emulator re-verification after the relocation: `640pdbg --zrel`
+auto-chains into gameplay (Link's treehouse) with clean depth, HUD
+slices intact — /tmp/shots_zrel, frames 200..2400.
+
+Also fixed while rebuilding the ladder: the ViMode_Init store offsets
+(vi_state/vi_lores/vi_moden/vi_w/vi_h) were stale after an earlier
+anchor refinement — 480i/240p flavors asserted-mismatched on rebuild.
+All five offsets re-derived word-for-word; `240pdbg` (auto-chain on the
+standard 320 signal, fits 4MB) now builds for the hardware bisect
+ladder documented in scripts/hi-res-hardware-testplan.md.
 - note: ovl_file_choose recompresses to 36374 bytes against a 36384-byte
   ROM slot — only 10 bytes of headroom, so debug edits there must stay
   minimal (a .data table word compresses smaller than code edits)
