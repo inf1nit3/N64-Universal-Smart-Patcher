@@ -1,6 +1,6 @@
 # Hi-Res-Kandidaten: Hardware-Testplan (SC64 / EverDrive)
 
-Stand: 2026-09-16, vor Runde 3.
+Stand: 2026-09-17, vor Runde 3.
 
 **Runde 1** (schwarzes Bild, mupen läuft): CRCs aller Kandidaten
 verifiziert — der Boot-Fehler lag nicht an der CRC. Zwei dokumentierte
@@ -11,29 +11,38 @@ behebt den Overflow.
 
 **Runde 2** (2026-09-13): Die Leiter hat funktioniert. L1 Baseline ✓,
 L2 240pdbg ✓ — Cart, Console und alle Gameplay-Patches sind sauber, der
-Ausfall war 640p-spezifisch. Ursache gefunden: `VI_X_SCALE` war auf
-`0x400` gesetzt. Das Register ist der horizontale Upscale-Faktor
-(Stock 0x200 = 2x für 320 breit), ein 640-breiter 1:1-Framebuffer
-braucht `0x100`. Die VI des Emulators modelliert den Scaler kaum,
-deshalb sahen alle Screenshots perfekt aus.
+Ausfall war 640p-spezifisch. Die damalige Schlussfolgerung, `VI_X_SCALE`
+sei schuld und müsse von `0x400` auf `0x100`, war **falsch** und ist
+zurückgenommen. Nintendos eigener Code entscheidet es: `viint.h` definiert
+`SCALE(scaleup, off) = F210(1.0f/scaleup)` — das Register hält den
+*Kehrwert* des Vergrößerungsfaktors — und `z_vimode.c:175` rechnet
+`xScale = (width << 10) / (SCREEN_WIDTH * 2)` mit SCREEN_WIDTH 320.
+Probe: 320 breit → `0x200` (= der Stock-Wert), 640 breit → `0x400`.
+`0x100` kodiert einen 160 Pixel breiten Framebuffer.
 
-**Runde 3** (offen): Der korrigierte Build war nie auf der Console. Er
-trägt beide Fixes — xScale `0x100` und die Z-Buffer-Relocation.
+Damit ist Runde 2 unerklärt — und der getestete Kandidat entstand
+**vor** `--zrel`. Der 640-breite Scissor, der 0x4B000 Bytes Tiefe in
+einen 0x25800-Byte-Puffer schreibt, passt deutlich besser zu „rechts und
+unten Müll, instabil“ als ein Abtastratenfehler.
+
+**Runde 3** (offen): Genau das ist der Test. Der Kandidat trägt die
+Z-Buffer-Relocation, die Runde 2 noch nicht hatte — bei ansonsten
+unveränderten VI-Tabellen (`0x280`/`0x400`).
 
 ## Die Leiter für Runde 3 (OoT, nacheinander flashen)
 
 Alle Dateien liegen fertig gebaut in `scripts/oot_hires/` (CRC- und
-xScale-geprüft, Stand 2026-09-16):
+xScale-geprüft, Stand 2026-09-17):
 
 | Stufe | Datei | Was sie zeigt |
 |---|---|---|
 | L1 | `cand_oot_baseline.z64` (= clean.z64, unmodifiziert) | Cart, Console, CIC/CRC, TV-Sync im Stock-Modus — in Runde 2 bereits ✓ |
-| L2 | `cand_oot_640p_zrel_r3.z64` | **Der eigentliche Test**: 640p mit xScale-Fix + Z-Buffer-Fix, normales Spiel (kein Auto-Chain), braucht 8MB |
-| L3 | `cand_oot_640pdbg_zrel.z64` | Derselbe Build mit Auto-Chain — nur falls L2 am File-Select hängt und du unbeaufsichtigt bis ins Gameplay willst |
+| L2 | `cand_oot_640p_zrel_r3.z64` | **Der eigentliche Test**: 640p mit Z-Buffer-Fix, normales Spiel (kein Auto-Chain), braucht 8MB |
+| L3 | `cand_oot_640pdbg_zrel_r3.z64` | Derselbe Build mit Auto-Chain — nur falls L2 am File-Select hängt und du unbeaufsichtigt bis ins Gameplay willst |
 
 Interpretation:
 
-- **L2 läuft** → der xScale war der Killer. Das Rezept kann aus
+- **L2 läuft** → der Z-Buffer-Overflow war der Killer. Das Rezept kann aus
   `EXPERIMENTAL` raus, sobald auch die Z-Relocation über mehrere Szenen
   sauber bleibt (Pausenmenü, Sonnenblendung, Raumwechsel).
 - **L2 schwarz, aber Logo + Sound** → Signal läuft, TV synct nicht:

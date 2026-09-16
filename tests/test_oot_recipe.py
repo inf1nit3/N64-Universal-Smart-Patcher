@@ -1,11 +1,10 @@
 """The shipped OoT 640x240p recipe: the JSON and the BPS must agree.
 
 This exists because they once did not. The recipe pair sat in the tree
-for four days carrying the 2026-09-12 build - VI_X_SCALE 0x400, no
-z-buffer relocation - while the builder had already been corrected
-twice. Anyone installing the pair got exactly the ROM the hardware round
-had rejected, and nothing in the repository said so: a stale binary
-looks identical to a current one.
+for four days carrying the 2026-09-12 build, without the z-buffer
+relocation the builder had grown since - so anyone installing it got the
+ROM whose 640-wide scissor overflows the depth buffer. Nothing in the
+repository said so: a stale binary looks identical to a current one.
 
 No ROM is needed to catch that. A BPS footer carries the CRC32 of the
 source it was built from and of the target it produces, so pinning both
@@ -30,12 +29,12 @@ _RECIPE = os.path.join(_RECIPE_DIR, "recipe.oot-hires-exp.json")
 
 # Zelda - Ocarina of Time (USA) Rev 0, the dump the recipe matches.
 _CLEAN_CRC32 = 0xCD16C529
-# The 640p --zrel build of 2026-09-16 (makeoot.py, VI_WIDTH 0x280 /
-# VI_X_SCALE 0x100, gZBuffer at 0x8056A000).
-_TARGET_CRC32 = 0x449C3C31
+# The 640p --zrel build of 2026-09-17 (makeoot.py, VI_WIDTH 0x280 /
+# VI_X_SCALE 0x400, gZBuffer at 0x8056A000).
+_TARGET_CRC32 = 0x00C7EB1A
 # ... and the N64 header checksums that build restamps into itself.
-_TARGET_CRC1 = 0xEC701F37
-_TARGET_CRC2 = 0x76D875D0
+_TARGET_CRC1 = 0xEC700137
+_TARGET_CRC2 = 0x75F8FA0E
 
 
 @unittest.skipUnless(os.path.isfile(_RECIPE), "source checkout only")

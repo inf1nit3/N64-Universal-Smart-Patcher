@@ -31,7 +31,7 @@ the SubDrag patches ship with).
   next to it (an operation's file is resolved against the recipe's own
   directory first). `--h2x` then applies it for this dump — the recipe
   carries `flavor: 640x240`, so `--hires` alone does not pick it up.
-  The BPS is `640p --zrel`, rebuilt after the round-2 xScale fix.
+  The BPS is `640p --zrel` (see "Round 3 candidate" below).
 - `cand_oot_*.z64` — built candidates (gitignored, ROMs never enter the
   repository).
 
@@ -118,40 +118,71 @@ ladder documented in scripts/hi-res-hardware-testplan.md.
 ## Hardware round 2 (2026-09-13): baseline ✓, 240pdbg ✓, 640p picture destroyed
 
 The bisect ladder worked: cart/console fine (baseline), all gameplay
-patches fine (240pdbg), and the 640p failure isolated to the VI table
-values. Per the n64brew VI documentation the xScale table edit was
-wrong: VI_X_SCALE is the horizontal upscale factor (stock 0x200 = 2x
-for 320-wide); a 640-wide 1:1 framebuffer needs **0x100**, not 0x400
-(the old value came from conflating Nintendo's ViMode_Configure 2.10
-formula with the register encoding). VI_WIDTH=0x280 and the stock
-108/748 H_START window are confirmed correct. mupen barely models the
-scaler, which is why every emulator verification looked perfect.
-Fix: one word per table, commit e135705.
+patches fine (240pdbg), and the 640p failure isolated to something
+640-specific. The conclusion drawn at the time — that `VI_X_SCALE` was
+the culprit and had to drop from `0x400` to `0x100` — was **wrong**, and
+commit e135705 is reverted.
+
+Nintendo's own source settles the encoding. `viint.h`:
+
+```c
+#define SCALE(scaleup, off) (F210(1.0f / (f32)(scaleup)) | (F210((f32)(off)) << 16))
+```
+
+The register holds the **reciprocal** of the upscale factor, not the
+factor: the stock table's `SCALE(2, 0)` is `F210(0.5)` = `0x200` for a
+320-wide framebuffer. `z_vimode.c:175` writes the same thing as a
+formula, and it is the one `ViMode_Configure` uses to build MM's
+hi-res notebook mode:
+
+```c
+xScale = (width << 10) / (SCREEN_WIDTH * 2 + rightAdjust - leftAdjust);
+```
+
+`SCREEN_WIDTH` is 320, so the divisor is the 640-pixel active window.
+Check it against the stock table: `(320 << 10) / 640 = 0x200` ✓.
+For a 640-wide framebuffer: `(640 << 10) / 640 = **0x400**`.
+
+`0x100` encodes a 160-wide framebuffer — the VI shows the left quarter
+at 4x. That is visible even in mupen, whose VI models the scaler only
+roughly: with `0x100` the boot wordmark is cropped at the
+right edge and the title screen comes out magnified and cut off; with
+`0x400` the full picture is there.
+
+Which leaves round 2's destroyed picture unexplained by the VI tables —
+and the candidate it tested was built **before** `--zrel`. The 640-wide
+scissor writing 0x4B000 bytes of depth into a 0x25800-byte buffer, over
+`gGfxSPTaskOutputBuffer`, is a far better fit for "right and bottom
+garbage, unstable" than a scan-rate error would be. Round 3 tests that.
+
 - note: ovl_file_choose recompresses to 36374 bytes against a 36384-byte
   ROM slot — only 10 bytes of headroom, so debug edits there must stay
   minimal (a .data table word compresses smaller than code edits)
 
-The z-buffer overflow is no longer on that risk list: `--zrel` moves
-gZBuffer out of the way (see above) and the shipped BPS is built with
-it. What remains untested on a console is the relocation itself — round
-2 predates it. HUD/menus keep the 320-space layout where their
-positions are compile-time constants — the per-renderer 2D pass is
-future work (the title/File Select screens already derive their
-positions from the runtime viewport and land correctly).
+HUD/menus keep the 320-space layout where their positions are
+compile-time constants — the per-renderer 2D pass is future work (the
+title/File Select screens already derive their positions from the
+runtime viewport and land correctly).
 
-### Round 3 candidate (2026-09-16, rebuilt, not yet run)
+### Round 3 candidate (2026-09-17, rebuilt, not yet on hardware)
 
-`zelda-oot-usa-rev0-640x240p-exp.bps` was still the 2026-09-12 build —
-xScale `0x400`, no `--zrel` — i.e. exactly the ROM round 2 rejected.
-Rebuilt from `640p --zrel` against the current `makeoot.py`:
+`zelda-oot-usa-rev0-640x240p-exp.bps` was still the 2026-09-12 build,
+without `--zrel`. Rebuilt from `640p --zrel` against the current
+`makeoot.py`:
 
-    clean.z64      CRC1 EC7011B7  CRC2 7616D72B
-    640p --zrel    CRC1 EC701F37  CRC2 76D875D0   (recipe `outputs`)
+    clean.z64      CRC1 EC7011B7  CRC2 7616D72B  CRC32 CD16C529
+    640p --zrel    CRC1 EC700137  CRC2 75F8FA0E  CRC32 00C7EB1A
 
-Verified before shipping: VI table reads `0x280`/`0x100`, all 10 zrel
+The CRC pair is the same one the recipe declared before the xScale
+detour, which is the expected consequence of reverting it: the VI
+tables sit inside the CIC window, the zrel edits do not.
+
+Verified before shipping: VI tables read `0x280`/`0x400`, all 10 zrel
 sites rewritten, the BPS round-trips byte-identically to the candidate,
-`ovl_file_choose` matches `clean.z64` (no debug edits), and a full
-`--h2x` pipeline run reproduces the candidate byte-for-byte.
+`ovl_file_choose` matches `clean.z64` (no debug edits), a full `--h2x`
+pipeline run reproduces the candidate byte-for-byte, and mupen renders
+logo → title with the whole picture present and the 2D layer in its
+320-space upper-left position.
 
 ## The 2D pass (HUD scaling) — slices 1+2 work
 

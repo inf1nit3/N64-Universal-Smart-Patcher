@@ -483,18 +483,29 @@ def main():
         # overflows 0x25800 bytes into gGfxSPTaskOutputBuffer
         # (survived in mupen64plus; fixed by --zrel, see below).
         #
-        # Table semantics per n64brew VI documentation: VI_WIDTH counts
-        # framebuffer pixels (640 -> 0x280), VI_X_SCALE is the horizontal
-        # up-scale in 1/256ths (stock 0x200 = 2x for 320-wide, 1:1 for
-        # 640-wide -> 0x100), VI_H_START stays at the stock NTSC
-        # 108/748 active window (640 screen pixels). The earlier 0x400
-        # xScale was the hardware killer of the 2026-09-13 round:
-        # mupen's VI barely models the scaler, a real VI does (destroyed
-        # right/bottom, unstable picture).
+        # Table semantics, derived from Nintendo's own code rather than
+        # from prose. viint.h: SCALE(scaleup, off) = F210(1.0f/scaleup),
+        # so the register holds the RECIPROCAL of the upscale factor -
+        # stock SCALE(2, 0) is 0.5 in 2.10 = 0x200 for a 320-wide
+        # framebuffer. z_vimode.c:175 states it as a formula:
+        #
+        #     xScale = (width << 10) / (SCREEN_WIDTH * 2 + rightAdjust - leftAdjust)
+        #
+        # with SCREEN_WIDTH 320, i.e. a 640-pixel active window. Check:
+        # width 320 -> (320 << 10) / 640 = 0x200, matching the table.
+        # width 640 -> (640 << 10) / 640 = 0x400.
+        #
+        # 0x400 it is. A brief detour through 0x100 (2026-09-13, from
+        # reading VI_X_SCALE as an upscale factor in 1/256ths rather
+        # than as the reciprocal step) encodes a 160-wide framebuffer:
+        # the VI then shows the left quarter at 4x, which mupen renders
+        # as a magnified, right-cropped title screen. VI_WIDTH counts
+        # framebuffer pixels (640 -> 0x280) and VI_H_START stays at the
+        # stock NTSC 108/748 window.
         for base in (0x6FC0, 0x7010):
             edits += [
                 ("r", base + 0x08, 0x00000280, 0x00000140, "table width 320->640"),
-                ("r", base + 0x20, 0x00000100, 0x00000200, "table xScale 2x->1x"),
+                ("r", base + 0x20, 0x00000400, 0x00000200, "table xScale 0.5->1.0 step"),
                 ("r", base + 0x28, 0x00000500, 0x00000280, "table f0 origin 640->1280"),
                 ("r", base + 0x3C, 0x00000500, 0x00000280, "table f1 origin 640->1280"),
             ]
