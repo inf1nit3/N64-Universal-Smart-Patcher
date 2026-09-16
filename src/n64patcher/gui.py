@@ -1444,7 +1444,9 @@ class N64PatcherGUI(QMainWindow):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
-        return answer == QMessageBox.StandardButton.Yes
+        # bool(): without PyQt6 stubs installed - which is what CI's
+        # lint job has - QMessageBox is Any, so the comparison is Any too.
+        return bool(answer == QMessageBox.StandardButton.Yes)
 
     def _require_saves(self) -> bool:
         if self.save_list:

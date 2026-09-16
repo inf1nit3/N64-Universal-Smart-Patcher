@@ -21,13 +21,16 @@ a mismatch aborts the build.
 
 The candidate ROM is written to STDOUT (binary); all logs go to stderr.
 Reads `clean.z64` and `flavor.txt` from the current directory
-(flavor.txt: 480i, 240p, vitables, 640p or 640pdbg; ROMs never enter the
-repository). `640pdbg` is the emulator-test variant of `640p`: it also
-forces the title screen's START checks true so `mupen64plus --testshots`
-runs unattended into File Select.
+(flavor.txt: 480i, 240p, 240pdbg, vitables, 640p or 640pdbg; ROMs never
+enter the repository). `640pdbg` is the emulator-test variant of `640p`:
+it also forces the title screen's START checks true so
+`mupen64plus --testshots` runs unattended into File Select. `--zrel`
+adds the gZBuffer relocation to the two 640p flavors; the shipped BPS is
+built with `640p --zrel`.
 
-Usage: python makeoot.py > cand_oot.z64
+Usage: python makeoot.py [--zrel] > cand_oot.z64
 """
+
 import struct
 import sys
 
@@ -52,8 +55,8 @@ def find_seq(data, words, start=0x1000):
 def find_en_mag(rom):
     """Locate the ovl_En_Mag file via the dmadata table (0x7430, 1526 entries)."""
     for k in range(1526):
-        vs, ve, rs, re_ = struct.unpack_from(">IIII", rom, 0x7430 + k * 16)
-        if vs == 0xE6C0D0 and rom[rs:rs + 4] == b"Yaz0":
+        vs, _ve, rs, re_ = struct.unpack_from(">IIII", rom, 0x7430 + k * 16)
+        if vs == 0xE6C0D0 and rom[rs : rs + 4] == b"Yaz0":
             return rs, re_
     raise SystemExit("ovl_En_Mag not found in dmadata")
 
@@ -87,7 +90,7 @@ HUD_SCALE_EDITS = [
     (0xAC4, 186),  # R_A_ICON_X       = A_BUTTON_X
     (0x810, 254),  # R_C_UP_BTN_X     = C_UP_BUTTON_X
     (0x844, 247),  # R_C_UP_ICON_X    = C_UP_BUTTON_X - 7
-    (0xAF6, 18),   # R_MAGIC_METER_X  = 18
+    (0xAF6, 18),  # R_MAGIC_METER_X  = 18
 ]
 
 # Two assignments the generic matcher cannot pin down (their li sits far
@@ -118,8 +121,8 @@ HUD_EXTRA_SITES = [
 # so lowering fb0 automatically keeps the z-buffer region heap-free.
 # Still REQUIRES 8MB (same as 640p before). CPU-side readers keep their
 # 320 stride (cosmetic: sun depth/glow sampling, pause prerender width).
-ZBUF_OLD_HI, ZBUF_OLD_LO = 0x8013, 0xBE40   # (%hi/%lo of 0x8012BE40)
-ZBUF_NEW_HI, ZBUF_NEW_LO = 0x8056, 0xA000   # (%hi/%lo of 0x8056A000)
+ZBUF_OLD_HI, ZBUF_OLD_LO = 0x8013, 0xBE40  # (%hi/%lo of 0x8012BE40)
+ZBUF_NEW_HI, ZBUF_NEW_LO = 0x8056, 0xA000  # (%hi/%lo of 0x8056A000)
 # Every gZBuffer reference in the code segment, verified against the
 # decomp ELF symbols (window-32 scan, addiu/ori and load-offset forms):
 ZBUF_EXPECT_SITES = (
@@ -148,7 +151,7 @@ def patch_zbuffer_relocation(code):
     Each patched lui also patches its paired lo word; for the load-offset
     form the load immediate carries the new %lo."""
     n = len(code) // 4
-    ws = list(struct.unpack_from(">%dI" % n, code, 0))
+    ws = list(struct.unpack_from(f">{n}I", code, 0))
     loads = {0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26}
 
     def redefine(w, rt):
@@ -200,10 +203,11 @@ def patch_zbuffer_relocation(code):
         raise SystemExit(
             "zrel: site list mismatch\n"
             f"  found:    {[f'code+{a:06X}->code+{b:06X}' for a, b in sorted(found)]}\n"
-            f"  expected: {[f'code+{a:06X}->code+{b:06X}' for a, b, _ in ZBUF_EXPECT_SITES]}")
+            f"  expected: {[f'code+{a:06X}->code+{b:06X}' for a, b, _ in ZBUF_EXPECT_SITES]}"
+        )
     for a, b, note in ZBUF_EXPECT_SITES:
         _err(f"  zrel: code+{a:06X}/code+{b:06X} -> 0x8056A000  ({note})")
-    return struct.pack(">%dI" % n, *ws)
+    return struct.pack(f">{n}I", *ws)
 
 
 def patch_hud_scale(code):
@@ -214,7 +218,7 @@ def patch_hud_scale(code):
     same value, sometimes moved through registers), so each li feeding a
     matched store is doubled once."""
     n = len(code) // 4
-    ws = list(struct.unpack_from(">%dI" % n, code, 0))
+    ws = list(struct.unpack_from(f">{n}I", code, 0))
 
     li_patches = {}  # li index -> (old, new)
     for off, old in HUD_SCALE_EDITS:
@@ -236,7 +240,8 @@ def patch_hud_scale(code):
                         li_patches[q] = (old, new)
                     elif prev != (old, new):
                         raise SystemExit(
-                            f"HUD scale: li at code+{q*4:06X} feeds conflicting scales")
+                            f"HUD scale: li at code+{q * 4:06X} feeds conflicting scales"
+                        )
                     break
         if stores == 0:
             _err(f"  HUD scale: WARNING no store for sh {off:#06x} (value {old})")
@@ -244,23 +249,24 @@ def patch_hud_scale(code):
     for off, expect, new in HUD_EXTRA_SITES:
         cur = ws[off // 4]
         if cur != expect:
-            raise SystemExit(
-                f"HUD extra site code+{off:06X}: expect {expect:08X}, found {cur:08X}")
+            raise SystemExit(f"HUD extra site code+{off:06X}: expect {expect:08X}, found {cur:08X}")
         ws[off // 4] = new
         _err(f"  HUD scale: code+{off:06X}: {expect:08X} -> {new:08X} (extra site)")
     for q, (old, new) in sorted(li_patches.items()):
         ws[q] = (ws[q] & 0xFFFF0000) | new
-        _err(f"  HUD scale: code+{q*4:06X}: li {old} -> {new}")
-    _err(f"  HUD scale: {len(li_patches) + len(HUD_EXTRA_SITES)} li sites patched for {len(HUD_SCALE_EDITS)} registers")
-    return struct.pack(">%dI" % n, *ws)
+        _err(f"  HUD scale: code+{q * 4:06X}: li {old} -> {new}")
+    _err(
+        f"  HUD scale: {len(li_patches) + len(HUD_EXTRA_SITES)} li sites patched for {len(HUD_SCALE_EDITS)} registers"
+    )
+    return struct.pack(f">{n}I", *ws)
 
 
 def find_fileselect(rom):
     """Locate ovl_file_choose via the gamestate overlay table in the code
     segment (gGameStateOverlayTable @0x800F1340, FileSelect entry vrom)."""
     for k in range(1526):
-        vs, ve, rs, re_ = struct.unpack_from(">IIII", rom, 0x7430 + k * 16)
-        if vs == FILESELECT_VROM and rom[rs:rs + 4] == b"Yaz0":
+        vs, _ve, rs, re_ = struct.unpack_from(">IIII", rom, 0x7430 + k * 16)
+        if vs == FILESELECT_VROM and rom[rs : rs + 4] == b"Yaz0":
             return rs, re_
     raise SystemExit("ovl_file_choose not found in dmadata")
 
@@ -288,7 +294,8 @@ def patch_fileselect_autoadvance(rom):
         cur = struct.unpack_from(">I", data, off)[0]
         if cur != expect:
             raise SystemExit(
-                f"FileSelect MISMATCH at 0x{vaddr:08X}: expect {expect:08X}, found {cur:08X} ({note})")
+                f"FileSelect MISMATCH at 0x{vaddr:08X}: expect {expect:08X}, found {cur:08X} ({note})"
+            )
         struct.pack_into(">I", data, off, expect | 0x04000000)
         _err(f"  FileSelect 0x{vaddr:08X}: {expect:08X} -> {expect | 0x04000000:08X}  {note}")
     # The keyboard state machine stays stuck on an unattended run (the
@@ -315,7 +322,7 @@ def patch_fileselect_autoadvance(rom):
     comp = bytes(crunch64.yaz0.compress(bytes(data)))
     if len(comp) > re_ - rs:
         raise SystemExit(f"FileSelect recompress {len(comp)} exceeds slot {re_ - rs}")
-    rom[rs:rs + len(comp)] = comp
+    rom[rs : rs + len(comp)] = comp
     _err(f"FileSelect recompressed: {len(comp)} bytes (slot {re_ - rs})")
 
 
@@ -335,7 +342,7 @@ def patch_en_mag_autoadvance(rom):
     comp = bytes(crunch64.yaz0.compress(bytes(data)))
     if len(comp) > re_ - rs:
         raise SystemExit(f"En_Mag recompress {len(comp)} exceeds slot {re_ - rs}")
-    rom[rs:rs + len(comp)] = comp
+    rom[rs : rs + len(comp)] = comp
     _err(f"En_Mag recompressed: {len(comp)} bytes (slot {re_ - rs})")
 
 
@@ -359,7 +366,8 @@ def main():
         cur = cword(off)
         if cur != expect:
             raise SystemExit(
-                f"MISMATCH at code+{off:05X}: expect {expect:08X}, found {cur:08X} ({note})")
+                f"MISMATCH at code+{off:05X}: expect {expect:08X}, found {cur:08X} ({note})"
+            )
         struct.pack_into(">I", code, off, new)
         _err(f"  code+{off:05X}: {expect:08X} -> {new:08X}  {note}")
 
@@ -370,7 +378,8 @@ def main():
         cur = rword(off)
         if cur != expect:
             raise SystemExit(
-                f"MISMATCH at {off:08X}: expect {expect:08X}, found {cur:08X} ({note})")
+                f"MISMATCH at {off:08X}: expect {expect:08X}, found {cur:08X} ({note})"
+            )
         struct.pack_into(">I", rom, off, new)
         _err(f"  {off:08X}: {expect:08X} -> {new:08X}  {note}")
 
@@ -379,8 +388,8 @@ def main():
     # sequence, verified word-for-word before patching)
     vi = find_seq(code, [0x24020001, 0x240E0140, 0x240F00F0, 0x24180042])  # ViMode_Init
     # SysCfb_Init fb-offset constant pairs (unique in the blob)
-    cfb_f0 = find_seq(code, [0x3C01FFFB, 0x34215000])   # lui at,0xfffb / ori 0x5000
-    cfb_f1 = find_seq(code, [0x3C01FFFD, 0x3421A800])   # lui at,0xfffd / ori 0xa800
+    cfb_f0 = find_seq(code, [0x3C01FFFB, 0x34215000])  # lui at,0xfffb / ori 0x5000
+    cfb_f1 = find_seq(code, [0x3C01FFFD, 0x3421A800])  # lui at,0xfffd / ori 0xa800
     # View_Init: the plain li-pair also appears in func_8008A994, so anchor
     # on View_Init's unique 4-word window (lui t8,0x5649 / li t6,240 /
     # li t7,320 / ori t8,t8,0x4557); pair sits at +0x04/+0x08
@@ -393,10 +402,15 @@ def main():
     # (dead on stock NTSC 1.0 - only runs when the SREG VI editor is on;
     # NOPed so the editor can never shrink the width back)
     vimode_nop = find_seq(code, [0x8E0F0054, 0x3C018010, 0xAC2FE500]) + 0x8
-    # gScreenWidth/gScreenHeight .data initializers
+    # gScreenWidth .data initializer. gScreenHeight sits at 0x800FE504
+    # and is deliberately left alone: every route here keeps 240 lines.
     gsw_data = 0x800FE500 - CODE_VRAM
-    gsh_data = 0x800FE504 - CODE_VRAM
-    for name, off in (("ViMode_Init", vi), ("SysCfb fb0", cfb_f0), ("SysCfb fb1", cfb_f1), ("View_Init", view)):
+    for name, off in (
+        ("ViMode_Init", vi),
+        ("SysCfb fb0", cfb_f0),
+        ("SysCfb fb1", cfb_f1),
+        ("View_Init", view),
+    ):
         if off < 0:
             raise SystemExit(f"anchor not found: {name}")
         _err(f"{name}: code+{off:05X}")
@@ -522,16 +536,19 @@ def main():
         # retail; zeroing its head gives the recompressor back the bytes
         # the HUD edits cost (the yaz0 stream only just fits the slot).
         donate_at, donate_len = 0xFF8AC, 0x40
-        code[donate_at:donate_at + donate_len] = b"\x00" * donate_len
+        code[donate_at : donate_at + donate_len] = b"\x00" * donate_len
         n += 1
-        _err(f"  compression donation: zeroed {donate_len:#x} bytes at code+{donate_at:06X} (dead JP table)")
+        _err(
+            f"  compression donation: zeroed {donate_len:#x} bytes at code+{donate_at:06X} (dead JP table)"
+        )
 
     if flavor in ("480i", "240p", "640p", "640pdbg"):
         comp = bytes(crunch64.yaz0.compress(bytes(code)))
         if len(comp) > CODE_PEND - CODE_PSTART:
             raise SystemExit(
-                f"recompressed code {len(comp)} exceeds slot {CODE_PEND - CODE_PSTART}")
-        rom[CODE_PSTART:CODE_PSTART + len(comp)] = comp
+                f"recompressed code {len(comp)} exceeds slot {CODE_PEND - CODE_PSTART}"
+            )
+        rom[CODE_PSTART : CODE_PSTART + len(comp)] = comp
         _err(f"code recompressed: {len(comp)} bytes (slot {CODE_PEND - CODE_PSTART})")
 
     if dbg_autoadvance:

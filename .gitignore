@@ -54,5 +54,7 @@ work/
 roms/
 *.7z
 
-# oot_hires local build input (which flavor to build)
-scripts/oot_hires/flavor.txt
+# oot_hires local build input (which flavor to build). makeoot.py reads
+# it from the CURRENT directory, so a run started elsewhere - the repo
+# root, typically - drops one there: ignore the name anywhere.
+flavor.txt

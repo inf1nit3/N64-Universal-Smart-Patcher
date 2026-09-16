@@ -35,6 +35,7 @@ Usage: python makemm.py [--dbg] > candidate.z64
 Reads the clean dump from ../work/mm/baseroms/n64-us/baserom.z64.
 All logs go to stderr, the candidate goes to stdout.
 """
+
 import struct
 import sys
 
@@ -78,7 +79,7 @@ def force_all_a_presses(code):
     so the HUD elements draw opaque regardless of the visibility
     machine."""
     n = len(code) // 4
-    ws = list(struct.unpack_from(">%dI" % n, code, 0))
+    ws = list(struct.unpack_from(f">{n}I", code, 0))
     count = 0
     for p in range(n):
         w = ws[p]
@@ -98,10 +99,11 @@ def force_all_a_presses(code):
     # compression donation: zero the ASCII-to-charcode table head
     # (code+0x133084); ocarina note rendering degrades, fine for a
     # throwaway emulator run
-    code[:] = struct.pack(">%dI" % n, *ws)
+    code[:] = struct.pack(f">{n}I", *ws)
     donate_at, donate_len = 0x133084, 0x6B
-    code[donate_at:donate_at + donate_len] = b"\x00" * donate_len
+    code[donate_at : donate_at + donate_len] = b"\x00" * donate_len
     _err(f"  compression donation: zeroed {donate_len} bytes at code+{donate_at:06X}")
+
 
 # Debug (unattended-run) patches inside ovl_file_choose:
 # 1. andi-masked press&(START|A) checks -> press|(START|A) (4 sites).
@@ -132,8 +134,16 @@ def main():
     dbg = "--dbg" in sys.argv
     import os
 
-    base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "work", "mm",
-                        "baseroms", "n64-us", "baserom.z64")
+    base = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "..",
+        "..",
+        "work",
+        "mm",
+        "baseroms",
+        "n64-us",
+        "baserom.z64",
+    )
     with open(base, "rb") as f:
         rom = bytearray(f.read())
 
@@ -141,7 +151,9 @@ def main():
     for off, expect, new, note in EDITS:
         cur = struct.unpack_from(">I", code, off)[0]
         if cur != expect:
-            raise SystemExit(f"MISMATCH at code+{off:06X}: expect {expect:08X}, found {cur:08X} ({note})")
+            raise SystemExit(
+                f"MISMATCH at code+{off:06X}: expect {expect:08X}, found {cur:08X} ({note})"
+            )
         struct.pack_into(">I", code, off, new)
         _err(f"  code+0x{off:06X}: {expect:08X} -> {new:08X}  {note}")
 
@@ -149,7 +161,7 @@ def main():
     slot = CODE_ROM_END - CODE_ROM_START
     if len(comp) > slot:
         raise SystemExit(f"recompressed code {len(comp)} exceeds slot {slot}")
-    rom[CODE_ROM_START:CODE_ROM_START + len(comp)] = comp
+    rom[CODE_ROM_START : CODE_ROM_START + len(comp)] = comp
     _err(f"code recompressed: {len(comp)} bytes (slot {slot})")
 
     if dbg:
@@ -158,24 +170,28 @@ def main():
         slot = CODE_ROM_END - CODE_ROM_START
         if len(comp) > slot:
             raise SystemExit(f"recompressed code {len(comp)} exceeds slot {slot}")
-        rom[CODE_ROM_START:CODE_ROM_START + len(comp)] = comp
+        rom[CODE_ROM_START : CODE_ROM_START + len(comp)] = comp
         _err(f"code recompressed (dbg): {len(comp)} bytes (slot {slot})")
         fs = bytearray(crunch64.yaz0.decompress(bytes(rom[FS_ROM_START:FS_ROM_END])))
         for off, expect, new, note in FS_DBG_EDITS:
             cur = struct.unpack_from(">I", fs, off)[0]
             if cur != expect:
-                raise SystemExit(f"MISMATCH at fs+{off:04X}: expect {expect:08X}, found {cur:08X} ({note})")
+                raise SystemExit(
+                    f"MISMATCH at fs+{off:04X}: expect {expect:08X}, found {cur:08X} ({note})"
+                )
             struct.pack_into(">I", fs, off, new)
             _err(f"  file_choose +{off:04X}: {expect:08X} -> {new:08X}  {note}")
         fcomp = bytes(crunch64.yaz0.compress(bytes(fs)))
         fslot = FS_ROM_END - FS_ROM_START
         if len(fcomp) > fslot:
             raise SystemExit(f"file_choose recompress {len(fcomp)} exceeds slot {fslot}")
-        rom[FS_ROM_START:FS_ROM_START + len(fcomp)] = fcomp
+        rom[FS_ROM_START : FS_ROM_START + len(fcomp)] = fcomp
         _err(f"file_choose recompressed: {len(fcomp)} bytes (slot {fslot})")
 
     sys.stdout.buffer.write(bytes(rom))
-    _err("wrote candidate to stdout (ROM CRCs unchanged: patched segments are outside the CIC window)")
+    _err(
+        "wrote candidate to stdout (ROM CRCs unchanged: patched segments are outside the CIC window)"
+    )
 
 
 if __name__ == "__main__":
