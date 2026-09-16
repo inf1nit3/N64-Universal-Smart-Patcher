@@ -78,13 +78,60 @@ then B and C: whichever addition brings the numbers back clears its
 sites; whichever does not leaves the suspect set halved. Raw image builds
 via `makefix.py t3a.z64 1,2,3,4` remain available for direct flashing.
 
-The leading hypothesis for the failure is the 12-bit coordinate field. A
-value is masked with `andi rX, rd, 0xFFF` after the shift, so `x << 3`
-overflows once `x` exceeds 511 pixels. Any HUD element positioned relative
-to a screen width the SubDrag delta already doubled to 640 would wrap and
-land somewhere else entirely. Checking whether the digit positions are
-computed from a width constant, rather than fixed like the icons, is the
-first thing to do.
+### The geometry is wrong, not (only) the site selection
+
+dataDave's SM64 H2X went the same way from source instead of from the
+binary, and its diff names the defect. Verified against
+`DavidFallows/sm64`, `master`...`h2x`, the three emitters it touches are
+exactly our three suspects — `print.c: render_textrect` (site 0) and
+`hud.c: render_hud_tex_lut` / `render_hud_small_tex_lut` (sites 5, 6):
+
+```c
+// hud.c  render_hud_tex_lut   (16x16 glyph)
+-    ... x << 2, y << 2, (x + 15) << 2, (y + 15) << 2, ..., 4 << 10, 1 << 10);
++    ... (x*2) << 2, y << 2, ((x + 16)*2) << 2, (y + 16) << 2, ..., 1 << 9, 1 << 10);
+
+// hud.c  render_hud_small_tex_lut   (8x8 glyph)
+-    ... x << 2, y << 2, (x + 7) << 2, (y + 7) << 2, ..., 4 << 10, 1 << 10);
++    ... (x*2) << 2, y << 2, ((x + 8)*2) << 2, (y + 8) << 2, ..., 1 << 9, 1 << 10);
+```
+
+Two things follow.
+
+**1. The end coordinate is off by one tile-edge.** The original writes
+`+15` for a 16-pixel tile and `+7` for an 8-pixel one; H2X writes `+16`
+and `+8`. Our transform never touches that operand — it only rewrites
+the shift, so `(x + 15) << 3` yields `2x + 30` where `2x + 32` is
+wanted. Every glyph comes out two pixels narrow. The menus tolerate it
+because their glyphs stand apart; the HUD draws its digits edge to edge,
+so the error accumulates across the string and the sampling runs off the
+tile edge. That matches the symptom exactly: icons survive, numbers do
+not. H2X's release note about fixing "an original HUD sprite AA/flicker
+issue" is this same `size-1` → `size` correction.
+
+**2. The texture step is not a simple halving.** H2X takes dsdx from
+`4 << 10` to `1 << 9` — a factor of 8 — while `makefix.py`'s
+`halve_imm()` produces `2 << 10`. The `4 << 10` is bound up with the
+tile setup in `dl_hud_img_load_tex_block` and the small variant's
+`gDPSetTile`, so the right value cannot be derived from the rectangle
+call alone; it has to be measured.
+
+**Do not copy H2X's constants.** H2X renders 640x240 — X doubled, Y
+left alone — while our fix rides on SubDrag's 640x480 delta, where both
+axes double. Only the `+15` → `+16` correction is geometry-independent
+and transfers unchanged.
+
+The older hypothesis is not dead, just demoted: the coordinate field is
+masked with `andi rX, rd, 0xFFF`, so `x << 3` overflows once `x` passes
+511. That would explain a HUD element positioned from a screen-width
+constant the delta already doubled, but it does not explain icons
+rendering while digits vanish, which the `+15` does.
+
+Next: rebuild sites 0, 5 and 6 with the end-coordinate operand raised to
+the tile size before the shift is doubled, then run the A/B/C bisect
+above. The four shipped menu sites depend on the same transform, so
+build the HUD correction as its own variant rather than changing
+`makefix.py`'s shared path.
 
 ## Rebuilding the working files
 
