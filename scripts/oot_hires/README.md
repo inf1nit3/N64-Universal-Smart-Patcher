@@ -180,9 +180,21 @@ tables sit inside the CIC window, the zrel edits do not.
 Verified before shipping: VI tables read `0x280`/`0x400`, all 10 zrel
 sites rewritten, the BPS round-trips byte-identically to the candidate,
 `ovl_file_choose` matches `clean.z64` (no debug edits), a full `--h2x`
-pipeline run reproduces the candidate byte-for-byte, and mupen renders
-logo → title with the whole picture present and the 2D layer in its
-320-space upper-left position.
+pipeline run reproduces the candidate byte-for-byte.
+
+Emulator re-verification of this exact pair (mupen64plus 2.6.0, 8 MB,
+`--testshots`):
+
+- `640p --zrel`, frames 120/600/900: boot wordmark and title screen
+  complete, 3D full-width, 2D layer at half size in its 320-space
+  upper-left position. Nothing cropped.
+- `640pdbg --zrel`, frames 1200/2000/3500/6000: auto-chains into Link's
+  treehouse and holds it — geometry and depth clean, no corruption, HUD
+  slices in place. (Run stopped after 6000; that is ~100 seconds of
+  gameplay, not a long-run test.)
+- Side by side with the `0x100` build for contrast: there the wordmark
+  is cut at the right edge and the title screen is magnified and
+  cropped.
 
 ## The 2D pass (HUD scaling) — slices 1+2 work
 
