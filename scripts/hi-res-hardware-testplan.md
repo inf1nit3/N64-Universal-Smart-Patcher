@@ -1,45 +1,56 @@
 # Hi-Res-Kandidaten: Hardware-Testplan (SC64 / EverDrive)
 
-Stand: 2026-09-13, nach dem ersten Hardware-Bericht „bootet nicht"
-(schwarzes Bild, mupen läuft). Die CRCs aller Kandidaten sind verifiziert
-(Algorithmus reproduziert an beiden Baseroms exakt Nintendos Header-Werte,
-Kandidaten selbstkonsistent gestempelt) — der Boot-Fehler lag nicht an der
-CRC. Der gemeldete 640p-Kandidat hatte zwei dokumentierte Hardware-Risiken:
-8MB-Zwang (Framebuffer-Paar im Expansion-Bereich) und den gZBuffer-Overflow
-(640-breiter Scissor schrieb 0x25800 Bytes über den 320x240-Z-Buffer hinaus
-in den gGfxSPTaskOutputBuffer — mupen überlebte, Hardware nicht). Der neue
-Build `640pdbg-zrel` behebt den Overflow (Z-Buffer-Relocation, siehe
-scripts/oot_hires/README.md).
+Stand: 2026-09-16, vor Runde 3.
 
-## Die Bisect-Leiter (OoT, nacheinander flashen, Reihenfolge beachten)
+**Runde 1** (schwarzes Bild, mupen läuft): CRCs aller Kandidaten
+verifiziert — der Boot-Fehler lag nicht an der CRC. Zwei dokumentierte
+Risiken blieben: 8MB-Zwang und der gZBuffer-Overflow (640-breiter
+Scissor schrieb 0x25800 Bytes über den 320x240-Z-Buffer hinaus in den
+gGfxSPTaskOutputBuffer — mupen überlebte, Hardware nicht). `--zrel`
+behebt den Overflow.
 
-Ziel: mit jedem Schritt eingrenzen, wo es klemmt — Cart/Setup, unsere
-Gameplay-Patches oder die 640-breite Video-Ausgabe. Alle vier liegen in
-`scripts/oot_hires/` fertig gebaut (CRC-geprüft) und müssen nur noch auf
-den Stick, wenn er wieder gemountet ist:
+**Runde 2** (2026-09-13): Die Leiter hat funktioniert. L1 Baseline ✓,
+L2 240pdbg ✓ — Cart, Console und alle Gameplay-Patches sind sauber, der
+Ausfall war 640p-spezifisch. Ursache gefunden: `VI_X_SCALE` war auf
+`0x400` gesetzt. Das Register ist der horizontale Upscale-Faktor
+(Stock 0x200 = 2x für 320 breit), ein 640-breiter 1:1-Framebuffer
+braucht `0x100`. Die VI des Emulators modelliert den Scaler kaum,
+deshalb sahen alle Screenshots perfekt aus.
+
+**Runde 3** (offen): Der korrigierte Build war nie auf der Console. Er
+trägt beide Fixes — xScale `0x100` und die Z-Buffer-Relocation.
+
+## Die Leiter für Runde 3 (OoT, nacheinander flashen)
+
+Alle Dateien liegen fertig gebaut in `scripts/oot_hires/` (CRC- und
+xScale-geprüft, Stand 2026-09-16):
 
 | Stufe | Datei | Was sie zeigt |
 |---|---|---|
-| L1 | `cand_oot_baseline.z64` (= clean.z64, unmodifiziert) | Cart, Console, CIC/CRC, TV-Sync im Stock-Modus |
-| L2 | `cand_oot_240pdbg.z64` | Unsere Gameplay-/Chain-Patches auf **Standard-320-Signal**, passt in 4MB |
-| L3 | `cand_oot_640pdbg_zrel.z64` | 640p **mit Z-Buffer-Fix**, braucht 8MB |
-| L4 | `cand_oot_640pdbg.z64` (alter Stand) | 640p ohne Z-Fix — nur zum Vergleich, ist der bekannte Ausfall |
+| L1 | `cand_oot_baseline.z64` (= clean.z64, unmodifiziert) | Cart, Console, CIC/CRC, TV-Sync im Stock-Modus — in Runde 2 bereits ✓ |
+| L2 | `cand_oot_640p_zrel_r3.z64` | **Der eigentliche Test**: 640p mit xScale-Fix + Z-Buffer-Fix, normales Spiel (kein Auto-Chain), braucht 8MB |
+| L3 | `cand_oot_640pdbg_zrel.z64` | Derselbe Build mit Auto-Chain — nur falls L2 am File-Select hängt und du unbeaufsichtigt bis ins Gameplay willst |
 
 Interpretation:
 
-- **L1 bootet nicht** → Cart/Dateisystem/Console-Problem (nicht unsere
-  Patches): Datei sichtbar? Format .z64? Andere ROM (240pSuite) startet?
-- **L1 ja, L2 schwarz** → unsere Code-Patches crashen auf Hardware
-  (unerwartet — mupen läuft, Standard-Video). Danach: Auto-Chain-
-  Varianten ohne dbg bauen und erneut testen.
-- **L2 ja, L3 schwarz** → 640p-spezifisch: (a) hat die Console ein
-  **Expansion Pak**? Ohne 8MB ist L3 nicht bootfähig (by design).
-  (b) Mit 8MB: TV akzeptiert die 640-Active-Pixel-Zeile nicht
-  (Signal läuft, TV zeigt schwarz — auf Composite/RGB prüfen,
-  idealerweise CRT). Dann: 240p-Signal bleibt der Fallback, 640p nur
-  auf syncing-fähigen TVs.
-- **L3 ja, L4 schwarz** → der Z-Buffer-Overflow war der Boot-Killer;
-  Z-Fix verifiziert, Fall abgeschlossen.
+- **L2 läuft** → der xScale war der Killer. Das Rezept kann aus
+  `EXPERIMENTAL` raus, sobald auch die Z-Relocation über mehrere Szenen
+  sauber bleibt (Pausenmenü, Sonnenblendung, Raumwechsel).
+- **L2 schwarz, aber Logo + Sound** → Signal läuft, TV synct nicht:
+  640 aktive Pixel auf Composite/RGB prüfen, idealerweise CRT. Dann
+  bleibt das 240p-Signal der Fallback.
+- **L2 kein Logo** → Cart/Setup-Ebene, nicht der Patch.
+- **L2 bootet, aber Grafikmüll in einer bestimmten Szene** → die
+  Z-Buffer-Relocation, nicht die VI-Tabelle. Notieren: welche Szene,
+  ab wann.
+- **Expansion Pak** ist Pflicht. Ohne 8MB ist L2 by design nicht
+  bootfähig.
+
+Achtung bei den Altdateien im Ordner: `cand_oot_640p_zrel.z64` (ohne
+`_r3`) trägt trotz des Namens die Debug-Edits in `ovl_file_choose` —
+die liegen jenseits des ersten Megabytes und damit außerhalb des
+CIC-Prüffensters, weshalb die CRC-Paare identisch sind. Für Runde 3
+`_r3` nehmen.
 
 Beim Boot auf **Nintendo-Logo und Sound achten**: Logo kommt aus dem
 Cart-IPL3 und erscheint immer, wenn die Cart korrekt gelesen wird.

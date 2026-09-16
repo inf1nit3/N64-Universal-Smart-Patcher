@@ -84,9 +84,14 @@ some steps and not others leaves a corrupt ROM.
 
 | Type | Fields | Meaning |
 |---|---|---|
-| `xdelta` | `file` | Apply a delta from the bundled patches directory |
-| `bps` | `file` | Apply a BPS patch from the bundled patches directory (source and target CRC32 verified) |
+| `xdelta` | `file` | Apply a delta |
+| `bps` | `file` | Apply a BPS patch (source and target CRC32 verified) |
 | `poke` | `offset` (int), `bytes` (hex string) | Write bytes at a ROM offset |
+
+`file` is resolved against the recipe's **own directory** first, then
+against the bundled patches directory. A user recipe can therefore ship
+its patch next to its JSON in `~/.n64patcher/patches/` instead of asking
+the user to drop files into the installed package.
 
 ### `flavor`
 

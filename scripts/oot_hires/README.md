@@ -26,11 +26,20 @@ the SubDrag patches ship with).
   `640pdbg` (640p + title auto-advance for unattended emulator runs).
   `--zrel` (with `640p`/`640pdbg`) relocates gZBuffer — see below.
 - `sites.txt` — the scan output that pinned the anchors.
-- `recipe.oot-hires-exp.json` + `zelda-oot-usa-rev0-640x480i-exp.bps` —
+- `recipe.oot-hires-exp.json` + `zelda-oot-usa-rev0-640x240p-exp.bps` —
   the user-installable pair: JSON into `~/.n64patcher/patches/`, BPS
-  next to it. `--hires` then applies it for this dump.
+  next to it (an operation's file is resolved against the recipe's own
+  directory first). `--h2x` then applies it for this dump — the recipe
+  carries `flavor: 640x240`, so `--hires` alone does not pick it up.
+  The BPS is `640p --zrel`, rebuilt after the round-2 xScale fix.
 - `cand_oot_*.z64` — built candidates (gitignored, ROMs never enter the
   repository).
+
+**Trap when picking a candidate to ship from:** the debug edits live in
+`ovl_file_choose`, which sits past the first megabyte and therefore
+outside the CIC-6102 checksum window — a dbg build and a clean build
+carry the *same* CRC pair. Comparing CRCs does not tell them apart; a
+byte-compare of ROM 0x0B099E0..0x0B12800 against `clean.z64` does.
 
 ## The 640-wide progressive route (640p flavor) — status: WORKS
 
@@ -122,12 +131,27 @@ Fix: one word per table, commit e135705.
   ROM slot — only 10 bytes of headroom, so debug edits there must stay
   minimal (a .data table word compresses smaller than code edits)
 
-Known risk: gZBuffer stays 320x240, so a 640-wide scissor overflows
-0x25800 bytes into gGfxSPTaskOutputBuffer (survived in the emulator;
-hardware verdict pending). HUD/menus keep the 320-space layout where
-their positions are compile-time constants — the per-renderer 2D pass
-is future work (the title/File Select screens already derive their
+The z-buffer overflow is no longer on that risk list: `--zrel` moves
+gZBuffer out of the way (see above) and the shipped BPS is built with
+it. What remains untested on a console is the relocation itself — round
+2 predates it. HUD/menus keep the 320-space layout where their
+positions are compile-time constants — the per-renderer 2D pass is
+future work (the title/File Select screens already derive their
 positions from the runtime viewport and land correctly).
+
+### Round 3 candidate (2026-09-16, rebuilt, not yet run)
+
+`zelda-oot-usa-rev0-640x240p-exp.bps` was still the 2026-09-12 build —
+xScale `0x400`, no `--zrel` — i.e. exactly the ROM round 2 rejected.
+Rebuilt from `640p --zrel` against the current `makeoot.py`:
+
+    clean.z64      CRC1 EC7011B7  CRC2 7616D72B
+    640p --zrel    CRC1 EC701F37  CRC2 76D875D0   (recipe `outputs`)
+
+Verified before shipping: VI table reads `0x280`/`0x100`, all 10 zrel
+sites rewritten, the BPS round-trips byte-identically to the candidate,
+`ovl_file_choose` matches `clean.z64` (no debug edits), and a full
+`--h2x` pipeline run reproduces the candidate byte-for-byte.
 
 ## The 2D pass (HUD scaling) — slices 1+2 work
 
@@ -168,9 +192,11 @@ verdict: unusable) — kept for reference only.
 
 ## Status
 
-- **640p**: emulator-verified through logo -> title -> File Select
-  (frames 120/900/1000-2000), progressive, no interlace. NOT yet on
-  real hardware — SummerCart64 run pending before bundling.
+- **640p**: emulator-verified through logo -> title -> File Select ->
+  gameplay, progressive, no interlace. On hardware, round 2 rejected
+  the then-current build (xScale `0x400`); the cause is understood and
+  fixed, but the corrected build has **not been on a console yet** —
+  that is the open item, see "Round 3 candidate" above.
 - **HUD / dialogs**: compile-time 320 positions stay upper-left; the
   per-renderer 2D pass over the decomp map is future work. Title and
   File Select already land correctly (runtime-viewport positions).
@@ -184,8 +210,12 @@ here) and the n64patcher package on `sys.path` (for the CRC engine):
 
     python makeoot.py            # reads flavor.txt, writes candidate to stdout
 
-`flavor.txt` holds one of: `480i`, `240p`, `vitables`, `640p`,
-`640pdbg`. Emulator test loop:
+`flavor.txt` holds one of: `480i`, `240p`, `240pdbg`, `vitables`,
+`640p`, `640pdbg`; `--zrel` is an extra argument for the two `640p`
+flavors. The shipped BPS is built with `640p` + `--zrel`. Note that
+`flavor.txt` is read from the **current** directory, so run the script
+from this folder — starting it from the repository root drops a stray
+`flavor.txt` there. Emulator test loop:
 
     python makeoot.py > cand.z64
     mupen64plus --testshots 120,900 --sshotdir /tmp/shots cand.z64
