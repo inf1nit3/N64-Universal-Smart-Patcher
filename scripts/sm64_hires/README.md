@@ -1,4 +1,4 @@
-# SM64 640x480 2D fix — menus shipped, HUD open
+# SM64 640x480 2D fix — menus shipped, HUD solved in the emulator
 
 Research tooling for the task described in
 [`docs/sm64_hires_patch_analysis.md`](../../docs/sm64_hires_patch_analysis.md):
@@ -12,13 +12,15 @@ run logs `Game fix: applied 635A2BFF_sm64_menu_2x.ips`. It is rebuilt
 from `635A2BFF_sm64_hud_textrect_2x.bps.wip` by `make_ips.py`, which
 refuses to write anything if the .wip and the site table disagree.
 
-**Still open:** the three HUD sites. With all seven enabled the in-game
-HUD loses its numbers, so the shipped fix deliberately excludes them.
+**HUD:** the cause is found and `make_hud.py` fixes it — full-size HUD,
+verified in mupen64plus through the attract demos. Hardware run pending
+before it replaces the shipped file. See "The HUD" below.
 
 **Note for this machine:** a user-level fix in
 `~/.n64patcher/game_fixes/` overrides the shipped one. A test build left
-there during the hardware runs (all seven sites) shadows the menu fix -
-remove or rename it for normal use.
+there during the August hardware runs (`635A2BFF_sm64_hud_test.bps`, all
+seven sites) still shadows the menu fix — every `--hires` run of SM64 on
+this machine applies the broken HUD edit until it is removed or replaced.
 
 ## The approach
 
@@ -31,107 +33,114 @@ RDP's 10.2 fixed-point form. The code already does `x << 2`; making it
 cost. Halving the texture step (dsdx, dtdy) alongside makes the glyph
 stretch over twice the pixels instead of repeating.
 
-That is six word edits per texture-rectangle emitter, and the whole ROM
-contains seven of them. 42 words, not hundreds of constants.
+That works for the menus. It does not work for the HUD, for a reason the
+texture step itself gives away — see below.
 
 ## State
 
-Verified on real hardware (SummerCart64, 2026-08-11):
+| Site | ROM offset | Draws | dsdx | Cycle | Status |
+|---|---|---|---|---|---|
+| 0 | `0x00091BB8` | HUD font: coins, stars, lives, timer | 4.0 | COPY | `make_hud.py`, emulator ✓ |
+| 1 | `0x00092D80` | menu glyph | 1.0 | 1-cycle | **hardware ✓, shipped** |
+| 2 | `0x00093020` | menu glyph, 2nd form | 1.0 | 1-cycle | **hardware ✓, shipped** |
+| 3 | `0x000931A4` | menu glyph, 3rd form | 1.0 | 1-cycle | **hardware ✓, shipped** |
+| 4 | `0x00093520` | menu glyph, 4th form | 1.0 | 1-cycle | **hardware ✓, shipped** |
+| 5 | `0x0009DDB4` | HUD LUT 16x16: digits, icons | 4.0 | COPY | `make_hud.py`, emulator ✓ |
+| 6 | `0x0009E010` | HUD LUT 8x8: small glyphs | 4.0 | COPY | `make_hud.py`, emulator ✓ |
 
-| Site | ROM offset | Draws | Status |
-|---|---|---|---|
-| 0 | `0x00091BB8` | HUD font: coins, stars, lives, timer | suspect |
-| 1 | `0x00092D80` | menu glyph | **correct** |
-| 2 | `0x00093020` | menu glyph, 2nd form | **correct** |
-| 3 | `0x000931A4` | menu glyph, 3rd form | **correct** |
-| 4 | `0x00093520` | menu glyph, 4th form | **correct** |
-| 5 | `0x0009DDB4` | HUD LUT char: large digits, icons | suspect |
-| 6 | `0x0009E010` | HUD LUT char, 2nd form | suspect |
+Sites 1–4 were confirmed on a SummerCart64 on 2026-08-11 by photographing
+the file-select screen and the Peach letter.
 
-Sites 1–4 were confirmed by photographing the file-select screen and the
-Peach letter: labels, titles and dialog text all land at the right size and
-position, where before the fix they sat half-size in the upper left. Those
-four are what ships.
+## The HUD
 
-With all seven enabled the in-game HUD loses its **numbers** — the icons
-render, the digits do not. One of sites 0, 5, 6 is responsible. The bisect
-runs through the normal pipeline - each variant is an installable game fix:
+### Why it broke: COPY mode
+
+With all seven sites through `makefix.py` the HUD lost its numbers. The
+column that explains it is dsdx. The four menu emitters step the texture
+by 1.0 per pixel; the three HUD emitters step it by **4.0**. That is the
+signature of the RDP's COPY cycle type, and segment 2 confirms it: the
+list the HUD calls first (`dl_hud_img_begin` in the decomp, segment
+offset `0x11AC0` in the US ROM) sets `G_CYC_COPY`.
+
+Copy mode moves four texels per clock and **cannot scale**. dsdx must be
+exactly 4.0, and the rectangle's end coordinate is *inclusive* — which is
+why the code writes `x + 15` for a 16-pixel glyph. `makefix.py` halves the
+step to 2.0 and doubles the shift; in copy mode that is simply invalid.
+
+This corrects the entry made here on 2026-09-16, which blamed the `+15`
+as an off-by-one. It is not one: `+15` is right for an inclusive end.
+H2X changes it to `+16` because H2X also changes the cycle type — in the
+1-cycle pipeline the end is exclusive. H2X's `bin/segment2.c` diff shows
+the switch: `G_CYC_COPY` → `G_CYC_1CYCLE`, plus a combiner
+(`G_CC_DECALRGBA`), point filtering and a new render mode
+(`G_RM_TEX_EDGE`), with the matching restores in `dl_hud_img_end`.
+
+### Two fixes, both in `make_hud.py`
+
+**`--mode full`** — H2X's route, adapted to 640x480. The HUD moves to the
+1-cycle pipeline, where the RDP can scale: start `x << 3`, end
+`(2x + 2*size) << 2` (exclusive), dsdx and dtdy 0.5. 24 code words across
+the three emitters, plus both display lists rewritten.
+
+The lists are the hard part. They sit in segment 2, which is
+MIO0-compressed, and H2X *adds* two commands to each — impossible in
+place, because every later segment-2 address would move. The fix merges
+instead: cycle type (bits 20-21), texture perspective (19) and texture
+filter (12-13) all live in `SETOTHERMODE_H`, so one command with shift
+12, length 10 sets all three. That frees exactly the two slots the
+combiner needs; the LUT/LOD/detail fields between them are set to their
+defaults, which is what the HUD's RGBA16 textures use. The combiner and
+render-mode words are copied out of H2X's compiled ROM rather than
+derived. Recompressed with crunch64, segment 2 comes out at 48 392 bytes
+against a 48 400-byte slot.
+
+**`--mode copy`** — the fallback. Stays in copy mode, doubles only the
+position: glyphs land in the right place at half size, with gaps between
+them ("1 5" for 15). 18 code words, no display-list changes, nothing that
+could break the way the first attempt did.
+
+Both rewrite each end coordinate's `addiu t, x, size-1 ; sll d, t, 2`
+pair into `sll d, x, 3 ; addiu d, d, k` in the same two slots. The
+original temporary `t` is no longer written, so the builder checks
+mechanically that nothing reads it before it is overwritten.
+
+### Emulator result (mupen64plus 2.6.0, attract demos, frames 900–4500)
+
+| State | HUD |
+|---|---|
+| shipped (menus only) | half size, all of it crowded into the left half |
+| `--mode copy` | right positions across the width, half size, letter-spaced |
+| `--mode full` | right positions, **full size, compact** — looks like the original at 2x |
+
+In `--mode full` all three emitter types render correctly: the counters
+(16x16), the camera-mode arrow (8x8) and the "PRESS START" line (text).
+Both IPS files reproduce the test ROMs byte-for-byte through the real
+pipeline (`clean.z64 --hires` with the IPS in the user fix folder).
+
+### Hardware run
 
 ```bash
-python scripts/sm64_hires/make_ips.py --bisect
-# writes scripts/sm64_hires/bisect/ :
-#   635A2BFF_bisect_A_menus.ips          sites 1-4   (the shipped set)
-#   635A2BFF_bisect_B_plus_hud_font.ips  sites 0-4   (+ HUD font)
-#   635A2BFF_bisect_C_plus_hud_lut.ips   sites 1-6   (+ HUD LUT)
+python scripts/sm64_hires/make_hud.py --mode full --check work/sm64/hires.z64 \
+    --ips scripts/sm64_hires/bisect/635A2BFF_hud_full.ips
+python scripts/sm64_hires/make_hud.py --mode copy --check work/sm64/hires.z64 \
+    --ips scripts/sm64_hires/bisect/635A2BFF_hud_copy.ips
 
-# install one variant at a time, replacing the shipped fix:
-cp scripts/sm64_hires/bisect/635A2BFF_bisect_B_plus_hud_font.ips \
-   ~/.n64patcher/game_fixes/
-rm ~/.n64patcher/game_fixes/635A2BFF_sm64_hud_test.bps   # the old 7-site shadow
-
-# then patch and flash as usual; the log line names the fix that ran:
-n64patcher clean.z64 --hires -o outdir
+# one at a time, replacing whatever is in the user folder:
+rm ~/.n64patcher/game_fixes/635A2BFF_*
+cp scripts/sm64_hires/bisect/635A2BFF_hud_full.ips ~/.n64patcher/game_fixes/
+n64patcher clean.z64 --hires -o outdir      # log: Game fix: applied 635A2BFF_hud_full.ips
 ```
 
-Read A first (numbers still gone = baseline matches the shipped state),
-then B and C: whichever addition brings the numbers back clears its
-sites; whichever does not leaves the suspect set halved. Raw image builds
-via `makefix.py t3a.z64 1,2,3,4` remain available for direct flashing.
+Each IPS carries the shipped menu fix too, so a run exercises menus and
+HUD together. Look at: the counters during a level (lives, coins, stars),
+the camera icon bottom-right, the timer in a race, the power meter after
+taking damage, a dialog box, the pause screen. If `full` is clean, it
+replaces `635A2BFF_sm64_menu_2x.ips`. If `full` shows anything wrong,
+`copy` is the safe fallback to ship instead.
 
-### The geometry is wrong, not (only) the site selection
-
-dataDave's SM64 H2X went the same way from source instead of from the
-binary, and its diff names the defect. Verified against
-`DavidFallows/sm64`, `master`...`h2x`, the three emitters it touches are
-exactly our three suspects — `print.c: render_textrect` (site 0) and
-`hud.c: render_hud_tex_lut` / `render_hud_small_tex_lut` (sites 5, 6):
-
-```c
-// hud.c  render_hud_tex_lut   (16x16 glyph)
--    ... x << 2, y << 2, (x + 15) << 2, (y + 15) << 2, ..., 4 << 10, 1 << 10);
-+    ... (x*2) << 2, y << 2, ((x + 16)*2) << 2, (y + 16) << 2, ..., 1 << 9, 1 << 10);
-
-// hud.c  render_hud_small_tex_lut   (8x8 glyph)
--    ... x << 2, y << 2, (x + 7) << 2, (y + 7) << 2, ..., 4 << 10, 1 << 10);
-+    ... (x*2) << 2, y << 2, ((x + 8)*2) << 2, (y + 8) << 2, ..., 1 << 9, 1 << 10);
-```
-
-Two things follow.
-
-**1. The end coordinate is off by one tile-edge.** The original writes
-`+15` for a 16-pixel tile and `+7` for an 8-pixel one; H2X writes `+16`
-and `+8`. Our transform never touches that operand — it only rewrites
-the shift, so `(x + 15) << 3` yields `2x + 30` where `2x + 32` is
-wanted. Every glyph comes out two pixels narrow. The menus tolerate it
-because their glyphs stand apart; the HUD draws its digits edge to edge,
-so the error accumulates across the string and the sampling runs off the
-tile edge. That matches the symptom exactly: icons survive, numbers do
-not. H2X's release note about fixing "an original HUD sprite AA/flicker
-issue" is this same `size-1` → `size` correction.
-
-**2. The texture step is not a simple halving.** H2X takes dsdx from
-`4 << 10` to `1 << 9` — a factor of 8 — while `makefix.py`'s
-`halve_imm()` produces `2 << 10`. The `4 << 10` is bound up with the
-tile setup in `dl_hud_img_load_tex_block` and the small variant's
-`gDPSetTile`, so the right value cannot be derived from the rectangle
-call alone; it has to be measured.
-
-**Do not copy H2X's constants.** H2X renders 640x240 — X doubled, Y
-left alone — while our fix rides on SubDrag's 640x480 delta, where both
-axes double. Only the `+15` → `+16` correction is geometry-independent
-and transfers unchanged.
-
-The older hypothesis is not dead, just demoted: the coordinate field is
-masked with `andi rX, rd, 0xFFF`, so `x << 3` overflows once `x` passes
-511. That would explain a HUD element positioned from a screen-width
-constant the delta already doubled, but it does not explain icons
-rendering while digits vanish, which the `+15` does.
-
-Next: rebuild sites 0, 5 and 6 with the end-coordinate operand raised to
-the tile size before the shift is doubled, then run the A/B/C bisect
-above. The four shipped menu sites depend on the same transform, so
-build the HUD correction as its own variant rather than changing
-`makefix.py`'s shared path.
+Unlike the menu fix, these IPS files cannot be rebuilt without the ROM:
+the liveness scan and the segment-2 recompression both read
+`hires.z64`.
 
 ## Rebuilding the working files
 
@@ -177,18 +186,26 @@ working directory or copy the ROM in.
   variants straight from the verified .wip, no ROM required: the project
   BPS encoder emits every changed byte as a literal, and the IPS carries
   exactly those bytes. A structural check aborts the build unless the
-  .wip is precisely makefix's 42-word edit plus the CRC restamp.
+  .wip is precisely makefix's 42-word edit plus the CRC restamp. Its
+  `--bisect` variants belong to the August site bisect and are obsolete:
+  all three HUD sites fail for the same reason.
+- `make_hud.py` — the HUD fix, `--mode full` or `--mode copy` (see "The
+  HUD"). Checks every expected word, runs the liveness scan, rewrites
+  and recompresses segment 2 in full mode, and emits a test ROM or an
+  IPS that includes the shipped menu fix.
 
-## Shipping it, once it works
+## Shipping the HUD, once hardware confirms it
 
-Generate the patch **from the hi-res image to the fixed image**, not from
-the clean ROM — Stage 1b applies on top of an already-patched file:
+Replace the shipped file with the confirmed IPS, keeping exactly one
+`635A2BFF_*` file in `game_fixes/` — the lookup is keyed on CRC1:
 
 ```bash
-n64patcher --create-patch hires.z64 hires_fixed.z64 \
-  src/n64patcher/game_fixes/635A2BFF_sm64_hud_2x.bps
+git rm src/n64patcher/game_fixes/635A2BFF_sm64_menu_2x.ips
+cp scripts/sm64_hires/bisect/635A2BFF_hud_full.ips \
+   src/n64patcher/game_fixes/635A2BFF_sm64_2d_2x.ips
 ```
 
-Then a full run should log `Game fix: applied …`, and
-`src/n64patcher/game_fixes/README.md` needs its "Known fixes: none yet"
-replaced.
+Then update `src/n64patcher/game_fixes/README.md`, `tests/test_sm64_menu_fix.py`
+(whose byte-range checks assume menus only) and `make_hud.py`'s `MENU_IPS`
+path, and note in the changelog that the shipped file can no longer be
+rebuilt without a ROM.

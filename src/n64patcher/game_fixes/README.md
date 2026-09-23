@@ -58,7 +58,7 @@ exists, and only after the `.xdelta` stage actually applied.
   becomes `x << 3` and each texture step is halved, 24 changed bytes in
   total. Confirmed on a SummerCart64 (file-select and the Peach letter
   land at full size and position). The three HUD emitters are NOT
-  included: with them enabled the HUD loses its numbers, and the bisect
-  that decides which site is responsible is still open — see
-  `scripts/sm64_hires/README.md`. Rebuilt from the verified working
-  patch by `scripts/sm64_hires/make_ips.py`.
+  included: they draw in the RDP's COPY mode, where the menu transform
+  is invalid. `scripts/sm64_hires/make_hud.py` builds the HUD fix (1-cycle
+  pipeline, full size) — emulator-verified, hardware run pending. See
+  `scripts/sm64_hires/README.md`.

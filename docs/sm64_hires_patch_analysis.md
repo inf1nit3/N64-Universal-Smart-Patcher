@@ -87,11 +87,12 @@ rectangle emitters, found by signature rather than by search: a `sll rd, rt,
 
 Sites 1–4 (the menu glyph renderers) are confirmed correct on hardware and
 **ship** as `game_fixes/635A2BFF_sm64_menu_2x.ips`, applied automatically
-by Stage 1b after the SubDrag delta. The three HUD sites are not yet: with
-all seven enabled the in-game HUD renders its icons but loses its numbers.
-Working notes, the bisect variants and the leading hypothesis — 12-bit
-field overflow on coordinates derived from an already-doubled screen
-width — are in
+by Stage 1b after the SubDrag delta. The three HUD sites need a different
+fix: they draw in the RDP's COPY cycle type (texture step 4.0), which
+cannot scale at all, so the menu transform broke them. Switching the HUD
+to the 1-cycle pipeline — as dataDave's SM64 H2X does from source —
+renders it at full size in the emulator; it waits on a hardware run.
+Details, both variants and the test protocol are in
 [`scripts/sm64_hires/README.md`](../scripts/sm64_hires/README.md).
 
 The delivery mechanism is Stage 1b in `n64_core.py`
