@@ -138,18 +138,11 @@ class TestFixRomCrcTrustsTheFileNotTheTool(HeaderTestBase):
             f"reported {res['message']!r} but checksums are still wrong",
         )
 
-    def test_falls_back_when_tool_exits_zero_without_doing_anything(self):
+    def test_native_engine_runs_before_the_tool(self):
         p = self._write("rom.z64", make_cic6102_rom())
-        with open(p, "rb") as f:
-            original = f.read()
-
-        class FakeResult:
-            returncode = 0
-            stdout = "Unable to calculate!"
-            stderr = ""
 
         def fake_run(*args, **kwargs):
-            return FakeResult()
+            raise AssertionError("rn64crc called although the native engine succeeded")
 
         with (
             mock.patch.object(core, "_is_runnable", lambda _p: True),
@@ -160,8 +153,35 @@ class TestFixRomCrcTrustsTheFileNotTheTool(HeaderTestBase):
         self.assertEqual(res["status"], "fixed", res)
         self.assertIn("natively", res["message"])
         self.assertTrue(core.crc_header_is_valid(p))
+
+    def test_tool_no_op_on_unknown_chip_is_an_error(self):
+        """The engine cannot identify the chip, so rn64crc is asked - and
+        exits 0 without changing anything, as the real tool does."""
+        p = self._write("nocic.z64", make_synthetic_rom(vi_tables=0))
         with open(p, "rb") as f:
-            self.assertNotEqual(f.read(), original)
+            original = f.read()
+
+        class FakeResult:
+            returncode = 0
+            stdout = "Unable to calculate!"
+            stderr = ""
+
+        calls = []
+
+        def fake_run(*args, **kwargs):
+            calls.append(args)
+            return FakeResult()
+
+        with (
+            mock.patch.object(core, "_is_runnable", lambda _p: True),
+            mock.patch("n64patcher.header_utils.subprocess.run", fake_run),
+        ):
+            res = fix_rom_crc(p)
+
+        self.assertEqual(len(calls), 1, "rn64crc was not asked as the fallback")
+        self.assertEqual(res["status"], "error", res)
+        with open(p, "rb") as f:
+            self.assertEqual(f.read(), original)
 
     def test_byte_swapped_rom_is_repaired_in_place(self):
         swapped = bytearray(make_cic6102_rom())

@@ -85,14 +85,19 @@ def detect_and_strip_scene_header(input_path: str, output_path: str) -> dict:
 def fix_rom_crc(rom_path: str, rn64crc_path: str | None = None) -> dict:
     """
     Repair the CRC1/CRC2 checksums in the ROM header, which EverDrive /
-    ED64 flashcarts require. Uses the rn64crc tool when it is runnable
-    and actually produced valid checksums, otherwise the built-in
-    pure-Python engine (which works on every platform).
+    ED64 flashcarts require. The built-in pure-Python engine runs first on
+    every platform; the rn64crc tool is only asked when that engine cannot
+    identify the boot chip, and only counts as a repair when the file
+    afterwards actually carries valid checksums.
     Returns: {"status": "fixed"|"error", "message": str}
     """
+    ok, msg = core.fix_rom_crc_native(rom_path)
+    if ok:
+        return {"status": "fixed", "message": msg}
+
     tool = rn64crc_path or core.RN64CRC_PATH
     # rn64crc expects a native big-endian image; byte-swapped .v64/.n64
-    # files go straight to the native engine, which preserves their order.
+    # files get no second opinion.
     if core._is_runnable(tool) and detect_format_magic(rom_path) == "z64":
         try:
             CREATE_NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
@@ -112,13 +117,9 @@ def fix_rom_crc(rom_path: str, rn64crc_path: str | None = None) -> dict:
             # function exists to serve.
             if result.returncode == 0 and core.crc_header_is_valid(rom_path):
                 return {"status": "fixed", "message": "CRC1/CRC2 repaired (rn64crc)"}
-            # Tool failed, or left invalid checksums -> use the native engine
         except (subprocess.TimeoutExpired, OSError):
-            pass  # fall through to the native engine
+            pass
 
-    ok, msg = core.fix_rom_crc_native(rom_path)
-    if ok:
-        return {"status": "fixed", "message": msg}
     return {"status": "error", "message": f"CRC fix failed: {msg}"}
 
 

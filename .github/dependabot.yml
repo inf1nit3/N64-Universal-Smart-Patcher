@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # actions/checkout, setup-python, upload-artifact: one grouped PR a month.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # The pinned linters in requirements-lint.txt.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      lint:
+        patterns: ["ruff", "mypy"]

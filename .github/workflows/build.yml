@@ -28,8 +28,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -51,7 +51,15 @@ jobs:
 
       - name: Install build dependencies
         # Pillow is what lets PyInstaller turn app_icon.png into a macOS .icns.
-        run: pip install -e ".[all]" pyinstaller pillow
+        run: pip install -e ".[all]" pyinstaller pillow pytest
+
+      # A tag on a commit whose tests fail must not turn into binaries.
+      # Runs the whole suite, GUI tests included, in the environment the
+      # binaries are frozen from.
+      - name: Test suite
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest
 
       - name: Build CLI
         run: python -m PyInstaller --noconfirm N64_Smart_Patcher_CLI.spec
@@ -148,8 +156,8 @@ jobs:
   wheel:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip

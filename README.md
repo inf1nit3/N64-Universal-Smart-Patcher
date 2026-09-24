@@ -4,7 +4,7 @@
 
 A modern, high-performance GUI + CLI ROM patcher and inspection utility for Nintendo 64 games. Features the **Smart VI Mode Table Engine v2.0** for structurally-verified 640x480 high-resolution patching, anti-aliasing (No-AA) removal, dither/divot/gamma filter toggles, SubDrag `.xdelta` integration, preset profiles, archive extraction, and Flashcart CRC/Header tools.
 
-**Cross-platform**: the bundled Windows helpers (`u64aap.exe`, `rn64crc.exe`, `xdelta3.exe`) are used when runnable, with graceful fallbacks everywhere else — a **built-in pure-Python CRC1/CRC2 engine**, a **built-in pure-Python VCDIFF/xdelta decoder** that applies the verified hi-res deltas without any helper, and the dynamic VI instruction patcher for No-AA.
+**Cross-platform**: every platform takes the same route — a **built-in pure-Python CRC1/CRC2 engine** and a **built-in pure-Python VCDIFF/xdelta decoder** that applies the verified hi-res deltas without any helper. The bundled Windows helpers are fallbacks: `rn64crc.exe` and `xdelta3.exe` only for what the built-in engines cannot handle, `u64aap.exe` for No-AA where it runs (the dynamic VI instruction patcher elsewhere).
 
 Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M64), flashcarts (SummerCart 64, EverDrive 64), and N64 emulators (Simple64, Ares, RMG).
 
@@ -32,7 +32,7 @@ Designed for use with real N64 hardware, FPGA consoles (Analogue 3D, ModRetro M6
 
 - **💾 Flashcart & EverDrive Compatibility Tools**:
   - **Scene-Header Stripper**: Automatically detects and strips obsolete 512/1024-byte scene release headers (`iN0000`, `PARADOX`, etc.) so `.xdelta` patches and cover arts match cleanly.
-  - **CRC1 / CRC2 Checksum Repairer**: Recalculates and updates N64 boot checksums to prevent blackscreen boots on real hardware — via `rn64crc.exe` when it is runnable *and* its output actually verifies, otherwise via the **built-in pure-Python CRC engine** (macOS/Linux included).
+  - **CRC1 / CRC2 Checksum Repairer**: Recalculates and updates N64 boot checksums to prevent blackscreen boots on real hardware — via the **built-in pure-Python CRC engine** on every platform; `rn64crc.exe` is only asked for a boot chip the engine does not know, and only counts when its output actually verifies.
 
 - **📦 Archive & Community Patch Support**:
   - **Direct Archive Support**: Processes `.zip` and `.7z` archives directly.
@@ -178,8 +178,8 @@ tracks run state: grey idle, amber working, green clean, red errors.
 **macOS**
 
 ```bash
-brew install xdelta   # optional: the reference xdelta3, used in preference
-                      # to the built-in VCDIFF engine when present
+brew install xdelta   # optional: the reference xdelta3, a fallback for a
+                      # delta the built-in VCDIFF engine cannot decode
 ```
 
 Then either download `N64-Smart-Patcher-macos-arm64.app.zip` from Releases, or
@@ -202,8 +202,8 @@ pure Python and needs no platform binary.
 **Linux**
 
 ```bash
-sudo apt install xdelta3   # optional, as on macOS - the built-in VCDIFF
-                           # engine applies the same deltas without it
+sudo apt install xdelta3   # optional fallback, as on macOS - the built-in
+                           # VCDIFF engine applies every bundled delta
 ```
 
 Then either download `N64-Smart-Patcher-linux-x86_64` from Releases and run
@@ -228,33 +228,31 @@ n64patcher --help         # command line
 ## 🖥️ Platform support
 
 The patching engine is pure standard library and behaves identically
-everywhere. What differs is the three bundled helper binaries, which are
-Windows executables: on macOS and Linux the tool detects that they cannot run
-and takes another route.
+everywhere. Checksums and verified deltas go through the built-in engines on
+every platform; the bundled Windows helpers are fallbacks, and only `u64aap`
+still changes a result where it runs.
 
 | Stage | Windows | macOS / Linux |
 |---|---|---|
 | ROM inspection, CIC detection, boot CRC | built-in Python engine | **identical** |
-| CRC repair | `rn64crc.exe`, falling back to the built-in engine | built-in engine only — same results |
+| CRC repair | built-in engine (`rn64crc.exe` only for a chip it does not know) | built-in engine — **identical** |
 | No-AA / dither / divot / gamma | `u64aap.exe`, falling back to the dynamic patcher | dynamic patcher |
-| **Verified 640x480 patches** | bundled `xdelta3.exe` | **built-in VCDIFF engine** — same result |
+| **Verified 640x480 patches** | built-in VCDIFF engine (`xdelta3.exe` as fallback) | **identical** |
 | IPS / BPS apply and create | built-in | **identical** |
 | DAT lookup, manifests, batch, archives | built-in | **identical** |
 
 No row needs anything installed. The verified 640x480 patches are xdelta
-deltas, and they are applied by a built-in pure-Python VCDIFF decoder
-(`xdelta_patch.py`, RFC 3284) wherever no `xdelta3` binary can run. The
-external tool is still preferred when present, being the reference
-implementation:
-
-```
-xdelta3: verified 640x480 patches use the built-in VCDIFF engine instead.
-```
+deltas, applied by a built-in pure-Python VCDIFF decoder (`xdelta_patch.py`,
+RFC 3284). Checked against the reference `xdelta3` on every bundled delta
+whose dump was available (9 of 11): byte-identical output. The built-in CRC
+engine reproduces the header checksums of all 78 retail dumps it was run on.
+That is why both go first everywhere, instead of Windows alone taking a
+different path through the bundled executables.
 
 The generic VI widening remains gated regardless — it renders wrong on real
 hardware and is never a substitute for a verified delta.
 
-CI runs the unit suite on Ubuntu, macOS and Windows across Python 3.11/3.12/3.13,
+CI runs the unit suite on Ubuntu, macOS and Windows across Python 3.11–3.14,
 and additionally runs `scripts/smoke_test.py` — which drives the *installed*
 command line tool as a subprocess against real files — on all three, plus once
 more under the C/POSIX locale.
@@ -288,7 +286,8 @@ python -m pytest
 # and path-resolution bugs that every unit test passes through.
 python scripts/smoke_test.py
 
-# Lint and type-check
+# Lint and type-check (the versions CI pins)
+pip install -r requirements-lint.txt
 python -m ruff check .
 python -m mypy
 
@@ -491,7 +490,7 @@ Installable package under `src/n64patcher/` (src layout, so tests run against
 the installed package rather than the working directory):
 
 - `n64_core.py` — Core patch engine, struct VI scanner, SubDrag xdelta, inspection, **pure-Python N64 boot CRC engine** (CIC detection + CRC1/CRC2), post-patch verification.
-- `header_utils.py` — Scene header detector/stripper & CRC checksum repairer (`rn64crc.exe` when runnable *and* verified, native engine otherwise).
+- `header_utils.py` — Scene header detector/stripper & CRC checksum repairer (native engine first, `rn64crc.exe` only for an unknown chip and only when its output verifies).
 - `presets.py` — Preset profile definitions and warning validators.
 - `zip_handler.py` — Hardened archive handling for `.zip` and `.7z` (zip-slip protected, streaming size cap, compression-ratio limit, symlink members rejected).
 - `ips_bps_patcher.py` — Community `.ips` & `.bps` delta patcher (spec-correct BPS with CRC32 verification; IPS sources are format-checked and byte-order corrected).

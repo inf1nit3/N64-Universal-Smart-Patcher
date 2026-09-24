@@ -659,17 +659,12 @@ def main(argv: list[str] | None = None) -> int:
         args.output_dir = os.path.abspath(args.output_dir)
         os.makedirs(args.output_dir, exist_ok=True)
 
-    # Check tool availability
+    # Check tool availability. Only u64aap changes a result: CRC fixing and
+    # verified deltas run on the built-in engines everywhere, with rn64crc
+    # and xdelta3 as fallbacks no bundled patch needs.
     tools = core.check_tools()
-    missing = [name for name in ("u64aap", "rn64crc", "xdelta3") if not tools.get(name)]
-    if missing:
-        log(f"⚠️  WARNING: tools not runnable: {', '.join(missing)}")
-        if "u64aap" in missing:
-            log("   u64aap: No-AA falls back to the built-in dynamic patcher.")
-        if "rn64crc" in missing:
-            log("   rn64crc: CRC fixing uses the built-in pure-Python engine.")
-        if "xdelta3" in missing:
-            log("   xdelta3: verified 640x480 patches use the built-in VCDIFF engine instead.")
+    if not tools.get("u64aap"):
+        log("⚠️  WARNING: u64aap not runnable - No-AA falls back to the built-in dynamic patcher.")
         log("")
 
     # One index per run: re-parsing a few thousand DAT entries for every

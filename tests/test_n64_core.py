@@ -1174,8 +1174,9 @@ class TestVerifyOutput(unittest.TestCase):
 class TestCrcHeaderValidity(unittest.TestCase):
     """Regression: rn64crc.exe exits 0 even when it cannot identify the
     boot chip and leaves the header untouched, so patch_rom marked the CRC
-    step done and never ran the native fallback - shipping a ROM that
-    black-screens. The file, not the exit code, is the authority."""
+    step done - shipping a ROM that black-screens. The file, not the exit
+    code, is the authority. Since 2026-09-24 the native engine runs first
+    and rn64crc is only the fallback for chips the engine does not know."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -1203,44 +1204,119 @@ class TestCrcHeaderValidity(unittest.TestCase):
         p = self._write("nocic.z64", make_synthetic_rom(vi_tables=0))
         self.assertFalse(core.crc_header_is_valid(p))
 
-    def test_pipeline_falls_back_when_external_tool_lies(self):
-        """Simulate the real rn64crc behaviour: exit 0, change nothing."""
+    FAKE_TOOLS = {  # noqa: RUF012 - read-only fixture
+        "rn64crc": True,
+        "u64aap": False,
+        "xdelta3": False,
+        "hires_patches": False,
+        "crc_native": True,
+    }
+
+    def _patch(self, rom, run_tool):
+        src = self._write("game.z64", bytes(rom))
+        opts = core.PatchOptions(
+            no_aa=False, no_dither=False, hires=True, force_hires=True
+        )  # synthetic fixture: no verified dump
+        logs = []
+        with (
+            mock.patch.object(core, "check_tools", lambda: self.FAKE_TOOLS),
+            mock.patch.object(core, "_run_tool", run_tool),
+        ):
+            res = core.patch_rom(src, opts, log=logs.append)
+        return res, logs
+
+    def test_pipeline_runs_the_native_engine_first(self):
+        """The built-in engine goes first on every platform; a runnable
+        rn64crc must not even be asked when the engine knows the chip."""
         rom = bytearray(make_cic6102_rom(size=0x4000))
         for i in range(2):
             off = 0x2000 + i * 0x40
             rom[off : off + 4] = core.WIDTH_320_DATA
             rom[off + 4 : off + 8] = core.NTSC_BURST
-        src = self._write("game.z64", bytes(rom))
+
+        def run_tool(*a, **k):
+            raise AssertionError("rn64crc called although the native engine succeeded")
+
+        res, logs = self._patch(rom, run_tool)
+        self.assertEqual(res["status"], "patched", res)
+        self.assertTrue(core.crc_header_is_valid(res["output"]))
+        self.assertTrue(any("recalculated natively" in m for m in logs), logs)
+        self.assertTrue(core.verify_output(res["output"], res["applied"])["ok"])
+
+    def test_pipeline_does_not_trust_a_tool_no_op(self):
+        """Unknown boot chip: the engine gives up, rn64crc is asked and does
+        what the real tool does there - exit 0, change nothing. That must
+        be reported as a failed CRC update, not as a repair."""
 
         class FakeResult:
             returncode = 0
             stdout = "Unable to calculate!"
             stderr = ""
 
-        opts = core.PatchOptions(
-            no_aa=False, no_dither=False, hires=True, force_hires=True
-        )  # synthetic fixture: no verified dump
-        logs = []
-        fake_tools = {
-            "rn64crc": True,
-            "u64aap": False,
-            "xdelta3": False,
-            "hires_patches": False,
-            "crc_native": True,
-        }
-        with (
-            mock.patch.object(core, "check_tools", lambda: fake_tools),
-            mock.patch.object(core, "_run_tool", lambda *a, **k: FakeResult()),
-        ):
-            res = core.patch_rom(src, opts, log=logs.append)
-
+        res, logs = self._patch(make_synthetic_rom(vi_tables=2), lambda *a, **k: FakeResult())
         self.assertEqual(res["status"], "patched", res)
-        self.assertTrue(
-            core.crc_header_is_valid(res["output"]),
-            "native engine did not run after the tool no-op",
-        )
-        self.assertTrue(any("falling back to native" in m for m in logs), logs)
-        self.assertTrue(core.verify_output(res["output"], res["applied"])["ok"])
+        self.assertFalse(core.crc_header_is_valid(res["output"]))
+        joined = " ".join(logs)
+        self.assertIn("rn64crc exited 0 but left invalid checksums", joined)
+        self.assertIn("CRC Update FAILED", joined)
+
+
+class TestXdeltaEngineOrder(unittest.TestCase):
+    """The built-in VCDIFF engine goes first on every platform (it matched
+    xdelta3 byte-for-byte on every bundled delta with an available dump);
+    the external xdelta3 is only the fallback for a delta it cannot decode."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.src = os.path.join(self.tmp.name, "clean.z64")
+        self.out = os.path.join(self.tmp.name, "out.z64")
+        with open(self.src, "wb") as f:
+            f.write(b"\x80\x37\x12\x40" + bytes(60))
+
+    def _run(self, builtin_status, subprocess_run, runnable=True):
+        def fake_builtin(src, patch, out):
+            return {"status": builtin_status, "message": "unsupported secondary compressor"}
+
+        with (
+            mock.patch.object(core.xdelta_patch, "apply_xdelta_patch", fake_builtin),
+            mock.patch.object(core, "_is_runnable", lambda _p: runnable),
+            mock.patch.object(core.subprocess, "run", subprocess_run),
+        ):
+            return core.try_subdrag_xdelta("x.xdelta", self.src, self.out)
+
+    def test_builtin_first_even_with_xdelta3_present(self):
+        def never(*a, **k):
+            raise AssertionError("xdelta3 called although the built-in engine succeeded")
+
+        ok, msg = self._run("patched", never)
+        self.assertTrue(ok)
+        self.assertIn("built-in VCDIFF", msg)
+
+    def test_external_is_the_fallback(self):
+        out = self.out
+
+        class Done:
+            returncode = 0
+            stderr = ""
+
+        def fake_xdelta(cmd, **k):
+            with open(out, "wb") as f:
+                f.write(b"patched")
+            return Done()
+
+        ok, msg = self._run("error", fake_xdelta)
+        self.assertTrue(ok, msg)
+        self.assertIn("external xdelta3", msg)
+        self.assertIn("unsupported secondary compressor", msg)
+
+    def test_both_missing_reports_the_builtin_error(self):
+        def never(*a, **k):
+            raise AssertionError("xdelta3 is not runnable")
+
+        ok, msg = self._run("error", never, runnable=False)
+        self.assertFalse(ok)
+        self.assertIn("unsupported secondary compressor", msg)
 
 
 class TestTempFilePlacement(unittest.TestCase):

@@ -1,0 +1,5 @@
+# Exact linter/type-checker versions CI runs. Pinned so a new upstream
+# release cannot fail CI on an unchanged tree; Dependabot proposes bumps
+# as pull requests (.github/dependabot.yml), where the fallout is visible.
+ruff==0.16.8
+mypy==2.3.1
