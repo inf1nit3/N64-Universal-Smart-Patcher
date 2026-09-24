@@ -88,6 +88,17 @@ def main():
         print("no 320-space gap: the delta covers the 2D layer. Nothing to fix here.")
         return
 
+    from makefix2d import in_copy_mode_function
+
+    copy = sorted(o for offs in groups.values() for o in offs if in_copy_mode_function(hires, o))
+    if copy:
+        print(
+            f"\n{len(copy)} of them sit in functions that draw in the RDP's COPY mode "
+            "(texture step 4.0). The shift/step transform is invalid there - "
+            "makefix2d refuses them unless told to skip them. First few: "
+            + ", ".join(f"{o:08X}" for o in copy[:8])
+        )
+
     print("\ndraft site file (review the grouping by hand, then name it):\n")
     print("GROUPS = {")
     print('    "all": [')
@@ -106,7 +117,7 @@ def main():
     )
     print(
         f"\nnext: makefix2d.py {hires_path} out.z64 --group all "
-        "--ips bisect/<CRC1>_<game>_bisect.ips --no-crc"
+        "--ips bisect/<CRC1>_<game>_bisect.ips --no-crc" + (" --skip-copy-mode" if copy else "")
     )
 
 

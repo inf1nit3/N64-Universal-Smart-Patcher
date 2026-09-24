@@ -120,3 +120,53 @@ class TestPackerFinder(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def lui(rt: int, imm: int) -> int:
+    return (0x0F << 26) | (rt << 16) | (imm & 0xFFFF)
+
+
+JR_RA = 0x03E00008
+
+
+def _func_buffer(*functions):
+    """Lay out word lists as consecutive functions, each ended by
+    `jr ra` plus a nop delay slot. Returns (buffer, start offsets)."""
+    words, starts = [0, 0], []
+    for body in functions:
+        starts.append(len(words) * 4)
+        words += [*body, JR_RA, 0]
+    buffer = bytearray(4 * len(words))
+    for i, w in enumerate(words):
+        struct.pack_into(">I", buffer, 4 * i, w)
+    return buffer, starts
+
+
+class TestCopyModeGuard(unittest.TestCase):
+    """COPY mode cannot scale; the transform must be refused there.
+    The signature is a step word of dsdx 4.0 / dtdy 1.0."""
+
+    COPY = (sll(9, 25, 2), lui(15, 0x1000), ori(15, 15, 0x0400))
+    ONE_CYCLE = (sll(9, 25, 2), lui(15, 0x0400), ori(15, 15, 0x0400))
+
+    def test_flags_a_function_with_a_copy_mode_step(self):
+        buffer, (start,) = _func_buffer(self.COPY)
+        self.assertEqual(makefix2d.in_copy_mode_function(buffer, start), [start + 4])
+
+    def test_leaves_a_one_cycle_function_alone(self):
+        buffer, (start,) = _func_buffer(self.ONE_CYCLE)
+        self.assertEqual(makefix2d.in_copy_mode_function(buffer, start), [])
+
+    def test_a_neighbouring_copy_function_does_not_leak_in(self):
+        """Classification is per function: jr ra bounds the scan."""
+        buffer, (one, copy) = _func_buffer(self.ONE_CYCLE, self.COPY)
+        self.assertEqual(makefix2d.in_copy_mode_function(buffer, one), [])
+        self.assertTrue(makefix2d.in_copy_mode_function(buffer, copy))
+
+    def test_lui_0x1000_without_the_dtdy_partner_is_not_a_step(self):
+        buffer, (start,) = _func_buffer([sll(9, 25, 2), lui(15, 0x1000), ori(15, 15, 0x1234)])
+        self.assertEqual(makefix2d.in_copy_mode_function(buffer, start), [])
+
+    def test_function_bounds_exclude_the_previous_delay_slot(self):
+        buffer, (_first, second) = _func_buffer([0x11111111], [0x22222222])
+        self.assertEqual(makefix2d.enclosing_function(buffer, second), (second, second + 12))

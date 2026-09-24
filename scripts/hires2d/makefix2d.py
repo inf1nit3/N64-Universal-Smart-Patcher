@@ -67,6 +67,61 @@ def halve_step_imm(data, off):
     return (w & 0xFFFF0000) | halved
 
 
+JR_RA = 0x03E00008
+
+
+def enclosing_function(data, off, limit=0x2000):
+    """[start, end) of the function around `off`: from just past the
+    previous `jr ra` and its delay slot to just past the next one."""
+    start = off
+    while start > max(0, off - limit):
+        if struct.unpack_from(">I", data, start - 4)[0] == JR_RA:
+            start += 4  # the delay slot belongs to the previous function
+            break
+        start -= 4
+    end = off
+    while end < min(len(data) - 4, off + limit):
+        if struct.unpack_from(">I", data, end)[0] == JR_RA:
+            end += 8
+            break
+        end += 4
+    return start, end
+
+
+def copy_mode_steps(data, lo, hi):
+    """Offsets of `lui r, 0x1000 ; ... ; ori r, r, 0x0400` in [lo, hi): a
+    texture-rectangle step word of dsdx 4.0 / dtdy 1.0, the signature of
+    the RDP's COPY cycle type.
+
+    Copy mode moves four texels per clock and cannot scale - dsdx must
+    stay 4.0 and the rectangle end is inclusive - so this module's
+    transform (double the shift, halve the step) is invalid for any
+    emitter that draws in it. That is exactly what broke SM64's HUD; see
+    scripts/sm64_hires/README.md, "The HUD". On SM64 this test separates
+    the three HUD emitters from the four menu emitters without a miss.
+    """
+    hits = []
+    for o in range(lo, hi - 4, 4):
+        w = struct.unpack_from(">I", data, o)[0]
+        if (w >> 26) != 0x0F or (w & 0xFFFF) != 0x1000:
+            continue
+        rt = (w >> 16) & 31
+        for p in range(o + 4, min(hi, o + 0x24), 4):
+            x = struct.unpack_from(">I", data, p)[0]
+            if (x >> 26) == 0x0D and ((x >> 21) & 31) == rt and ((x >> 16) & 31) == rt:
+                if x & 0xFFFF == 0x0400:
+                    hits.append(o)
+                break
+    return hits
+
+
+def in_copy_mode_function(data, off):
+    """The copy-mode step words of the function `off` sits in (empty when
+    the function draws nothing in COPY mode)."""
+    lo, hi = enclosing_function(data, off)
+    return copy_mode_steps(data, lo, hi)
+
+
 def build_ips(edits):
     """edits: {offset: 4-byte replacement} -> plain IPS bytes."""
     hunks = []
@@ -109,6 +164,17 @@ def main():
         action="store_true",
         help="skip the boot checksum restamp (IPS route: the pipeline restamps anyway)",
     )
+    copy = ap.add_mutually_exclusive_group()
+    copy.add_argument(
+        "--skip-copy-mode",
+        action="store_true",
+        help="leave out sites in functions that draw in COPY mode (reported), build the rest",
+    )
+    copy.add_argument(
+        "--allow-copy-mode",
+        action="store_true",
+        help="edit COPY-mode sites anyway - an experiment, not a fix",
+    )
     args = ap.parse_args()
 
     sites = load_site_file(args.sites)
@@ -121,6 +187,31 @@ def main():
 
     with open(args.image, "rb") as f:
         data = bytearray(f.read())
+
+    # The transform is invalid in COPY mode (see copy_mode_steps). Refuse
+    # by default: a variant that silently includes such sites costs a
+    # hardware round and shows garbled glyphs, not an answer.
+    copy_sites = {
+        off: steps
+        for off in [*coord_group, *step_group]
+        if (steps := in_copy_mode_function(data, off))
+    }
+    if copy_sites and not args.allow_copy_mode:
+        listing = "\n".join(
+            f"  {off:08X}  (copy-mode step word at {', '.join(f'{s:08X}' for s in steps)})"
+            for off, steps in sorted(copy_sites.items())
+        )
+        if not args.skip_copy_mode:
+            raise SystemExit(
+                f"{len(copy_sites)} requested site(s) sit in functions that draw in the RDP's "
+                f"COPY mode, where doubling the shift and halving the step is invalid:\n"
+                f"{listing}\n"
+                "Pass --skip-copy-mode to build the rest, or --allow-copy-mode to force it. "
+                "Background: scripts/sm64_hires/README.md, 'The HUD'."
+            )
+        print(f"skipping {len(copy_sites)} COPY-mode site(s):\n{listing}")
+        coord_group = [o for o in coord_group if o not in copy_sites]
+        step_group = [o for o in step_group if o not in copy_sites]
 
     edits = {}
     for off in coord_group:

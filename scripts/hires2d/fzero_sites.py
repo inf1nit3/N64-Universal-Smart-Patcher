@@ -12,8 +12,15 @@ step class (0x0400/0x0800/0xFC00/0xF800) within +-64 words of a
 packer in the group - a heuristic, which is why they are a
 separate bisect axis and never mixed in silently.
 
+46 of the 169 sites (and 13 of the 55 steps) sit in functions that
+draw in the RDP's COPY mode, where the transform is invalid;
+makefix2d.py refuses them unless run with --skip-copy-mode. Even
+without them, the emulator shows texture corruption (title art torn
+into streaks), so these groups also hold texture-space packers and
+need re-cutting before any variant is worth flashing.
+
 NOTHING HERE IS VERIFIED ON HARDWARE. See this directory's README
-for the bisect protocol.
+for the bisect protocol and the emulator pre-screen.
 """
 
 GROUPS = {

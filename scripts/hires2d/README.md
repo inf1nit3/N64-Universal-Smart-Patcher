@@ -76,6 +76,51 @@ Stage 1b IPS files (install into `~/.n64patcher/game_fixes/`) are in
 scale on menus/HUD and for texture corruption (which means the group
 contains texture-space sites and must be re-cut).
 
+## Emulator pre-screen (2026-09-24) — read before flashing anything
+
+Two things learned on SM64's HUD change how these variants must be read.
+
+**COPY mode.** An emitter that steps its texture by 4.0 (`lui r, 0x1000 ;
+ori r, r, 0x0400`) draws in the RDP's COPY cycle type, which cannot
+scale. Doubling its shift puts a 1:1 glyph into a 2x rectangle; halving
+its step is invalid outright. That broke SM64's HUD (see
+`scripts/sm64_hires/README.md`, "The HUD"). `makefix2d.py` now checks
+every requested site's enclosing function for that step word and
+**refuses** to build if it finds one; `--skip-copy-mode` builds the rest
+and lists what it left out, `--allow-copy-mode` forces it. On SM64 the
+check separates the three HUD emitters from the four menu emitters
+without a miss. `analyze.py` reports the count up front.
+
+| Game | Sites in COPY-mode functions |
+|---|---|
+| GoldenEye | 0 of 33 |
+| Quake II | 0 of 25 |
+| Forsaken | 0 of 1 |
+| **F-Zero X** | **46 of 169** — blitter 30/88, `reg_00B` 12/15, `reg_00A` 4/12; 13 of 55 steps |
+
+The F-Zero variants in `bisect/` and `work/B30E…/bisect/` are rebuilt
+with `--skip-copy-mode` (A 58 words, B 80, C 123, D 165).
+
+**mupen64plus shows breakage the variants were built to find.** Running
+each variant through boot, intro and attract mode (frames 300–4800,
+8 MB) against its unmodified hi-res image:
+
+| Variant | Emulator verdict |
+|---|---|
+| F-Zero X C, D (COPY sites skipped) | title art torn into colour streaks — the signature of a doubled tile *size*, so texture-space packers (SETTILESIZE uses the same `<< 2 / & 0xFFF` idiom) are in the groups; pilot portraits turn into white boxes |
+| GoldenEye A, C | intro identical to the base image — neither better nor worse; menus and HUD are not reachable without input |
+| GoldenEye D (and so B's steps) | breaks the intro credits, which the base image already renders correctly: glyphs stretched 2x vertically and cut in half |
+| Quake II A | legal text smeared into a solid block, title menu reduced to green blocks |
+| Quake II B | the same, plus distorted 3D geometry — some "2D" packers are shared with geometry code |
+
+What is worth a hardware round: **GoldenEye A or C**, to look at the
+file select, the watch and the in-game HUD. Nothing else. F-Zero X and
+Quake II need their site tables re-cut first — separating screen-space
+packers from texture-space and geometry ones — and GoldenEye's step
+halving is wrong for at least its credit text. The August claim that
+GoldenEye's whole 2D layer sits in 320-space also does not survive: the
+Enhanced delta already renders the credits at 640-space size.
+
 ## Rebuilding for another game
 
 1. `n64patcher <clean dump> --hires -o outdir` (or apply the recipe's
